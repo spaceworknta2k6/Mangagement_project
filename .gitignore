@@ -1,0 +1,57 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# Build outputs
+dist/
+build/
+frontend/dist/
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+
+# Temporary and log files
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.DS_Store
+Thumbs.db
+tmp_pdf_images/
+coverage/
+backend/uploads/
+backend/tmp/
+
+# ==========================================
+# Cấu hình bỏ qua các thư mục/file theo yêu cầu:
+# ==========================================
+
+# Thư mục tài liệu và kiểm thử
+docs/
+UI_test/
+
+# Các file tài liệu cá nhân / hướng dẫn AI
+AI_FEATURES.md
+Bao_Cao_Do_An_Tot_Nghiep.docx
+CODING_GUIDE_FOR_AI.md
+DEPLOYMENT_GUIDE.md
+ENV_EXAMPLE.md
+FLOW.md
+FOLDER_STRUCTURE.md
+MODELS.md
+ROUTES.md
+TECH_STACK.md
+TESTING_GUIDE.md
+VALIDATION.md
+README_AI.md
+.vscode
