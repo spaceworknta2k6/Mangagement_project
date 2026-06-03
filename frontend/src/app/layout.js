@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: 'Episteme — Quản lý Đồ án Tốt nghiệp',
+  title: 'Karl — Quản lý Đồ án Tốt nghiệp',
   description: 'Hệ thống quản lý đồ án tốt nghiệp dành cho Đại học Bách Khoa Hà Nội',
 };
 

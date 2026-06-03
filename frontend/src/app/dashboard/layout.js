@@ -106,7 +106,7 @@ function Sidebar({ collapsed, onToggle, userRole }) {
               whiteSpace: 'nowrap',
             }}
           >
-            Episteme
+            Karl
           </span>
         )}
       </div>

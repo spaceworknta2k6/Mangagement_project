@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Eye, EyeSlash, User, Lock } from '@phosphor-icons/react';
+import { Eye, EyeSlash, User, Lock, Question } from '@phosphor-icons/react';
 import useAuthStore from '@/store/auth.store';
 import useThemeStore from '@/store/theme.store';
 import { authService } from '@/services/auth.service';
@@ -25,18 +25,11 @@ export default function LoginPage() {
     applyTheme();
   }, [applyTheme]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (!email.trim() || !password.trim()) {
-      setError('Vui lòng nhập đầy đủ email và mật khẩu.');
-      return;
-    }
-
+  const doLogin = async (loginEmail, loginPassword) => {
     setLoading(true);
+    setError('');
     try {
-      const loginResult = await authService.login(email, password);
+      const loginResult = await authService.login(loginEmail, loginPassword);
       const token = loginResult.data.accessToken;
 
       // Fetch full user profile
@@ -50,6 +43,31 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      setError('Vui lòng nhập đầy đủ email và mật khẩu.');
+      return;
+    }
+    doLogin(email, password);
+  };
+
+  const handleMicrosoftLogin = () => {
+    const msEmail = window.prompt("Vui lòng nhập email tài khoản Microsoft của Phenikaa:");
+    if (!msEmail) return;
+
+    // Validate email domain
+    const emailRegex = /^[0-9]{8}@st\.phenikaa-uni\.edu\.vn$/;
+    if (!emailRegex.test(msEmail)) {
+      setError('Chỉ cho phép tài khoản sinh viên Phenikaa (VD: 24100351@st.phenikaa-uni.edu.vn).');
+      return;
+    }
+
+    // Try mock login for SSO testing
+    // Mật khẩu mặc định có thể là gì đó cho mục đích test
+    doLogin(msEmail, '123456aA@');
   };
 
   return (
@@ -66,7 +84,7 @@ export default function LoginPage() {
         position: 'absolute', inset: 0, zIndex: 0,
       }}>
         <Image
-          src="/bg-login.jpg"
+          src="/images/bg-login.jpg"
           alt="background"
           fill
           style={{ objectFit: 'cover', objectPosition: 'center' }}
@@ -75,69 +93,77 @@ export default function LoginPage() {
         {/* Blue overlay to match Phenikaa style */}
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, rgba(10,40,120,0.82) 0%, rgba(5,25,90,0.75) 100%)',
+          background: 'linear-gradient(135deg, rgba(10,40,120,0.85) 0%, rgba(5,25,90,0.85) 100%)',
         }} />
       </div>
 
-      {/* Decorative lines from brand kit */}
+      {/* Decorative lines */}
       <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 1, opacity: 0.5 }}>
-        <Image src="/login-line-1.png" alt="" width={300} height={200} style={{ objectFit: 'contain' }} />
+        <Image src="/images/login-line-1.png" alt="" width={300} height={200} style={{ objectFit: 'contain' }} />
       </div>
       <div style={{ position: 'absolute', bottom: 0, right: 0, zIndex: 1, opacity: 0.5 }}>
-        <Image src="/login-line-2.png" alt="" width={200} height={150} style={{ objectFit: 'contain' }} />
+        <Image src="/images/login-line-2.png" alt="" width={200} height={150} style={{ objectFit: 'contain' }} />
       </div>
 
-      {/* Main card */}
+      {/* Content wrapper */}
       <div style={{
         position: 'relative', zIndex: 10,
         width: '100%', maxWidth: '420px',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center',
         margin: '20px',
-        backgroundColor: 'rgba(255,255,255,0.97)',
-        borderRadius: '16px',
-        padding: '40px 36px',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
-        border: '1px solid rgba(255,255,255,0.2)',
-        animation: 'fadeIn 0.4s ease',
       }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        
+        {/* Logo at Top */}
+        <div style={{ marginBottom: '32px' }}>
           <Image
-            src="/logo-Phenikaa-w.png"
+            src="/images/logo-Phenikaa-w.png"
             alt="Phenikaa University"
-            width={180}
-            height={60}
-            style={{ objectFit: 'contain', filter: 'invert(1) brightness(0) saturate(100%) invert(22%) sepia(90%) saturate(600%) hue-rotate(200deg)' }}
+            width={280}
+            height={80}
+            style={{ objectFit: 'contain' }}
           />
         </div>
 
-        {/* Title */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+        {/* Main card */}
+        <div style={{
+          width: '100%',
+          backgroundColor: '#f5f7fa',
+          borderRadius: '20px',
+          padding: '36px 40px',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+          animation: 'fadeIn 0.4s ease',
+        }}>
+        {/* Plane Icon */}
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '52px', height: '52px',
+            width: '60px', height: '60px',
             borderRadius: '50%',
-            backgroundColor: '#e8f0fc',
-            marginBottom: '12px',
+            backgroundColor: '#eaf1fb',
+            transform: 'translateY(-60px)',
+            marginBottom: '-60px'
           }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
               <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" fill="#1a56db"/>
               <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" fill="#1a56db"/>
             </svg>
           </div>
+        </div>
+
+        {/* Title */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1 style={{
-            fontSize: '20px',
+            fontSize: '22px',
             fontWeight: 700,
-            letterSpacing: '0.08em',
-            color: '#0f2d78',
+            letterSpacing: '0.04em',
+            color: '#1a3d9e',
             textTransform: 'uppercase',
           }}>
-            Đăng nhập
+            ĐĂNG NHẬP
           </h1>
-          <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
-            Hệ thống Quản lý Đồ án Tốt nghiệp
-          </p>
         </div>
 
         {/* Form */}
@@ -145,13 +171,13 @@ export default function LoginPage() {
           {/* Email field */}
           <div style={{ position: 'relative' }}>
             <span style={{
-              position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
-              color: '#9ca3af', display: 'flex', alignItems: 'center',
+              position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
+              color: '#6b7280', display: 'flex', alignItems: 'center',
             }}>
               <User size={18} />
             </span>
             <input
-              type="email"
+              type="text"
               name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -160,11 +186,11 @@ export default function LoginPage() {
               autoFocus
               style={{
                 width: '100%',
-                height: '48px',
+                height: '46px',
                 paddingLeft: '44px',
                 paddingRight: '16px',
-                border: '1.5px solid #e5e7eb',
-                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
                 fontSize: '14px',
                 color: '#111827',
                 backgroundColor: '#fff',
@@ -173,15 +199,15 @@ export default function LoginPage() {
                 fontFamily: 'inherit',
               }}
               onFocus={(e) => e.target.style.borderColor = '#1a56db'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
             />
           </div>
 
           {/* Password field */}
           <div style={{ position: 'relative' }}>
             <span style={{
-              position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
-              color: '#9ca3af', display: 'flex', alignItems: 'center',
+              position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
+              color: '#6b7280', display: 'flex', alignItems: 'center',
             }}>
               <Lock size={18} />
             </span>
@@ -194,11 +220,11 @@ export default function LoginPage() {
               required
               style={{
                 width: '100%',
-                height: '48px',
+                height: '46px',
                 paddingLeft: '44px',
                 paddingRight: '48px',
-                border: '1.5px solid #e5e7eb',
-                borderRadius: '8px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
                 fontSize: '14px',
                 color: '#111827',
                 backgroundColor: '#fff',
@@ -207,7 +233,7 @@ export default function LoginPage() {
                 fontFamily: 'inherit',
               }}
               onFocus={(e) => e.target.style.borderColor = '#1a56db'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
             />
             <button
               type="button"
@@ -215,11 +241,19 @@ export default function LoginPage() {
               style={{
                 position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
                 background: 'none', border: 'none', cursor: 'pointer',
-                color: '#9ca3af', display: 'flex', alignItems: 'center', padding: '4px',
+                color: '#6b7280', display: 'flex', alignItems: 'center', padding: '4px',
               }}
             >
               {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
             </button>
+          </div>
+
+          {/* Links Row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', marginTop: '4px', marginBottom: '8px' }}>
+            <a href="#" style={{ color: '#1a3d9e', textDecoration: 'none' }} onClick={(e) => e.preventDefault()}>Quên mật khẩu</a>
+            <a href="#" style={{ color: '#1a3d9e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={(e) => e.preventDefault()}>
+              <Question size={16} /> Trợ giúp!
+            </a>
           </div>
 
           {/* Error message */}
@@ -230,7 +264,7 @@ export default function LoginPage() {
               color: '#dc2626',
               backgroundColor: '#fef2f2',
               border: '1px solid #fecaca',
-              borderRadius: '8px',
+              borderRadius: '6px',
               lineHeight: 1.4,
             }}>
               {error}
@@ -243,14 +277,13 @@ export default function LoginPage() {
             disabled={loading}
             style={{
               width: '100%',
-              height: '48px',
-              backgroundColor: loading ? '#6b88c7' : '#0f2d78',
+              height: '46px',
+              backgroundColor: loading ? '#3b5fbd' : '#1e3868',
               color: '#fff',
               border: 'none',
-              borderRadius: '8px',
-              fontSize: '15px',
-              fontWeight: 700,
-              letterSpacing: '0.06em',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: 600,
               textTransform: 'uppercase',
               cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'background-color 0.15s',
@@ -259,10 +292,9 @@ export default function LoginPage() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              marginTop: '4px',
             }}
-            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#1a3d9e'; }}
-            onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#0f2d78'; }}
+            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#152a51'; }}
+            onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3868'; }}
           >
             {loading && (
               <span style={{
@@ -273,14 +305,14 @@ export default function LoginPage() {
                 animation: 'spin 0.7s linear infinite',
               }} />
             )}
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {loading ? 'ĐANG ĐĂNG NHẬP...' : 'ĐĂNG NHẬP'}
           </button>
         </form>
 
         {/* Divider */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: '12px',
-          margin: '20px 0', color: '#9ca3af', fontSize: '12px',
+          margin: '24px 0', color: '#9ca3af', fontSize: '12px',
         }}>
           <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
           <span>Hoặc đăng nhập</span>
@@ -290,13 +322,14 @@ export default function LoginPage() {
         {/* Microsoft SSO button */}
         <button
           type="button"
+          onClick={handleMicrosoftLogin}
           style={{
             width: '100%',
             height: '46px',
-            backgroundColor: '#0f2d78',
+            backgroundColor: '#005a9e',
             color: '#fff',
             border: 'none',
-            borderRadius: '8px',
+            borderRadius: '6px',
             fontSize: '14px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -307,8 +340,8 @@ export default function LoginPage() {
             fontFamily: 'inherit',
             transition: 'background-color 0.15s',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a3d9e'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0f2d78'}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004578'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#005a9e'}
         >
           {/* Microsoft logo (inline SVG) */}
           <svg width="20" height="20" viewBox="0 0 21 21" fill="none">
@@ -321,19 +354,17 @@ export default function LoginPage() {
         </button>
       </div>
 
-      {/* Footer text */}
-      <p style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        color: 'rgba(255,255,255,0.6)',
-        fontSize: '12px',
-        zIndex: 10,
-        whiteSpace: 'nowrap',
-      }}>
-        © 2025 Trường Đại học Bách Khoa Hà Nội — Hệ thống Episteme
-      </p>
+
+        {/* Footer text */}
+        <p style={{
+          marginTop: '32px',
+          color: 'rgba(255,255,255,0.7)',
+          fontSize: '12px',
+          textAlign: 'center'
+        }}>
+          © 2026 Đại học Phenikaa - Hệ thống Karl
+        </p>
+      </div>
     </div>
   );
 }
