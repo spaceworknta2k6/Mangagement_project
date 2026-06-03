@@ -39,7 +39,7 @@ export default function LoginPage() {
 
       router.push('/dashboard');
     } catch (err) {
-      setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+      setError('Tên tài khoản hoặc mật khẩu không hợp lệ!');
     } finally {
       setLoading(false);
     }
@@ -48,26 +48,18 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      setError('Vui lòng nhập đầy đủ email và mật khẩu.');
+      setError('Tên tài khoản hoặc mật khẩu không hợp lệ!');
       return;
     }
     doLogin(email, password);
   };
 
   const handleMicrosoftLogin = () => {
-    const msEmail = window.prompt("Vui lòng nhập email tài khoản Microsoft của Phenikaa:");
-    if (!msEmail) return;
-
-    // Validate email domain
-    const emailRegex = /^[0-9]{8}@st\.phenikaa-uni\.edu\.vn$/;
-    if (!emailRegex.test(msEmail)) {
-      setError('Chỉ cho phép tài khoản sinh viên Phenikaa (VD: 24100351@st.phenikaa-uni.edu.vn).');
-      return;
-    }
-
-    // Try mock login for SSO testing
-    // Mật khẩu mặc định có thể là gì đó cho mục đích test
-    doLogin(msEmail, '123456aA@');
+    // Chuyển hướng đến trang đăng nhập Microsoft chuẩn
+    const clientId = "5392332e-2635-4e9f-a313-2e8cb0f80056";
+    const redirectUri = encodeURIComponent(window.location.origin + "/auth/login");
+    const msLoginUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid+profile`;
+    window.location.href = msLoginUrl;
   };
 
   return (
@@ -97,14 +89,6 @@ export default function LoginPage() {
         }} />
       </div>
 
-      {/* Decorative lines */}
-      <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 1, opacity: 0.5 }}>
-        <Image src="/images/login-line-1.png" alt="" width={300} height={200} style={{ objectFit: 'contain' }} />
-      </div>
-      <div style={{ position: 'absolute', bottom: 0, right: 0, zIndex: 1, opacity: 0.5 }}>
-        <Image src="/images/login-line-2.png" alt="" width={200} height={150} style={{ objectFit: 'contain' }} />
-      </div>
-
       {/* Content wrapper */}
       <div style={{
         position: 'relative', zIndex: 10,
@@ -127,233 +111,242 @@ export default function LoginPage() {
 
         {/* Main card */}
         <div style={{
+          position: 'relative',
           width: '100%',
-          backgroundColor: '#f5f7fa',
+          background: 'linear-gradient(to top, rgb(240, 243, 253), rgb(178, 194, 240))',
           borderRadius: '20px',
           padding: '36px 40px',
           boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
           animation: 'fadeIn 0.4s ease',
         }}>
-        {/* Plane Icon */}
-        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          {/* Decorative Plane (login-line-1.png) */}
           <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '60px', height: '60px',
-            borderRadius: '50%',
-            backgroundColor: '#eaf1fb',
-            transform: 'translateY(-60px)',
-            marginBottom: '-60px'
-          }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-              <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" fill="#1a56db"/>
-              <path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" fill="#1a56db"/>
-            </svg>
-          </div>
-        </div>
+            position: 'absolute',
+            top: '-20px',
+            right: '-12px',
+            width: '274px',
+            height: '89px',
+            backgroundImage: 'url(/images/login-line-1.png)',
+            backgroundSize: 'auto',
+            backgroundPosition: '50% 0%',
+            backgroundRepeat: 'no-repeat',
+            pointerEvents: 'none',
+            zIndex: 10
+          }} />
 
-        {/* Title */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{
-            fontSize: '22px',
-            fontWeight: 700,
-            letterSpacing: '0.04em',
-            color: '#1a3d9e',
-            textTransform: 'uppercase',
-          }}>
-            ĐĂNG NHẬP
-          </h1>
-        </div>
+          {/* Decorative Line (login-line-2.png) */}
+          <div style={{
+            position: 'absolute',
+            bottom: '-24px',
+            left: '-16px',
+            width: '138px',
+            height: '74px',
+            backgroundImage: 'url(/images/login-line-2.png)',
+            backgroundSize: 'auto',
+            backgroundPosition: '50% 0%',
+            backgroundRepeat: 'no-repeat',
+            pointerEvents: 'none',
+            zIndex: 0
+          }} />
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Email field */}
-          <div style={{ position: 'relative' }}>
-            <span style={{
-              position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
-              color: '#6b7280', display: 'flex', alignItems: 'center',
+          {/* Title */}
+          <div style={{ textAlign: 'center', marginBottom: '24px', marginTop: '20px', position: 'relative', zIndex: 1 }}>
+            <h1 style={{
+              fontSize: '22px',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              color: '#1a3d9e',
+              textTransform: 'uppercase',
             }}>
-              <User size={18} />
-            </span>
-            <input
-              type="text"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Nhập tài khoản hoặc email"
-              required
-              autoFocus
-              style={{
-                width: '100%',
-                height: '46px',
-                paddingLeft: '44px',
-                paddingRight: '16px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                color: '#111827',
-                backgroundColor: '#fff',
-                outline: 'none',
-                transition: 'border-color 0.15s',
-                fontFamily: 'inherit',
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#1a56db'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-            />
-          </div>
-
-          {/* Password field */}
-          <div style={{ position: 'relative' }}>
-            <span style={{
-              position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
-              color: '#6b7280', display: 'flex', alignItems: 'center',
-            }}>
-              <Lock size={18} />
-            </span>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Nhập mật khẩu"
-              required
-              style={{
-                width: '100%',
-                height: '46px',
-                paddingLeft: '44px',
-                paddingRight: '48px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                color: '#111827',
-                backgroundColor: '#fff',
-                outline: 'none',
-                transition: 'border-color 0.15s',
-                fontFamily: 'inherit',
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#1a56db'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              style={{
-                position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#6b7280', display: 'flex', alignItems: 'center', padding: '4px',
-              }}
-            >
-              {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-
-          {/* Links Row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', marginTop: '4px', marginBottom: '8px' }}>
-            <a href="#" style={{ color: '#1a3d9e', textDecoration: 'none' }} onClick={(e) => e.preventDefault()}>Quên mật khẩu</a>
-            <a href="#" style={{ color: '#1a3d9e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={(e) => e.preventDefault()}>
-              <Question size={16} /> Trợ giúp!
-            </a>
+              ĐĂNG NHẬP
+            </h1>
           </div>
 
           {/* Error message */}
           {error && (
             <div style={{
-              padding: '10px 12px',
               fontSize: '13px',
               color: '#dc2626',
-              backgroundColor: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '6px',
-              lineHeight: 1.4,
+              marginBottom: '8px',
+              position: 'relative',
+              zIndex: 1
             }}>
               {error}
             </div>
           )}
 
-          {/* Submit */}
+          {/* Form */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative', zIndex: 1 }} noValidate>
+            {/* Email field */}
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
+                color: '#6b7280', display: 'flex', alignItems: 'center',
+              }}>
+                <User size={18} />
+              </span>
+              <input
+                type="text"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Nhập tài khoản hoặc email"
+                autoFocus
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  paddingLeft: '44px',
+                  paddingRight: '16px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  color: '#111827',
+                  backgroundColor: '#fff',
+                  outline: 'none',
+                  transition: 'border-color 0.15s',
+                  fontFamily: 'inherit',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#1a56db'}
+                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              />
+            </div>
+
+            {/* Password field */}
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
+                color: '#6b7280', display: 'flex', alignItems: 'center',
+              }}>
+                <Lock size={18} />
+              </span>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Nhập mật khẩu"
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  paddingLeft: '44px',
+                  paddingRight: '48px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  color: '#111827',
+                  backgroundColor: '#fff',
+                  outline: 'none',
+                  transition: 'border-color 0.15s',
+                  fontFamily: 'inherit',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#1a56db'}
+                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                style={{
+                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#6b7280', display: 'flex', alignItems: 'center', padding: '4px',
+                }}
+              >
+                {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            {/* Links Row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', marginTop: '4px', marginBottom: '8px' }}>
+              <a href="#" style={{ color: '#1a3d9e', textDecoration: 'none' }} onClick={(e) => e.preventDefault()}>Quên mật khẩu</a>
+              <a href="#" style={{ color: '#1a3d9e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={(e) => e.preventDefault()}>
+                <Question size={16} /> Trợ giúp!
+              </a>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                height: '46px',
+                backgroundColor: loading ? '#3b5fbd' : '#1e3868',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.15s',
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+              }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#152a51'; }}
+              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3868'; }}
+            >
+              {loading && (
+                <span style={{
+                  width: '16px', height: '16px',
+                  border: '2px solid rgba(255,255,255,0.4)',
+                  borderTopColor: '#fff',
+                  borderRadius: '50%',
+                  animation: 'spin 0.7s linear infinite',
+                }} />
+              )}
+              {loading ? 'ĐANG ĐĂNG NHẬP...' : 'ĐĂNG NHẬP'}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            margin: '24px 0', color: '#9ca3af', fontSize: '12px',
+            position: 'relative', zIndex: 1
+          }}>
+            <div style={{ flex: 1, height: '1px', backgroundColor: '#cbd5e1' }} />
+            <span>Hoặc đăng nhập</span>
+            <div style={{ flex: 1, height: '1px', backgroundColor: '#cbd5e1' }} />
+          </div>
+
+          {/* Microsoft SSO button */}
           <button
-            type="submit"
-            disabled={loading}
+            type="button"
+            onClick={handleMicrosoftLogin}
             style={{
               width: '100%',
               height: '46px',
-              backgroundColor: loading ? '#3b5fbd' : '#1e3868',
+              backgroundColor: '#005a9e',
               color: '#fff',
               border: 'none',
               borderRadius: '6px',
               fontSize: '14px',
               fontWeight: 600,
-              textTransform: 'uppercase',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.15s',
-              fontFamily: 'inherit',
+              cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px',
+              gap: '10px',
+              fontFamily: 'inherit',
+              transition: 'background-color 0.15s',
+              position: 'relative', zIndex: 1
             }}
-            onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#152a51'; }}
-            onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3868'; }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004578'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#005a9e'}
           >
-            {loading && (
-              <span style={{
-                width: '16px', height: '16px',
-                border: '2px solid rgba(255,255,255,0.4)',
-                borderTopColor: '#fff',
-                borderRadius: '50%',
-                animation: 'spin 0.7s linear infinite',
-              }} />
-            )}
-            {loading ? 'ĐANG ĐĂNG NHẬP...' : 'ĐĂNG NHẬP'}
+            {/* Microsoft logo (inline SVG) */}
+            <svg width="20" height="20" viewBox="0 0 21 21" fill="none">
+              <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
+              <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
+              <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
+              <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
+            </svg>
+            Sign in using Microsoft
           </button>
-        </form>
-
-        {/* Divider */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '12px',
-          margin: '24px 0', color: '#9ca3af', fontSize: '12px',
-        }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
-          <span>Hoặc đăng nhập</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
         </div>
-
-        {/* Microsoft SSO button */}
-        <button
-          type="button"
-          onClick={handleMicrosoftLogin}
-          style={{
-            width: '100%',
-            height: '46px',
-            backgroundColor: '#005a9e',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
-            fontFamily: 'inherit',
-            transition: 'background-color 0.15s',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#004578'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#005a9e'}
-        >
-          {/* Microsoft logo (inline SVG) */}
-          <svg width="20" height="20" viewBox="0 0 21 21" fill="none">
-            <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
-            <rect x="11" y="1" width="9" height="9" fill="#7FBA00"/>
-            <rect x="1" y="11" width="9" height="9" fill="#00A4EF"/>
-            <rect x="11" y="11" width="9" height="9" fill="#FFB900"/>
-          </svg>
-          Sign in using Microsoft
-        </button>
-      </div>
-
 
         {/* Footer text */}
         <p style={{
