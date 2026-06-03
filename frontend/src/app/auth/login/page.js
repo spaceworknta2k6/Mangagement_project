@@ -58,7 +58,8 @@ export default function LoginPage() {
     // Chuyển hướng đến trang đăng nhập Microsoft chuẩn
     const clientId = "5392332e-2635-4e9f-a313-2e8cb0f80056";
     const tenantId = "0eff33e2-f755-4d49-aa45-ac5ee4ce2308";
-    const redirectUri = encodeURIComponent(window.location.origin + "/auth/login");
+    // Phải dùng đúng redirect_uri đã đăng ký trong Azure AD của Phenikaa để không bị lỗi AADSTS50011
+    const redirectUri = encodeURIComponent("https://qldtbeta.phenikaa-uni.edu.vn/conggiangvien/login.aspx");
     const msLoginUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid+profile`;
     window.location.href = msLoginUrl;
   };
