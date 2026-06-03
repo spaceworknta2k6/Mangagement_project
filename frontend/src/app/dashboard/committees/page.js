@@ -105,7 +105,7 @@ export default function CommitteesPage() {
       });
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi khi tạo hội đồng');
+      toast.error(err.message || 'Lỗi khi tạo hội đồng');
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +129,8 @@ export default function CommitteesPage() {
     );
   }
 
-  const isStaff = user?.role === 'FACULTY_STAFF' || user?.role === 'DEPARTMENT_STAFF';
+  const userRole = user?.role || user?.roles?.[0];
+  const isStaff = userRole === 'FACULTY_STAFF' || userRole === 'DEPARTMENT_STAFF';
 
   return (
     <div>

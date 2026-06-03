@@ -83,7 +83,7 @@ export default function DefensesPage() {
       });
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi khi xếp lịch bảo vệ');
+      toast.error(err.message || 'Lỗi khi xếp lịch bảo vệ');
     } finally {
       setSubmitting(false);
     }
@@ -107,7 +107,8 @@ export default function DefensesPage() {
     );
   }
 
-  const isStaff = user?.role === 'FACULTY_STAFF' || user?.role === 'DEPARTMENT_STAFF';
+  const userRole = user?.role || user?.roles?.[0];
+  const isStaff = userRole === 'FACULTY_STAFF' || userRole === 'DEPARTMENT_STAFF';
 
   return (
     <div>

@@ -253,7 +253,7 @@ function Header({ user, sidebarCollapsed, onMobileMenuToggle }) {
         {user && (
           <div style={{ textAlign: 'right' }}>
             <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
-              {user.name || user.email}
+              {user.fullName || user.name || user.email}
             </p>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
               {getRoleLabel(user.role || user.roles?.[0])}

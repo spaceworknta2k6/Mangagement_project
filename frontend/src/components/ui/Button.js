@@ -36,15 +36,18 @@ const VARIANTS = {
 };
 
 const SIZES = {
-  sm: { padding: '6px 12px', fontSize: '12px', height: '32px' },
-  md: { padding: '8px 16px', fontSize: '14px', height: '38px' },
-  lg: { padding: '10px 20px', fontSize: '15px', height: '44px' },
+  sm: { padding: '6px 12px', iconPadding: '6px 8px', fontSize: '12px', height: '32px' },
+  md: { padding: '8px 16px', iconPadding: '8px 10px', fontSize: '14px', height: '38px' },
+  lg: { padding: '10px 20px', iconPadding: '10px 12px', fontSize: '15px', height: '44px' },
 };
 
 /**
  * Button component
- * @param {'primary'|'secondary'|'ghost'|'danger'} variant
+ * @param {'primary'|'secondary'|'ghost'|'outline'|'danger'} variant
  * @param {'sm'|'md'|'lg'} size
+ * @param {React.ReactNode} icon - Optional icon shown before children
+ * @param {boolean} isLoading - Alias for loading
+ * @param {string} title - Tooltip text (used when icon-only button)
  */
 export default function Button({
   children,
@@ -52,22 +55,29 @@ export default function Button({
   size = 'md',
   disabled = false,
   loading = false,
+  isLoading = false,
   fullWidth = false,
   type = 'button',
   onClick,
   style,
   className,
+  icon,
+  title,
   ...rest
 }) {
-  const v = VARIANTS[variant];
-  const s = SIZES[size];
-  const isDisabled = disabled || loading;
+  const v = VARIANTS[variant] || VARIANTS.primary;
+  const s = SIZES[size] || SIZES.md;
+  const isDisabled = disabled || loading || isLoading;
+  const isSpinning = loading || isLoading;
+  // Use smaller padding when icon-only (no children text)
+  const computedPadding = !children ? s.iconPadding : s.padding;
 
   return (
     <motion.button
       type={type}
       onClick={onClick}
       disabled={isDisabled}
+      title={title}
       whileTap={isDisabled ? {} : { scale: 0.97, y: 1 }}
       style={{
         display: 'inline-flex',
@@ -75,7 +85,7 @@ export default function Button({
         justifyContent: 'center',
         gap: '6px',
         height: s.height,
-        padding: s.padding,
+        padding: computedPadding,
         fontSize: s.fontSize,
         fontWeight: 500,
         fontFamily: 'inherit',
@@ -101,7 +111,7 @@ export default function Button({
       className={className}
       {...rest}
     >
-      {loading && (
+      {isSpinning ? (
         <span
           style={{
             width: '14px',
@@ -110,9 +120,14 @@ export default function Button({
             borderTopColor: 'transparent',
             borderRadius: '50%',
             animation: 'spin 0.7s linear infinite',
+            flexShrink: 0,
           }}
         />
-      )}
+      ) : icon ? (
+        <span style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0 }}>
+          {icon}
+        </span>
+      ) : null}
       {children}
     </motion.button>
   );

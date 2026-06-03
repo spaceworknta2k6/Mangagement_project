@@ -128,7 +128,7 @@ export default function DashboardPage() {
     <div>
       {/* Greeting */}
       <div style={{ marginBottom: '28px' }}>
-        <h1 className="text-display">{greeting()}, {user?.name || 'Người dùng'}</h1>
+        <h1 className="text-display">{greeting()}, {user?.fullName || user?.name || 'Người dùng'}</h1>
         <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '6px' }}>
           <Badge variant="info">{getRoleLabel(user?.role || user?.roles?.[0])}</Badge>
           <span style={{ marginLeft: '8px' }}>

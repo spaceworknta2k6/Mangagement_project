@@ -124,7 +124,7 @@ export default function ScoresPage() {
       }
       fetchData();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Lỗi khi nộp phiếu điểm');
+      toast.error(err.message || 'Lỗi khi nộp phiếu điểm');
     } finally {
       setSubmitting(false);
     }
