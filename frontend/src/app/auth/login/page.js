@@ -55,12 +55,8 @@ export default function LoginPage() {
   };
 
   const handleMicrosoftLogin = () => {
-    // Chuyển hướng đến trang đăng nhập Microsoft chung (Multi-tenant)
-    // Sử dụng Client ID dùng chung (Azure CLI) để nó hiện form nhập email trắng của Microsoft
-    // Khi người dùng gõ email Phenikaa, Microsoft sẽ tự nhận diện và chuyển sang giao diện Phenikaa
-    const clientId = "04b07795-8ddb-461a-bbee-02f9e1bf7b46";
-    const msLoginUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=http://localhost:3000&response_type=code&scope=openid`;
-    window.location.href = msLoginUrl;
+    // Theo yêu cầu, chỉ link đến trang đăng nhập của Google
+    window.location.href = 'https://accounts.google.com/signin';
   };
 
   return (
