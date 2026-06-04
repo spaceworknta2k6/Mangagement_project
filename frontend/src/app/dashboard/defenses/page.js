@@ -99,6 +99,16 @@ export default function DefensesPage() {
     }
   };
 
+  const getCommitteeStatusLabel = (status) => {
+    switch(status) {
+      case 'draft': return 'Bản nháp';
+      case 'approved': return 'Đã duyệt';
+      case 'active': return 'Đang hoạt động';
+      case 'finished': return 'Đã kết thúc';
+      default: return status || 'Không rõ';
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
@@ -236,7 +246,9 @@ export default function DefensesPage() {
                   >
                     <option value="">-- Chọn Hội đồng --</option>
                     {committees.map(c => (
-                      <option key={c._id} value={c._id}>{c.name}</option>
+                      <option key={c._id} value={c._id} disabled={!['approved', 'active'].includes(c.status)}>
+                        {c.name} - {getCommitteeStatusLabel(c.status)}
+                      </option>
                     ))}
                   </select>
                 </div>

@@ -10,7 +10,7 @@ import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
-import { Gavel, Plus, ArrowsClockwise, Users, Trash } from '@phosphor-icons/react';
+import { Gavel, Plus, ArrowsClockwise, Users, Trash, CheckCircle, PlayCircle } from '@phosphor-icons/react';
 
 export default function CommitteesPage() {
   const { user, token } = useAuthStore();
@@ -23,6 +23,7 @@ export default function CommitteesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [actionLoading, setActionLoading] = useState('');
 
   // Form
   const [form, setForm] = useState({
@@ -111,6 +112,32 @@ export default function CommitteesPage() {
     }
   };
 
+  const handleApproveCommittee = async (committeeId) => {
+    try {
+      setActionLoading(`approve:${committeeId}`);
+      await api.post(`/committees/${committeeId}/approve`, {}, token);
+      toast.success('Đã phê duyệt hội đồng');
+      fetchData();
+    } catch (err) {
+      toast.error(err.message || 'Lỗi khi phê duyệt hội đồng');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleActivateCommittee = async (committeeId) => {
+    try {
+      setActionLoading(`activate:${committeeId}`);
+      await api.post(`/committees/${committeeId}/activate`, {}, token);
+      toast.success('Đã kích hoạt hội đồng');
+      fetchData();
+    } catch (err) {
+      toast.error(err.message || 'Lỗi khi kích hoạt hội đồng');
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch(status) {
       case 'draft': return <Badge variant="warning">Bản nháp</Badge>;
@@ -119,6 +146,19 @@ export default function CommitteesPage() {
       case 'finished': return <Badge variant="neutral">Đã kết thúc</Badge>;
       default: return <Badge>{status}</Badge>;
     }
+  };
+
+  const getLecturerDisplay = (member) => {
+    const populatedLecturer = typeof member.lecturerId === 'object' ? member.lecturerId : null;
+    const lecturerId = populatedLecturer?._id || member.lecturerId;
+    const fallbackLecturer = lecturers.find((l) => l._id === lecturerId);
+    const lecturer = populatedLecturer || fallbackLecturer || {};
+    const userInfo = lecturer.userId || fallbackLecturer?.userId || {};
+
+    return {
+      fullName: userInfo.fullName || lecturer.fullName || 'Chưa có tên giảng viên',
+      lecturerCode: lecturer.lecturerCode || lecturer.employeeId || fallbackLecturer?.lecturerCode || fallbackLecturer?.employeeId || '',
+    };
   };
 
   if (loading) {
@@ -178,15 +218,15 @@ export default function CommitteesPage() {
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {committee.members?.map((m, idx) => {
-                  const lecturerInfo = m.lecturerId?.userId || {};
+                  const lecturerInfo = getLecturerDisplay(m);
                   return (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', padding: '8px', backgroundColor: 'var(--surface-sunken)', borderRadius: '6px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
-                          {lecturerInfo.fullName || 'Giảng viên ẩn'}
+                          {lecturerInfo.fullName}
                         </span>
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                          {m.lecturerId?.employeeId || ''}
+                          {lecturerInfo.lecturerCode}
                         </span>
                       </div>
                       <Badge variant={m.role === 'COMMITTEE_CHAIR' ? 'danger' : m.role === 'COMMITTEE_SECRETARY' ? 'warning' : 'neutral'}>
@@ -203,6 +243,33 @@ export default function CommitteesPage() {
             <div style={{ borderTop: '1px solid var(--border)', marginTop: '16px', paddingTop: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
               Tạo lúc: {formatDate(committee.createdAt)}
             </div>
+
+            {isStaff && (
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', justifyContent: 'flex-end' }}>
+                {committee.status === 'draft' && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<CheckCircle size={14} />}
+                    loading={actionLoading === `approve:${committee._id}`}
+                    onClick={() => handleApproveCommittee(committee._id)}
+                  >
+                    Duyệt
+                  </Button>
+                )}
+                {committee.status === 'approved' && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={<PlayCircle size={14} />}
+                    loading={actionLoading === `activate:${committee._id}`}
+                    onClick={() => handleActivateCommittee(committee._id)}
+                  >
+                    Kích hoạt
+                  </Button>
+                )}
+              </div>
+            )}
           </Card>
         ))}
 
@@ -282,7 +349,7 @@ export default function CommitteesPage() {
                               <option value="">-- Chọn Giảng viên --</option>
                               {lecturers.map(l => (
                                 <option key={l._id} value={l._id}>
-                                  {l.userId?.fullName} ({l.employeeId})
+                                  {l.userId?.fullName} ({l.lecturerCode})
                                 </option>
                               ))}
                             </select>

@@ -399,7 +399,7 @@ export default function TopicsPage() {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <Cpu size={18} style={{ color: 'var(--accent)' }} />
-                          <span style={{ fontWeight: 600 }}>Gemini AI - Kiểm tra trùng lặp đề tài</span>
+                          <span style={{ fontWeight: 600 }}>Kiểm tra trùng lặp đề tài</span>
                         </div>
                         <Button
                           variant="secondary"
