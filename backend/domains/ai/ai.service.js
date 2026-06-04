@@ -11,42 +11,168 @@ const getApiKey = () => {
   return process.env.GEMINI_API_KEY;
 };
 
+const getModelName = () => {
+  const apiKey = getApiKey();
+  if (apiKey && apiKey.startsWith('sk-or-')) {
+    return 'google/gemini-2.5-pro';
+  }
+  return 'gemini-2.5-flash';
+};
+
 const callGemini = async (prompt) => {
   const apiKey = getApiKey();
-  const model = 'gemini-2.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-  const payload = {
-    contents: [
-      {
-        parts: [{ text: prompt }]
-      }
-    ],
-    generationConfig: {
-      responseMimeType: 'application/json'
-    }
+  const isOpenRouter = apiKey && apiKey.startsWith('sk-or-');
+  
+  let url;
+  let headers = {
+    'Content-Type': 'application/json'
   };
+  let payload;
+
+  if (isOpenRouter) {
+    url = 'https://openrouter.ai/api/v1/chat/completions';
+    headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['HTTP-Referer'] = 'http://localhost:3000';
+    headers['X-Title'] = 'Episteme Management System';
+    
+    payload = {
+      model: 'google/gemini-2.5-pro',
+      messages: [
+        { role: 'user', content: prompt }
+      ],
+      response_format: { type: 'json_object' }
+    };
+  } else {
+    const model = 'gemini-2.5-flash';
+    url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    headers['x-goog-api-key'] = apiKey;
+    
+    payload = {
+      contents: [
+        {
+          parts: [{ text: prompt }]
+        }
+      ],
+      generationConfig: {
+        responseMimeType: 'application/json'
+      }
+    };
+  }
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(payload)
   });
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Gemini API Error (HTTP ${res.status}): ${errText}`);
+    throw new Error(`AI API Error (HTTP ${res.status}): ${errText}`);
   }
 
   const result = await res.json();
-  const text = result.candidates[0].content.parts[0].text;
-  return JSON.parse(text);
+  
+  let text = '';
+  if (isOpenRouter) {
+    if (!result.choices || !result.choices[0] || !result.choices[0].message) {
+      throw new Error(`OpenRouter Invalid Response: ${JSON.stringify(result)}`);
+    }
+    text = result.choices[0].message.content;
+  } else {
+    if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
+      throw new Error(`Gemini Invalid Response: ${JSON.stringify(result)}`);
+    }
+    text = result.candidates[0].content.parts[0].text;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (parseErr) {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    throw parseErr;
+  }
+};
+
+const callAIChat = async (messages) => {
+  const apiKey = getApiKey();
+  const isOpenRouter = apiKey && apiKey.startsWith('sk-or-');
+
+  let url;
+  let headers = { 'Content-Type': 'application/json' };
+  let payload;
+
+  if (isOpenRouter) {
+    url = 'https://openrouter.ai/api/v1/chat/completions';
+    headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['HTTP-Referer'] = 'http://localhost:3000';
+    headers['X-Title'] = 'Episteme Management System';
+    payload = { model: 'google/gemini-2.5-pro', messages };
+  } else {
+    const model = 'gemini-2.5-flash';
+    url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    headers['x-goog-api-key'] = apiKey;
+
+    const systemMsg = messages.find(m => m.role === 'system');
+    const conversationMsgs = messages.filter(m => m.role !== 'system');
+    payload = {
+      ...(systemMsg && { systemInstruction: { parts: [{ text: systemMsg.content }] } }),
+      contents: conversationMsgs.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      }))
+    };
+  }
+
+  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`AI Chat Error (HTTP ${res.status}): ${errText}`);
+  }
+
+  const result = await res.json();
+  if (isOpenRouter) {
+    if (!result.choices?.[0]?.message?.content) throw new Error(`OpenRouter invalid response: ${JSON.stringify(result)}`);
+    return result.choices[0].message.content;
+  } else {
+    if (!result.candidates?.[0]?.content?.parts?.[0]?.text) throw new Error(`Gemini invalid response: ${JSON.stringify(result)}`);
+    return result.candidates[0].content.parts[0].text;
+  }
+};
+
+const chatTopicSuggestion = async (studentId, messages) => {
+  const student = await Student.findById(studentId).populate('userId');
+  if (!student) throw { status: 404, message: 'Sinh viên không tồn tại.' };
+
+  const topics = await ProjectTopic.find({ status: 'approved' }).limit(20);
+  const topicList = topics.length > 0
+    ? topics.map((t, i) => `${i + 1}. "${t.title}"${t.summary ? ` — ${t.summary}` : ''}`).join('\n')
+    : 'Chưa có đề tài nào được duyệt trong hệ thống.';
+
+  const systemPrompt = `Bạn là trợ lý tư vấn đề tài đồ án thông minh của Hệ thống Episteme (Đại học Bách Khoa).
+Hãy tư vấn, giải thích và gợi ý đề tài phù hợp nhất. Trả lời bằng tiếng Việt, thân thiện và súc tích.
+
+Hồ sơ sinh viên đang tư vấn:
+- Ngành học: ${student.major || 'Chưa cập nhật'}
+- Kỹ năng chuyên môn: ${(student.skills || []).join(', ') || 'Chưa cập nhật'}
+- Lĩnh vực quan tâm: ${(student.interests || []).join(', ') || 'Chưa cập nhật'}
+
+Danh sách đề tài hiện có trong hệ thống:
+${topicList}`;
+
+  const fullMessages = [{ role: 'system', content: systemPrompt }, ...messages];
+  return await callAIChat(fullMessages);
 };
 
 const getEmbedding = async (text) => {
   const apiKey = getApiKey();
+  if (apiKey && apiKey.startsWith('sk-or-')) {
+    return null;
+  }
   const model = 'gemini-embedding-2';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent`;
 
   const payload = {
     content: {
@@ -56,7 +182,10 @@ const getEmbedding = async (text) => {
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
+    },
     body: JSON.stringify(payload)
   });
 
@@ -125,60 +254,113 @@ const checkDuplicateTopic = async (topicId, user) => {
     targetType: 'ProjectTopic',
     targetId: topicId,
     inputHash,
-    model: 'gemini-2.5-flash',
+    model: getModelName(),
     createdBy: user._id
   });
   await job.save();
 
   // Async process wrapper (for test suite we run synchronously or wait it out)
   const processFn = async () => {
-    // 1. Generate & Cache Embedding
-    const textToEmbed = `${topic.title} ${topic.summary || ''}`;
-    const vector = await getEmbedding(textToEmbed);
-    
-    await TopicEmbedding.findOneAndUpdate(
-      { topicId: topic._id },
-      { embeddingVector: vector, model: 'gemini-embedding-2', keywords: [] },
-      { upsert: true }
-    );
-
-    // 2. Fetch other topics in department and calculate Cosine Similarity
-    const others = await ProjectTopic.find({
-      _id: { $ne: topic._id },
-      periodId: topic.periodId,
-      status: { $nin: ['cancelled', 'rejected'] }
-    });
-
+    const apiKey = getApiKey();
+    const isOpenRouter = apiKey && apiKey.startsWith('sk-or-');
     const parsedMatches = [];
-    for (const other of others) {
-      let otherEmbed = await TopicEmbedding.findOne({ topicId: other._id });
-      if (!otherEmbed) {
-        // Fallback: Dynamically generate embedding for older topics on request
-        const otherText = `${other.title} ${other.summary || ''}`;
-        const otherVector = await getEmbedding(otherText);
-        otherEmbed = await TopicEmbedding.create({
-          topicId: other._id,
-          embeddingVector: otherVector,
-          model: 'gemini-embedding-2'
-        });
-      }
 
-      const similarity = cosineSimilarity(vector, otherEmbed.embeddingVector);
-      if (similarity >= 0.3) { // Threshold for structural matches
-        parsedMatches.push({
-          topicId: other._id.toString(),
-          title: other.title,
-          similarity: Math.round(similarity * 100)
+    if (!isOpenRouter) {
+      // 1. Generate & Cache Embedding
+      const textToEmbed = `${topic.title} ${topic.summary || ''}`;
+      const vector = await getEmbedding(textToEmbed);
+      
+      if (vector) {
+        await TopicEmbedding.findOneAndUpdate(
+          { topicId: topic._id },
+          { embeddingVector: vector, model: 'gemini-embedding-2', keywords: [] },
+          { upsert: true }
+        );
+
+        // 2. Fetch other topics in department and calculate Cosine Similarity
+        const others = await ProjectTopic.find({
+          _id: { $ne: topic._id },
+          periodId: topic.periodId,
+          status: { $nin: ['cancelled', 'rejected'] }
         });
+
+        for (const other of others) {
+          let otherEmbed = await TopicEmbedding.findOne({ topicId: other._id });
+          if (!otherEmbed) {
+            // Fallback: Dynamically generate embedding for older topics on request
+            const otherText = `${other.title} ${other.summary || ''}`;
+            const otherVector = await getEmbedding(otherText);
+            if (otherVector) {
+              otherEmbed = await TopicEmbedding.create({
+                topicId: other._id,
+                embeddingVector: otherVector,
+                model: 'gemini-embedding-2'
+              });
+            }
+          }
+
+          if (otherEmbed && otherEmbed.embeddingVector && otherEmbed.embeddingVector.length) {
+            const similarity = cosineSimilarity(vector, otherEmbed.embeddingVector);
+            if (similarity >= 0.3) { // Threshold for structural matches
+              parsedMatches.push({
+                topicId: other._id.toString(),
+                title: other.title,
+                similarity: Math.round(similarity * 100)
+              });
+            }
+          }
+        }
+      }
+    } else {
+      // OpenRouter mode: Fallback to token Jaccard similarity pre-filter
+      const tokenize = (str) => {
+        if (!str) return new Set();
+        return new Set(
+          str.toLowerCase()
+            .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+            .split(/\s+/)
+            .filter(word => word.length > 1)
+        );
+      };
+
+      const topicTokens = tokenize(`${topic.title} ${topic.summary || ''}`);
+
+      const others = await ProjectTopic.find({
+        _id: { $ne: topic._id },
+        periodId: topic.periodId,
+        status: { $nin: ['cancelled', 'rejected'] }
+      });
+
+      for (const other of others) {
+        const otherText = `${other.title} ${other.summary || ''}`;
+        const otherTokens = tokenize(otherText);
+
+        if (topicTokens.size === 0 || otherTokens.size === 0) continue;
+
+        const intersection = new Set([...topicTokens].filter(x => otherTokens.has(x)));
+        const union = new Set([...topicTokens, ...otherTokens]);
+        const jaccardSim = intersection.size / union.size;
+
+        if (jaccardSim >= 0.08) {
+          parsedMatches.push({
+            topicId: other._id.toString(),
+            title: other.title,
+            similarity: Math.round(jaccardSim * 100)
+          });
+        }
       }
     }
 
+    // Sort and limit candidates to top 10
+    parsedMatches.sort((a, b) => b.similarity - a.similarity);
+    const topMatches = parsedMatches.slice(0, 10);
+
     // 3. Prompt Gemini for cognitive validation analysis of matches
-    if (parsedMatches.length === 0) {
+    if (topMatches.length === 0) {
       return { hasRisk: false, riskScore: 0, matches: [] };
     }
 
-    const matchesListStr = parsedMatches.map(m => `- [ID: ${m.topicId}] "${m.title}" (Độ tương đồng toán học: ${m.similarity}%)`).join('\n');
+    const matchesListStr = topMatches.map(m => `- [ID: ${m.topicId}] "${m.title}" (Độ tương đồng toán học: ${m.similarity}%)`).join('\n');
     const prompt = `Bạn là một chuyên gia thẩm định học thuật của Đại học Bách Khoa (HUST).
 Hãy phân tích mức độ trùng lặp nội dung giữa đề tài mới sau:
 - Tên đề tài mới: "${topic.title}"
@@ -207,7 +389,7 @@ Trả về kết quả duy nhất ở định dạng JSON theo schema:
   return await executeJob(job, processFn);
 };
 
-const suggestTopics = async (studentId, user) => {
+const suggestTopics = async (studentId, user, force = false) => {
   const student = await Student.findById(studentId).populate('userId');
   if (!student) throw { status: 404, message: 'Sinh viên không tồn tại.' };
 
@@ -218,21 +400,30 @@ const suggestTopics = async (studentId, user) => {
   };
   const inputHash = crypto.createHash('sha256').update(JSON.stringify(inputs)).digest('hex');
 
-  const cachedJob = await AiJob.findOne({
-    feature: 'topic_suggestion',
-    targetType: 'Student',
-    targetId: studentId,
-    inputHash,
-    status: 'succeeded'
-  });
-  if (cachedJob) return cachedJob;
+  if (force) {
+    // Invalidate previous cached job so AI re-runs with current topic list
+    await AiJob.deleteMany({
+      feature: 'topic_suggestion',
+      targetType: 'Student',
+      targetId: studentId,
+    });
+  } else {
+    const cachedJob = await AiJob.findOne({
+      feature: 'topic_suggestion',
+      targetType: 'Student',
+      targetId: studentId,
+      inputHash,
+      status: 'succeeded'
+    });
+    if (cachedJob) return cachedJob;
+  }
 
   const job = new AiJob({
     feature: 'topic_suggestion',
     targetType: 'Student',
     targetId: studentId,
     inputHash,
-    model: 'gemini-2.5-flash',
+    model: getModelName(),
     createdBy: user._id
   });
   await job.save();
@@ -311,7 +502,7 @@ const analyzeReportFeedback = async (submissionId, user) => {
     targetType: 'SubmissionPackage',
     targetId: submissionId,
     inputHash,
-    model: 'gemini-2.5-flash',
+    model: getModelName(),
     createdBy: user._id
   });
   await job.save();
@@ -362,7 +553,7 @@ const suggestDefenseQuestions = async (projectId, user) => {
     targetType: 'Project',
     targetId: projectId,
     inputHash,
-    model: 'gemini-2.5-flash',
+    model: getModelName(),
     createdBy: user._id
   });
   await job.save();
@@ -411,9 +602,16 @@ const retryAiJob = async (id, user) => {
   if (job.feature === 'duplicate_topic') {
     processFn = async () => {
       const topic = await ProjectTopic.findById(job.targetId);
+      const apiKey = getApiKey();
+      const isOpenRouter = apiKey && apiKey.startsWith('sk-or-');
+      if (isOpenRouter) {
+        return { hasRisk: false, riskScore: 0, matches: [] };
+      }
       const textToEmbed = `${topic.title} ${topic.summary || ''}`;
       const vector = await getEmbedding(textToEmbed);
-      await TopicEmbedding.findOneAndUpdate({ topicId: topic._id }, { embeddingVector: vector }, { upsert: true });
+      if (vector) {
+        await TopicEmbedding.findOneAndUpdate({ topicId: topic._id }, { embeddingVector: vector }, { upsert: true });
+      }
       return { hasRisk: false, riskScore: 0, matches: [] }; // Mock fast fallback for simplicity
     };
   } else if (job.feature === 'topic_suggestion') {
@@ -440,6 +638,7 @@ const manualOverrideJob = async (id, result, user) => {
 module.exports = {
   checkDuplicateTopic,
   suggestTopics,
+  chatTopicSuggestion,
   analyzeReportFeedback,
   suggestDefenseQuestions,
   getJobById,

@@ -112,8 +112,28 @@ const getTopicById = async (req, res, next) => {
   }
 };
 
+const updateTopic = async (req, res, next) => {
+  try {
+    if (!req.user.studentId) {
+      return res.status(403).json({ success: false, message: 'Chỉ tài khoản sinh viên mới có quyền cập nhật đề tài đồ án.' });
+    }
+    const result = await topicsService.updateTopic(req.params.id, req.body, req.user.studentId);
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật đề tài đồ án thành công!',
+      data: result,
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
+    next(error);
+  }
+};
+
 module.exports = {
   proposeTopic,
+  updateTopic,
   approveTopic,
   rejectTopic,
   requestRevision,

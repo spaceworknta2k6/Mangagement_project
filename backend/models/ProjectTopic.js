@@ -68,7 +68,7 @@ const ProjectTopicSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['draft', 'submitted', 'ai_checked', 'needs_revision', 'approved', 'assigned', 'locked', 'changed', 'cancelled', 'completed'],
+    enum: ['draft', 'submitted', 'ai_checked', 'needs_revision', 'approved', 'assigned', 'locked', 'changed', 'cancelled', 'completed', 'rejected'],
     default: 'draft',
   },
   aiDuplicateRisk: {

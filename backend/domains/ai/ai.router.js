@@ -50,6 +50,7 @@ router.post('/jobs/:id/manual-override', requireRole(['FACULTY_STAFF', 'DEPARTME
 
 router.post('/topics/:id/check-duplicate', requireRole(['FACULTY_STAFF', 'DEPARTMENT_STAFF']), aiValidator.validateTopicId, aiController.checkDuplicateTopic);
 router.post('/students/:id/topic-suggestions', requireRole(['STUDENT', 'FACULTY_STAFF']), aiValidator.validateStudentId, aiController.suggestTopics);
+router.post('/students/:id/topic-chat', requireRole(['STUDENT', 'FACULTY_STAFF']), aiValidator.validateStudentId, aiController.chatTopicSuggestion);
 router.post('/submissions/:id/report-feedback', requireRole(['STUDENT', 'LECTURER', 'FACULTY_STAFF']), aiValidator.validateSubmissionId, aiController.analyzeReportFeedback);
 
 // Committee only for defense questions

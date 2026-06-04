@@ -100,6 +100,28 @@ const validateTopicPropose = async (req, res, next) => {
   }
 };
 
+const validateTopicUpdate = async (req, res, next) => {
+  try {
+    const ProjectTopic = require('../../models/ProjectTopic');
+    const topic = await ProjectTopic.findById(req.params.id);
+    if (!topic) {
+      return res.status(404).json({ success: false, message: 'Đề tài không tồn tại.' });
+    }
+    
+    // Auto-fill fields if not provided
+    if (!req.body.periodId) req.body.periodId = topic.periodId.toString();
+    if (!req.body.groupId) req.body.groupId = topic.groupId.toString();
+    if (!req.body.proposedSupervisorId && topic.proposedSupervisorId) {
+      req.body.proposedSupervisorId = topic.proposedSupervisorId.toString();
+    }
+    
+    return validateTopicPropose(req, res, next);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   validateTopicPropose,
+  validateTopicUpdate,
 };

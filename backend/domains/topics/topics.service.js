@@ -245,8 +245,54 @@ const getTopicById = async (id) => {
   return topic;
 };
 
+const updateTopic = async (topicId, topicData, studentId) => {
+  const topic = await ProjectTopic.findById(topicId);
+  if (!topic) {
+    throw { status: 404, message: 'Đề tài không tồn tại.' };
+  }
+
+  // Verify ownership
+  if (topic.proposedByStudentId.toString() !== studentId.toString()) {
+    throw { status: 403, message: 'Chỉ sinh viên đề xuất mới có quyền chỉnh sửa đề tài.' };
+  }
+
+  // Verify status is needs_revision or draft
+  if (topic.status !== 'needs_revision' && topic.status !== 'draft') {
+    throw { status: 400, message: 'Chỉ có thể chỉnh sửa đề tài khi có yêu cầu chỉnh sửa từ Giáo vụ.' };
+  }
+
+  // Update fields
+  if (topicData.title) topic.title = topicData.title.trim();
+  if (topicData.summary) topic.summary = topicData.summary.trim();
+  if (topicData.objectives) topic.objectives = topicData.objectives.trim();
+  if (topicData.scope) topic.scope = topicData.scope.trim();
+  if (topicData.technologies) topic.technologies = topicData.technologies;
+  if (topicData.expectedResult) topic.expectedResult = topicData.expectedResult.trim();
+  if (topicData.plan) topic.plan = topicData.plan.trim();
+  if (topicData.proposedSupervisorId) topic.proposedSupervisorId = topicData.proposedSupervisorId;
+
+  // Change status back to submitted
+  topic.status = 'submitted';
+  topic.version += 1;
+
+  await topic.save();
+
+  await logWorkflowEvent({
+    entityId: topic._id,
+    fromStatus: 'needs_revision',
+    toStatus: 'submitted',
+    actorId: studentId,
+    actorRoles: ['STUDENT'],
+    action: 'RESUBMIT_TOPIC',
+    reason: `Cập nhật và nộp lại đề tài sau chỉnh sửa: ${topic.title}`,
+  });
+
+  return topic;
+};
+
 module.exports = {
   proposeTopic,
+  updateTopic,
   reviewTopic,
   assignSupervisor,
   getTopicsByPeriod,

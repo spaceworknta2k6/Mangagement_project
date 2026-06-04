@@ -20,11 +20,13 @@ import {
   List,
   Sun,
   Moon,
+  Warning,
 } from '@phosphor-icons/react';
 import useAuthStore from '@/store/auth.store';
 import useThemeStore from '@/store/theme.store';
 import { authService } from '@/services/auth.service';
 import Spinner from '@/components/ui/Spinner';
+import Button from '@/components/ui/Button';
 import { getRoleLabel } from '@/lib/utils';
 import { ToastProvider } from '@/components/ui/Toast';
 
@@ -32,7 +34,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 const NAV_ITEMS = [
   { href: '/dashboard',            label: 'Tổng quan',     icon: House,            roles: null },
   { href: '/dashboard/periods',    label: 'Đợt đồ án',    icon: CalendarBlank,    roles: ['FACULTY_STAFF', 'SYSTEM_ADMIN'] },
-  { href: '/dashboard/groups',     label: 'Nhóm',          icon: Users,            roles: null },
+  { href: '/dashboard/groups',     label: 'Nhóm',          icon: Users,            roles: ['STUDENT', 'FACULTY_STAFF', 'SYSTEM_ADMIN'] },
   { href: '/dashboard/topics',     label: 'Đề tài',        icon: BookOpen,         roles: null },
   { href: '/dashboard/projects',   label: 'Dự án',         icon: FolderSimple,     roles: null },
   { href: '/dashboard/submissions',label: 'Nộp bài',       icon: FileText,         roles: null },
@@ -331,6 +333,7 @@ function Header({ user, sidebarCollapsed, onMobileMenuToggle }) {
 /* ─── Dashboard Layout ───────────────────────────────────────────── */
 export default function DashboardLayout({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { token, user, isLoading, hydrate, setUser, logout } = useAuthStore();
   const { applyTheme } = useThemeStore();
   const [collapsed, setCollapsed] = useState(false);
@@ -391,6 +394,69 @@ export default function DashboardLayout({ children }) {
     );
   }
 
+  const userRole = user?.role || user?.roles?.[0];
+  const normalizedPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+  const currentNavItem = NAV_ITEMS.find(item => {
+    if (item.href === '/dashboard') {
+      return normalizedPath === '/dashboard';
+    }
+    return normalizedPath === item.href || normalizedPath.startsWith(item.href + '/');
+  });
+  const isAuthorized = !currentNavItem || !currentNavItem.roles || currentNavItem.roles.includes(userRole);
+
+  const accessDeniedView = (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '80px 24px',
+        textAlign: 'center',
+      }}
+    >
+      <div
+        style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--error-bg)',
+          color: 'var(--error)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '20px',
+        }}
+      >
+        <Warning size={32} weight="duotone" />
+      </div>
+      <h2
+        style={{
+          fontSize: '20px',
+          fontWeight: 700,
+          color: 'var(--text-primary)',
+          marginBottom: '8px',
+        }}
+      >
+        Quyền truy cập bị từ chối
+      </h2>
+      <p
+        style={{
+          fontSize: '14px',
+          color: 'var(--text-muted)',
+          maxWidth: '420px',
+          lineHeight: 1.5,
+          marginBottom: '24px',
+        }}
+      >
+        Tài khoản của bạn ({getRoleLabel(userRole)}) không có quyền truy cập chức năng này.
+      </p>
+      <Button variant="primary" onClick={() => router.push('/dashboard')}>
+        Quay lại trang chủ
+      </Button>
+    </div>
+  );
+
   return (
     <ToastProvider>
       <Sidebar
@@ -422,7 +488,7 @@ export default function DashboardLayout({ children }) {
             width: '100%',
           }}
         >
-          {children}
+          {isAuthorized ? children : accessDeniedView}
         </main>
       </div>
     </ToastProvider>

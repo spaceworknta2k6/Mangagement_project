@@ -66,6 +66,10 @@ export default function GroupsPage() {
 
   // Load student-specific group data
   const fetchStudentGroupData = async () => {
+    if (!user?.studentId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       // To find the student's group, we fetch all groups in periods and check where the student is a member
@@ -80,15 +84,15 @@ export default function GroupsPage() {
         const list = resG.data || [];
         for (const g of list) {
           const isMember = g.members?.some(
-            (m) => m.studentId?._id === user?.studentId || m.studentId === user?.studentId
+            (m) => (m.studentId?._id || m.studentId) === user?.studentId
           );
           if (isMember) {
             const myMemberInfo = g.members.find(
               (m) => (m.studentId?._id || m.studentId) === user?.studentId
             );
-            if (myMemberInfo.status === 'accepted') {
+            if (myMemberInfo?.status === 'accepted') {
               foundGroup = g;
-            } else if (myMemberInfo.status === 'invited') {
+            } else if (myMemberInfo?.status === 'invited') {
               invitations.push({ group: g, period: p });
             }
           }

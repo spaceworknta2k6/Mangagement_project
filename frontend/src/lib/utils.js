@@ -56,6 +56,7 @@ const STATUS_MAP = {
   pending_review: { label: 'Chờ duyệt', variant: 'warning' },
   approved: { label: 'Đã duyệt', variant: 'success' },
   rejected: { label: 'Từ chối', variant: 'error' },
+  needs_revision: { label: 'Yêu cầu chỉnh sửa', variant: 'warning' },
   // Submission statuses
   submitted: { label: 'Đã nộp', variant: 'info' },
   graded: { label: 'Đã chấm', variant: 'success' },

@@ -20,8 +20,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="vi" className={`${geist.variable} ${geistMono.variable}`}>
-      <body>
+    <html lang="vi" className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <script
           dangerouslySetInnerHTML={{
             __html: `

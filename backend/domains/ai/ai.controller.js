@@ -15,12 +15,26 @@ const checkDuplicateTopic = async (req, res, next) => {
 
 const suggestTopics = async (req, res, next) => {
   try {
-    const job = await aiService.suggestTopics(req.params.id, req.user);
+    const force = req.query.force === 'true';
+    const job = await aiService.suggestTopics(req.params.id, req.user, force);
     res.status(200).json({
       success: true,
       message: 'Gợi ý đề tài cho sinh viên hoàn tất.',
       data: job,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const chatTopicSuggestion = async (req, res, next) => {
+  try {
+    const { messages } = req.body;
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ success: false, message: 'Tin nhắn không hợp lệ.' });
+    }
+    const reply = await aiService.chatTopicSuggestion(req.params.id, messages);
+    res.status(200).json({ success: true, data: { message: reply } });
   } catch (error) {
     next(error);
   }
@@ -94,6 +108,7 @@ const manualOverrideJob = async (req, res, next) => {
 module.exports = {
   checkDuplicateTopic,
   suggestTopics,
+  chatTopicSuggestion,
   analyzeReportFeedback,
   suggestDefenseQuestions,
   getJobById,

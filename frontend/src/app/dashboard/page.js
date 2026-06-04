@@ -4,9 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import useAuthStore from '@/store/auth.store';
 import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
-import { getRoleLabel, formatDate, getStatus } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import api from '@/services/api';
 import {
   Users,
@@ -130,10 +129,7 @@ export default function DashboardPage() {
       <div style={{ marginBottom: '28px' }}>
         <h1 className="text-display">{greeting()}, {user?.fullName || user?.name || 'Người dùng'}</h1>
         <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '6px' }}>
-          <Badge variant="info">{getRoleLabel(user?.role || user?.roles?.[0])}</Badge>
-          <span style={{ marginLeft: '8px' }}>
-            Hôm nay là {formatDate(new Date(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </span>
+          Hôm nay là {formatDate(new Date(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </div>
 

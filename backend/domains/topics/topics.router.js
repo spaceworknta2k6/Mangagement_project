@@ -10,6 +10,7 @@ router.use(protect);
 
 // Student/authenticated endpoints
 router.post('/', topicsValidator.validateTopicPropose, topicsController.proposeTopic);
+router.put('/:id', topicsValidator.validateTopicUpdate, topicsController.updateTopic);
 router.get('/', topicsController.getTopics);
 router.get('/:id', topicsController.getTopicById);
 
