@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const FileAsset = require('../../models/FileAsset');
 const Project = require('../../models/Project');
 const ProjectGroup = require('../../models/ProjectGroup');
@@ -74,7 +75,7 @@ const uploadFile = async (multerFile, ownerType, ownerId, user) => {
     size: multerFile.size,
     sha256: sha256Hash,
     ownerType: ownerType || 'project',
-    ownerId: ownerId || null,
+    ownerId: (ownerId && mongoose.Types.ObjectId.isValid(ownerId)) ? ownerId : null,
     uploadedBy: user._id,
     scanStatus: 'clean', // Automatically clean for mock context
     accessPolicy: 'private'
@@ -108,37 +109,54 @@ const checkFileAccess = async (id, user) => {
   }
 
   // Case 3: Project context scoping
-  if (asset.ownerId) {
-    const project = await Project.findById(asset.ownerId);
-    if (project) {
-      // If student is part of the project group
-      if (user.roles && user.roles.includes('STUDENT') && user.studentId) {
-        const group = await ProjectGroup.findById(project.groupId);
-        if (group) {
-          const isMember = group.members.some(m => m.studentId.toString() === user.studentId.toString());
-          if (isMember) return asset;
-        }
+  let project = null;
+  if (asset.ownerId && mongoose.Types.ObjectId.isValid(asset.ownerId)) {
+    project = await Project.findById(asset.ownerId);
+  }
+  
+  // Fallback: Nếu không tìm thấy Project bằng ownerId (ví dụ trường hợp ownerId là null hoặc không khớp dự án nào)
+  if (!project) {
+    const Student = require('../../models/Student');
+    const student = await Student.findOne({ userId: asset.uploadedBy });
+    if (student) {
+      const group = await ProjectGroup.findOne({
+        'members.studentId': student._id,
+        status: { $ne: 'cancelled' }
+      });
+      if (group) {
+        project = await Project.findOne({ groupId: group._id });
       }
+    }
+  }
 
-      // If user is the Supervisor
-      if (project.supervisorId && user.lecturerId && project.supervisorId.toString() === user.lecturerId.toString()) {
-        return asset;
+  if (project) {
+    // If student is part of the project group
+    if (user.roles && user.roles.includes('STUDENT') && user.studentId) {
+      const group = await ProjectGroup.findById(project.groupId);
+      if (group) {
+        const isMember = group.members.some(m => m.studentId.toString() === user.studentId.toString());
+        if (isMember) return asset;
       }
+    }
 
-      // If user is the Reviewer
-      if (project.reviewerId && user.lecturerId && project.reviewerId.toString() === user.lecturerId.toString()) {
-        return asset;
-      }
+    // If user is the Supervisor
+    if (project.supervisorId && user.lecturerId && project.supervisorId.toString() === user.lecturerId.toString()) {
+      return asset;
+    }
 
-      // If user is a Committee member
-      if (user.lecturerId) {
-        const session = await DefenseSession.findOne({ projectId: project._id });
-        if (session) {
-          const committee = await Committee.findById(session.committeeId);
-          if (committee) {
-            const isCommitteeMember = committee.members.some(m => m.lecturerId.toString() === user.lecturerId.toString());
-            if (isCommitteeMember) return asset;
-          }
+    // If user is the Reviewer
+    if (project.reviewerId && user.lecturerId && project.reviewerId.toString() === user.lecturerId.toString()) {
+      return asset;
+    }
+
+    // If user is a Committee member
+    if (user.lecturerId) {
+      const session = await DefenseSession.findOne({ projectId: project._id });
+      if (session) {
+        const committee = await Committee.findById(session.committeeId);
+        if (committee) {
+          const isCommitteeMember = committee.members.some(m => m.lecturerId.toString() === user.lecturerId.toString());
+          if (isCommitteeMember) return asset;
         }
       }
     }

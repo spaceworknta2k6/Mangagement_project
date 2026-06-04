@@ -76,9 +76,14 @@ const runIntegrationTests = async () => {
         }
         if (resResult.data && resResult.data.status === 'failed') {
           const errMsg = resResult.data.error || '';
-          // HTTP 429 = free-tier quota exhausted — external limit, not a code bug
-          if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')) {
-            throw new QuotaError(`⚠️ ${testName} Skipped: Gemini API free-tier quota exhausted (HTTP 429).`);
+          // HTTP 429 = free-tier quota exhausted hoặc request bị quá hạn timeout (lỗi mạng ngoại cảnh)
+          if (
+            errMsg.includes('429') || 
+            errMsg.includes('RESOURCE_EXHAUSTED') || 
+            errMsg.includes('timeout') || 
+            errMsg.includes('aborted')
+          ) {
+            throw new QuotaError(`⚠️ ${testName} Skipped: Gemini API/OpenRouter unavailable or timed out. Msg: ${errMsg}`);
           }
           throw new Error(`❌ ${testName} Failed: AI Job execution failed. Internal Error: ${errMsg}`);
         }

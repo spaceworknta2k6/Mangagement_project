@@ -59,11 +59,20 @@ const callGemini = async (prompt) => {
     };
   }
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload)
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15000)
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      throw new Error('Yêu cầu tới AI API bị quá thời gian chờ (Timeout 15 giây).');
+    }
+    throw err;
+  }
 
   if (!res.ok) {
     const errText = await res.text();
@@ -126,7 +135,21 @@ const callAIChat = async (messages) => {
     };
   }
 
-  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15000)
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      throw new Error('Cuộc hội thoại với AI bị quá thời gian chờ (Timeout 15 giây).');
+    }
+    throw err;
+  }
+
   if (!res.ok) {
     const errText = await res.text();
     throw new Error(`AI Chat Error (HTTP ${res.status}): ${errText}`);
@@ -180,14 +203,23 @@ const getEmbedding = async (text) => {
     }
   };
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey
-    },
-    body: JSON.stringify(payload)
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(15000)
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') {
+      throw new Error('Yêu cầu trích xuất Vector hóa (Embedding) bị quá thời gian chờ (Timeout 15 giây).');
+    }
+    throw err;
+  }
 
   if (!res.ok) {
     const errText = await res.text();

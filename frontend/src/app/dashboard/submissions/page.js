@@ -50,6 +50,11 @@ export default function SubmissionsPage() {
   const isLecturer = (user?.role || user?.roles?.[0]) === 'LECTURER';
   const isStudent = (user?.role || user?.roles?.[0]) === 'STUDENT';
 
+  const currentProject = projects.find(p => p._id === selectedProjectId);
+  const isSupervisor = isLecturer && currentProject && (
+    String(currentProject.supervisorId?._id || currentProject.supervisorId) === String(user?.lecturerId)
+  );
+
   // 1. Fetch active projects list to know which project we are working on
   const loadProjects = async () => {
     setLoading(true);
@@ -115,8 +120,8 @@ export default function SubmissionsPage() {
     setUploadingFile(true);
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('ownerType', 'User');
-    formData.append('ownerId', user.id);
+    formData.append('ownerType', 'project');
+    formData.append('ownerId', selectedProjectId);
 
     try {
       const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
@@ -230,7 +235,18 @@ export default function SubmissionsPage() {
   const handleDownloadFile = async (fileId) => {
     try {
       const res = await api.get(`/files/${fileId}/download-url`, token);
-      const downloadUrl = res.data?.downloadUrl || `http://localhost:5000/api/v1/files/${fileId}/download`;
+      let downloadUrl = res.data?.downloadUrl;
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+      const backendHost = apiBase.replace('/api/v1', '');
+
+      if (downloadUrl) {
+        if (downloadUrl.startsWith('/')) {
+          downloadUrl = `${backendHost}${downloadUrl}`;
+        }
+      } else {
+        downloadUrl = `${backendHost}/api/v1/files/${fileId}/download`;
+      }
+
       // Open in a new window or secure download
       window.open(downloadUrl, '_blank');
     } catch (err) {
@@ -280,7 +296,7 @@ export default function SubmissionsPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          {(isStaff || isLecturer) && selectedProjectId && (
+          {isSupervisor && (
             <Button variant="primary" size="sm" onClick={() => setShowCreateMilestoneModal(true)}>
               <Plus size={16} />
               Tạo mốc nộp mới

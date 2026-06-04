@@ -330,7 +330,6 @@ function Header({ user, sidebarCollapsed, onMobileMenuToggle }) {
   );
 }
 
-/* ─── Dashboard Layout ───────────────────────────────────────────── */
 export default function DashboardLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -338,6 +337,7 @@ export default function DashboardLayout({ children }) {
   const { applyTheme } = useThemeStore();
   const [collapsed, setCollapsed] = useState(false);
   const [ready, setReady] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
 
   // Apply saved theme on mount
   useEffect(() => {
@@ -348,6 +348,24 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  const loadProfile = () => {
+    setNetworkError(false);
+    authService.me(token).then((res) => {
+      setUser(res.data);
+      setReady(true);
+    }).catch((err) => {
+      // Chỉ logout khi token thực sự hết hạn hoặc không hợp lệ (401 Unauthorized)
+      if (err.status === 401) {
+        logout();
+        router.replace('/auth/login');
+      } else {
+        console.error('Network or server error on /auth/me:', err);
+        setNetworkError(true);
+        setReady(true); // Vẫn hiển thị trang để render view báo lỗi mạng
+      }
+    });
+  };
 
   // Fetch user profile once token is available
   useEffect(() => {
@@ -364,14 +382,7 @@ export default function DashboardLayout({ children }) {
       return;
     }
 
-    // Fetch user profile
-    authService.me(token).then((res) => {
-      setUser(res.data);
-      setReady(true);
-    }).catch(() => {
-      logout();
-      router.replace('/auth/login');
-    });
+    loadProfile();
   }, [isLoading, token, user, router, setUser, logout]);
 
   // Loading state
@@ -390,6 +401,69 @@ export default function DashboardLayout({ children }) {
       >
         <Spinner />
         Đang tải...
+      </div>
+    );
+  }
+
+  // Network error state
+  if (networkError) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100dvh',
+          padding: '24px',
+          textAlign: 'center',
+          backgroundColor: 'var(--bg-surface)',
+        }}
+      >
+        <div
+          style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--error-bg)',
+            color: 'var(--error)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '20px',
+          }}
+        >
+          <Warning size={32} weight="duotone" />
+        </div>
+        <h2
+          style={{
+            fontSize: '20px',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            marginBottom: '8px',
+          }}
+        >
+          Lỗi kết nối máy chủ
+        </h2>
+        <p
+          style={{
+            fontSize: '14px',
+            color: 'var(--text-muted)',
+            maxWidth: '420px',
+            lineHeight: 1.5,
+            marginBottom: '24px',
+          }}
+        >
+          Hệ thống không thể tải thông tin tài khoản của bạn do sự cố kết nối mạng hoặc máy chủ đang khởi động lại. Phiên đăng nhập của bạn vẫn được giữ.
+        </p>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Button variant="primary" onClick={() => { setReady(false); loadProfile(); }}>
+            Thử lại
+          </Button>
+          <Button variant="secondary" onClick={() => { logout(); router.replace('/auth/login'); }}>
+            Đăng nhập lại
+          </Button>
+        </div>
       </div>
     );
   }
