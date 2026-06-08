@@ -8,6 +8,8 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
+import Pagination from '@/components/ui/Pagination';
+import Tabs from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { formatDateTime, getRoleLabel, truncate } from '@/lib/utils';
 import {
@@ -32,6 +34,21 @@ const auditEntityTypeOptions = [
 const auditEntityTypeLabels = Object.fromEntries(
   auditEntityTypeOptions.map((option) => [option.value, option.label])
 );
+
+const auditTabs = [
+  { id: 'general', label: 'Nháº­t kÃ½ chung' },
+  { id: 'entity', label: 'Tra cá»©u theo thá»±c thá»ƒ' },
+];
+
+const auditTabLabels = {
+  general: 'Nh\u1eadt k\u00fd chung',
+  entity: 'Tra c\u1ee9u theo th\u1ef1c th\u1ec3',
+};
+
+const auditTabOptions = auditTabs.map((tab) => ({
+  ...tab,
+  label: auditTabLabels[tab.id] || tab.label,
+}));
 
 function getId(value) {
   if (!value) return '';
@@ -232,7 +249,9 @@ export default function AuditPage() {
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
   const [events, setEvents] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 6;
+  const [activeAuditTab, setActiveAuditTab] = useState('general');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -256,9 +275,13 @@ export default function AuditPage() {
     () => Object.values(appliedFilters).filter(Boolean).length,
     [appliedFilters]
   );
-  const visibleEvents = useMemo(
-    () => events.slice(0, visibleCount),
-    [events, visibleCount]
+  const totalPages = useMemo(
+    () => Math.ceil(events.length / PAGE_SIZE),
+    [events]
+  );
+  const paginatedEvents = useMemo(
+    () => events.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [events, currentPage]
   );
 
   const fetchEvents = useCallback(async () => {
@@ -272,7 +295,7 @@ export default function AuditPage() {
       const suffix = params.toString() ? `?${params.toString()}` : '';
       const res = await api.get(`/audit/events${suffix}`, token);
       setEvents(res.data || []);
-      setVisibleCount(50);
+      setCurrentPage(1);
     } catch (err) {
       toast.error(err.message || 'Không thể tải nhật ký hệ thống.');
     } finally {
@@ -291,12 +314,14 @@ export default function AuditPage() {
   const handleApplyFilters = (e) => {
     e.preventDefault();
     setAppliedFilters(filters);
+    setCurrentPage(1);
   };
 
   const handleResetFilters = () => {
     const empty = { entityType: '', actorId: '', action: '' };
     setFilters(empty);
     setAppliedFilters(empty);
+    setCurrentPage(1);
   };
 
   const handleLoadHistory = async (e) => {
@@ -353,151 +378,157 @@ export default function AuditPage() {
         </Button>
       </div>
 
-      <Card style={{ marginBottom: '18px' }}>
-        <form onSubmit={handleApplyFilters} style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
-          <SelectField
-            label="Đối tượng thay đổi"
-            name="audit-entity-type"
-            value={filters.entityType}
-            onChange={(e) => handleFilterChange('entityType', e.target.value)}
-            style={{ flex: '1 1 190px' }}
-          >
-            <option value="">Tất cả đối tượng</option>
-            {auditEntityTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </SelectField>
-          <Input
-            label="Người thao tác"
-            name="audit-actor-id"
-            placeholder="ObjectId người dùng"
-            value={filters.actorId}
-            onChange={(e) => handleFilterChange('actorId', e.target.value)}
-            style={{ flex: '1 1 220px' }}
-          />
-          <Input
-            label="Hành động"
-            name="audit-action"
-            placeholder="APPROVE_TOPIC..."
-            value={filters.action}
-            onChange={(e) => handleFilterChange('action', e.target.value)}
-            style={{ flex: '1 1 190px' }}
-          />
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <Button type="submit" variant="primary" icon={<Funnel size={16} />}>
-              Lọc
-            </Button>
-            <Button type="button" variant="secondary" onClick={handleResetFilters} icon={<X size={16} />}>
-              Xóa lọc
-            </Button>
-          </div>
-        </form>
-      </Card>
+      <Tabs tabs={auditTabOptions} activeTab={activeAuditTab} onChange={setActiveAuditTab} />
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: '14px',
-          marginBottom: '18px',
-        }}
-      >
-        <Card>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Sự kiện đang hiển thị</p>
-          <p style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{events.length}</p>
-        </Card>
-        <Card>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Bộ lọc đang bật</p>
-          <p style={{ fontSize: '24px', fontWeight: 700, color: activeFilterCount > 0 ? 'var(--accent)' : 'var(--text-primary)' }}>
-            {activeFilterCount}
-          </p>
-        </Card>
-      </div>
-
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '70px 0' }}>
-          <Spinner size="lg" />
-        </div>
-      ) : events.length === 0 ? (
-        <Card>
-          <div style={{ textAlign: 'center', padding: '42px 24px' }}>
-            <ShieldCheck size={42} weight="duotone" style={{ color: 'var(--text-muted)', marginBottom: '12px' }} />
-            <h3 style={{ fontSize: '16px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '6px' }}>
-              Chưa có sự kiện phù hợp
-            </h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-              Thử xóa bộ lọc hoặc kiểm tra lại dữ liệu audit trong backend.
-            </p>
-          </div>
-        </Card>
-      ) : (
-        <Card title="Dòng sự kiện" subtitle="Sắp xếp từ mới nhất đến cũ nhất" noPadding style={{ marginBottom: '18px' }}>
-          {visibleEvents.map((event) => (
-            <AuditEventRow key={event._id} event={event} />
-          ))}
-          {events.length > visibleCount && (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 20px' }}>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setVisibleCount((count) => count + 50)}
+      {activeAuditTab === 'general' ? (
+        <>
+          <Card style={{ marginBottom: '18px' }}>
+            <form onSubmit={handleApplyFilters} style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
+              <SelectField
+                label="Đối tượng thay đổi"
+                name="audit-entity-type"
+                value={filters.entityType}
+                onChange={(e) => handleFilterChange('entityType', e.target.value)}
+                style={{ flex: '1 1 190px' }}
               >
-                Tải thêm {Math.min(50, events.length - visibleCount)} sự kiện
+                <option value="">Tất cả đối tượng</option>
+                {auditEntityTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </SelectField>
+              <Input
+                label="Người thao tác"
+                name="audit-actor-id"
+                placeholder="ID người dùng"
+                value={filters.actorId}
+                onChange={(e) => handleFilterChange('actorId', e.target.value)}
+                style={{ flex: '1 1 220px' }}
+              />
+              <Input
+                label="Hành động"
+                name="audit-action"
+                placeholder="APPROVE_TOPIC..."
+                value={filters.action}
+                onChange={(e) => handleFilterChange('action', e.target.value)}
+                style={{ flex: '1 1 190px' }}
+              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button type="submit" variant="primary" icon={<Funnel size={16} />}>
+                  Lọc
+                </Button>
+                <Button type="button" variant="secondary" onClick={handleResetFilters} icon={<X size={16} />}>
+                  Xóa lọc
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+              gap: '14px',
+              marginBottom: '18px',
+            }}
+          >
+            <Card>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Sự kiện đang hiển thị</p>
+              <p style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{events.length}</p>
+            </Card>
+            <Card>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Bộ lọc đang bật</p>
+              <p style={{ fontSize: '24px', fontWeight: 700, color: activeFilterCount > 0 ? 'var(--accent)' : 'var(--text-primary)' }}>
+                {activeFilterCount}
+              </p>
+            </Card>
+          </div>
+
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '70px 0' }}>
+              <Spinner size="lg" />
+            </div>
+          ) : events.length === 0 ? (
+            <Card>
+              <div style={{ textAlign: 'center', padding: '42px 24px' }}>
+                <ShieldCheck size={42} weight="duotone" style={{ color: 'var(--text-muted)', marginBottom: '12px' }} />
+                <h3 style={{ fontSize: '16px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                  Chưa có sự kiện phù hợp
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  Thử xóa bộ lọc hoặc kiểm tra lại dữ liệu audit trong backend.
+                </p>
+              </div>
+            </Card>
+          ) : (
+            <Card title="Dòng sự kiện" subtitle="Sắp xếp từ mới nhất đến cũ nhất" noPadding style={{ marginBottom: '18px' }}>
+              {paginatedEvents.map((event) => (
+                <AuditEventRow key={event._id} event={event} />
+              ))}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={events.length}
+                pageSize={PAGE_SIZE}
+                itemLabel={'b\u1ea3n ghi'}
+                onPageChange={setCurrentPage}
+              />
+            </Card>
+          )}
+        </>
+      ) : (
+        <Card title="Lịch sử theo thực thể" subtitle="Tra cứu toàn bộ timeline của một bản ghi cụ thể">
+          <form onSubmit={handleLoadHistory} style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <SelectField
+              label="Đối tượng thay đổi"
+              name="audit-history-entity-type"
+              value={historyForm.entityType}
+              onChange={(e) => setHistoryForm((prev) => ({ ...prev, entityType: e.target.value }))}
+              error={historyError && !historyForm.entityType.trim() ? historyError : ''}
+              style={{ flex: '1 1 190px' }}
+            >
+              <option value="">Chọn đối tượng</option>
+              {auditEntityTypeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </SelectField>
+            <Input
+              label="Mã bản ghi"
+              name="audit-history-entity-id"
+              placeholder="ID bản ghi"
+              value={historyForm.entityId}
+              onChange={(e) => setHistoryForm((prev) => ({ ...prev, entityId: e.target.value }))}
+              error={historyError && !historyForm.entityId.trim() ? historyError : ''}
+              style={{ flex: '2 1 280px' }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 500, visibility: 'hidden', userSelect: 'none' }}>&nbsp;</span>
+              <Button type="submit" loading={historyLoading} icon={<MagnifyingGlass size={16} />}>
+                Tra cứu
               </Button>
             </div>
+          </form>
+
+          {historyLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '28px 0' }}>
+              <Spinner />
+            </div>
+          ) : history.length > 0 ? (
+            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+              {history.map((event) => (
+                <AuditEventRow key={event._id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+              Chọn đối tượng thay đổi và nhập ID bản ghi để xem lịch sử riêng của bản ghi.
+            </p>
           )}
         </Card>
       )}
-
-      <Card title="Lịch sử theo thực thể" subtitle="Tra cứu toàn bộ timeline của một bản ghi cụ thể">
-        <form onSubmit={handleLoadHistory} style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end', marginBottom: '16px' }}>
-          <SelectField
-            label="Đối tượng thay đổi"
-            name="audit-history-entity-type"
-            value={historyForm.entityType}
-            onChange={(e) => setHistoryForm((prev) => ({ ...prev, entityType: e.target.value }))}
-            error={historyError && !historyForm.entityType.trim() ? historyError : ''}
-            style={{ flex: '1 1 190px' }}
-          >
-            <option value="">Chọn đối tượng</option>
-            {auditEntityTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </SelectField>
-          <Input
-            label="Mã bản ghi"
-            name="audit-history-entity-id"
-            placeholder="ObjectId"
-            value={historyForm.entityId}
-            onChange={(e) => setHistoryForm((prev) => ({ ...prev, entityId: e.target.value }))}
-            error={historyError && !historyForm.entityId.trim() ? historyError : ''}
-            style={{ flex: '2 1 280px' }}
-          />
-          <Button type="submit" loading={historyLoading} icon={<MagnifyingGlass size={16} />}>
-            Tra cứu
-          </Button>
-        </form>
-
-        {historyLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '28px 0' }}>
-            <Spinner />
-          </div>
-        ) : history.length > 0 ? (
-          <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-            {history.map((event) => (
-              <AuditEventRow key={event._id} event={event} />
-            ))}
-          </div>
-        ) : (
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-            Chọn đối tượng thay đổi và nhập ObjectId để xem lịch sử riêng của bản ghi.
-          </p>
-        )}
-      </Card>
     </div>
   );
 }

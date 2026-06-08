@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
+import Pagination from '@/components/ui/Pagination';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate, getRoleLabel } from '@/lib/utils';
 import { 
@@ -360,35 +361,16 @@ export default function UsersPage() {
             </table>
           </div>
 
-          {/* Pagination Footer */}
-          {pagination.pages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderTop: '1px solid var(--border)', backgroundColor: 'var(--surface-sunken)' }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                Hiển thị {users.length} trên tổng số {pagination.total} tài khoản
-              </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                >
-                  Trước
-                </Button>
-                <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13px', fontWeight: 600 }}>
-                  Trang {currentPage} / {pagination.pages}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={currentPage === pagination.pages}
-                  onClick={() => setCurrentPage(prev => Math.min(pagination.pages, prev + 1))}
-                >
-                  Sau
-                </Button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            compact
+            currentPage={currentPage}
+            totalPages={pagination.pages}
+            totalItems={pagination.total}
+            currentItemCount={users.length}
+            itemLabel={'t\u00e0i kho\u1ea3n'}
+            onPageChange={setCurrentPage}
+            style={{ backgroundColor: 'var(--surface-sunken)' }}
+          />
         </Card>
       )}
 

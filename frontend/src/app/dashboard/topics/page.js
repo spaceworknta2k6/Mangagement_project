@@ -8,9 +8,17 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
+import Tabs from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate, getStatus, hasAnyRole } from '@/lib/utils';
 import { BookOpen, Plus, Check, X, Shield, Cpu, Sparkle, Pencil, Lightbulb, Star } from '@phosphor-icons/react';
+
+const topicTabs = [
+  { id: 'all', label: 'T\u1ea5t c\u1ea3' },
+  { id: 'pending_review', label: 'Ch\u1edd duy\u1ec7t' },
+  { id: 'approved', label: '\u0110\u00e3 duy\u1ec7t' },
+  { id: 'rejected', label: 'T\u1eeb ch\u1ed1i' },
+];
 
 export default function TopicsPage() {
   const user = useAuthStore((s) => s.user);
@@ -296,41 +304,7 @@ export default function TopicsPage() {
         )}
       </div>
 
-      {/* Tabs list filtering */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '8px',
-          marginBottom: '20px',
-          borderBottom: '1px solid var(--border)',
-          paddingBottom: '10px',
-        }}
-      >
-        {[
-          { id: 'all', label: 'Tất cả' },
-          { id: 'pending_review', label: 'Chờ duyệt' },
-          { id: 'approved', label: 'Đã duyệt' },
-          { id: 'rejected', label: 'Từ chối' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '6px 12px',
-              fontSize: '13px',
-              fontWeight: activeTab === tab.id ? 600 : 400,
-              color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-secondary)',
-              backgroundColor: activeTab === tab.id ? 'var(--accent-glow)' : 'transparent',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
-              transition: 'background-color 0.15s, color 0.15s',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs tabs={topicTabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {/* List items */}
       {loading ? (

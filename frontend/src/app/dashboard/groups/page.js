@@ -421,7 +421,7 @@ export default function GroupsPage() {
                       name="inviteStudentId"
                       value={inviteStudentId}
                       onChange={(e) => setInviteStudentId(e.target.value)}
-                      placeholder="Nhập mã ID Sinh viên (ObjectId)..."
+                      placeholder="Nhập ID Sinh viên..."
                       required
                       style={{ flex: 1 }}
                     />
