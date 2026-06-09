@@ -15,7 +15,14 @@ frontend/dist/
 .env.test.local
 .env.production.local
 backend/.env
+backend/.env.local
+backend/.env.test
+backend/.env.development
+backend/.env.production
 frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.production
 
 # Temporary and log files
 logs

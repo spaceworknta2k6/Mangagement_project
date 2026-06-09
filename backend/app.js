@@ -1,6 +1,6 @@
 const path = require('path');
 // Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('./config/env').loadEnv();
 
 const express = require('express');
 const cors = require('cors');
@@ -20,8 +20,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static public upload folders safely if needed
-app.use('/public', express.static(path.join(__dirname, 'public')));
+// Only avatars are public. Project/submission files are private and must go through /api/v1/files.
+app.use('/public/uploads/avatars', express.static(path.join(__dirname, 'public/uploads/avatars')));
 
 // API Routes Hook
 const authRouter = require('./domains/auth/auth.router');

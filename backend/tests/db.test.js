@@ -1,6 +1,5 @@
-const path = require('path');
-// Load environment variables from backend/.env (adjusted for tests subfolder)
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+require('../config/env').loadEnv();
 
 const connectDB = require('../config/db');
 const mongoose = require('mongoose');

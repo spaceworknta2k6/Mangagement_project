@@ -9,6 +9,13 @@ const DefenseSession = require('../../models/DefenseSession');
 const Committee = require('../../models/Committee');
 const { getJwtSecret } = require('../../config/jwt');
 
+const PRIVATE_UPLOAD_DIR = path.join(__dirname, '../../uploads/private');
+
+const sanitizeFileName = (originalName) => {
+  const baseName = path.basename(originalName || 'upload.bin');
+  return baseName.replace(/[^a-zA-Z0-9._-]/g, '_');
+};
+
 const hasAnyRole = (user, allowedRoles) => {
   const roles = user.roles || (user.role ? [user.role] : []);
   return roles.some((role) => allowedRoles.includes(role));
@@ -60,15 +67,14 @@ const uploadFile = async (multerFile, ownerType, ownerId, user) => {
     };
   }
 
-  // 3. Save file locally in private upload folder
-  const uploadDir = path.join(__dirname, '../../public/uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+  // 3. Save file locally in a non-public upload folder.
+  if (!fs.existsSync(PRIVATE_UPLOAD_DIR)) {
+    fs.mkdirSync(PRIVATE_UPLOAD_DIR, { recursive: true });
   }
 
-  const uniqueFileName = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}-${multerFile.originalname}`;
-  const relativePath = path.join('public/uploads', uniqueFileName);
-  const absolutePath = path.join(uploadDir, uniqueFileName);
+  const uniqueFileName = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}-${sanitizeFileName(multerFile.originalname)}`;
+  const relativePath = path.join('uploads/private', uniqueFileName);
+  const absolutePath = path.join(PRIVATE_UPLOAD_DIR, uniqueFileName);
 
   fs.writeFileSync(absolutePath, fileBuffer);
 

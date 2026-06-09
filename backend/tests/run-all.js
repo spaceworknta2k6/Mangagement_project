@@ -9,7 +9,8 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+process.env.NODE_ENV = process.env.NODE_ENV || 'test';
+require('../config/env').loadEnv();
 const { assertSafeTestDatabase } = require('./test-db-guard');
 
 assertSafeTestDatabase();
