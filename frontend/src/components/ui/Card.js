@@ -1,56 +1,30 @@
+import css from './Card.module.css';
 /**
  * Card — surface container with optional header.
  */
-export default function Card({ children, title, subtitle, actions, noPadding = false, style }) {
+export default function Card({ children, title, subtitle, actions, noPadding = false, className = '' }) {
+  const classes = [css.card, className].filter(Boolean).join(' ');
+
   return (
-    <div
-      style={{
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        overflow: 'hidden',
-        ...style,
-      }}
-    >
+    <div className={classes}>
       {(title || actions) && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--border)',
-          }}
-        >
+        <div className={css.s1} >
           <div>
             {title && (
-              <h3
-                style={{
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  color: 'var(--text-primary)',
-                  lineHeight: 1.3,
-                }}
-              >
+              <h3 className={css.s2} >
                 {title}
               </h3>
             )}
             {subtitle && (
-              <p
-                style={{
-                  fontSize: '12px',
-                  color: 'var(--text-muted)',
-                  marginTop: '2px',
-                }}
-              >
+              <p className={css.s3} >
                 {subtitle}
               </p>
             )}
           </div>
-          {actions && <div style={{ display: 'flex', gap: '8px' }}>{actions}</div>}
+          {actions && <div className={css.s4}>{actions}</div>}
         </div>
       )}
-      <div style={{ padding: noPadding ? 0 : '20px' }}>{children}</div>
+      <div className={noPadding ? css.bodyNoPadding : css.body}>{children}</div>
     </div>
   );
 }

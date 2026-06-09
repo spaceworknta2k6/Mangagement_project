@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { getStatus, hasAnyRole } from '@/lib/utils';
 import { Users, Plus, Check, UserPlus, Warning, PencilSimple, Trash } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 export default function GroupsPage() {
   const user = useAuthStore((s) => s.user);
@@ -226,40 +227,29 @@ export default function GroupsPage() {
   return (
     <div>
       {/* Page Title Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Users size={28} style={{ color: 'var(--accent)' }} />
+      <div className={css.s1}>
+        <h1 className={`text-display ${css.s2}`}>
+          <Users size={28} className={css.s3} />
           Quản lý Nhóm đồ án
         </h1>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+        <p className={css.s4}>
           {isStaff ? 'Xem chi tiết các nhóm thành lập trong từng học kỳ' : 'Thành lập nhóm và kết nối với các bạn sinh viên'}
         </p>
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+        <div className={css.s5}>
           <Spinner size="lg" />
         </div>
       ) : isStaff ? (
         /* ─── Staff View ─── */
         <div>
           {/* Period selector */}
-          <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Chọn Đợt Đồ Án:</span>
+          <div className={css.s6}>
+            <span className={css.s7}>Chọn Đợt Đồ Án:</span>
             <select
               value={selectedPeriodId}
-              onChange={(e) => setSelectedPeriodId(e.target.value)}
-              style={{
-                height: '36px',
-                padding: '0 12px',
-                fontSize: '13px',
-                color: 'var(--text-primary)',
-                backgroundColor: 'var(--bg-raised)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                outline: 'none',
-              }}
-            >
+              onChange={(e) => setSelectedPeriodId(e.target.value)} className={css.s36} >
               {periods.map((p) => (
                 <option key={p._id} value={p._id}>
                   {p.name} ({p.schoolYear})
@@ -270,18 +260,18 @@ export default function GroupsPage() {
 
           {groups.length === 0 ? (
             <Card>
-              <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+              <div className={css.s8}>
                 Chưa có nhóm nào được đăng ký trong đợt này.
               </div>
             </Card>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className={css.s9}>
               {groups.map((g) => {
                 const statusInfo = getStatus(g.status);
                 return (
                   <Card key={g._id} title={g.name} subtitle={`Trưởng nhóm: ${g.leaderStudentId?.userId?.fullName || 'Không rõ'}`}
                     actions={
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div className={css.s10}>
                         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                         <Button variant="secondary" size="sm" onClick={() => handleEditGroup(g)}>
                           <PencilSimple size={14} /> Sửa
@@ -292,27 +282,17 @@ export default function GroupsPage() {
                       </div>
                     }
                   >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>Thành viên nhóm:</p>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+                    <div className={css.s11}>
+                      <p className={css.s12}>Thành viên nhóm:</p>
+                      <div className={css.s13}>
                         {g.members?.map((m) => (
                           <div
-                            key={m.studentId?._id || m.studentId}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '8px 12px',
-                              backgroundColor: 'var(--bg-raised)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 'var(--radius-sm)',
-                            }}
-                          >
+                            key={m.studentId?._id || m.studentId} className={css.s14} >
                             <div>
-                              <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                              <p className={css.s15}>
                                 {m.studentId?.userId?.fullName || 'Đang mời...'}
                               </p>
-                              <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <p className={css.s16}>
                                 {m.studentId?.userId?.email || 'Chờ phản hồi'}
                               </p>
                             </div>
@@ -334,14 +314,14 @@ export default function GroupsPage() {
         <div>
           {/* My invitations */}
           {myInvitations.length > 0 && (
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--warning)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className={css.s17}>
+              <h3 className={css.s18}>
                 <Warning size={16} /> Lời mời gia nhập nhóm đang chờ xử lý
               </h3>
               {myInvitations.map(({ group, period }) => (
                 <Card key={group._id} title={`Mời gia nhập nhóm: ${group.name}`} subtitle={`Đợt đồ án: ${period.name}`}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <div className={css.s19}>
+                    <p className={css.s20}>
                       Bạn nhận được lời mời gia nhập nhóm này từ trưởng nhóm.
                     </p>
                     <Button variant="primary" size="sm" onClick={() => handleAccept(group._id)}>
@@ -357,7 +337,7 @@ export default function GroupsPage() {
             /* Student has group */
             <Card title={myGroup.name} subtitle={`Mã nhóm: ${myGroup._id}`}
               actions={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className={css.s21}>
                   <Badge variant={getStatus(myGroup.status).variant}>{getStatus(myGroup.status).label}</Badge>
                   {myGroup.status === 'draft' && myGroup.leaderStudentId?._id === user?.studentId && (
                     <>
@@ -376,29 +356,19 @@ export default function GroupsPage() {
               }
             >
               {/* Group Members details */}
-              <div style={{ marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '10px' }}>
+              <div className={css.s22}>
+                <h4 className={css.s23}>
                   Danh sách Thành viên Nhóm
                 </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                <div className={css.s24}>
                   {myGroup.members?.map((m) => (
                     <div
-                      key={m.studentId?._id || m.studentId}
-                      style={{
-                        padding: '12px',
-                        backgroundColor: 'var(--bg-raised)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-md)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
+                      key={m.studentId?._id || m.studentId} className={css.s25} >
                       <div>
-                        <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <p className={css.s26}>
                           {m.studentId?.userId?.fullName || 'Đang gửi lời mời...'}
                         </p>
-                        <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <p className={css.s27}>
                           {m.studentId?.userId?.email || 'Chờ xác nhận'}
                         </p>
                       </div>
@@ -412,20 +382,18 @@ export default function GroupsPage() {
 
               {/* Invite member section (Leader only) */}
               {myGroup.status === 'draft' && myGroup.leaderStudentId?._id === user?.studentId && (
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
-                  <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                <div className={css.s28}>
+                  <h4 className={css.s29}>
                     Mời thành viên mới
                   </h4>
-                  <form onSubmit={handleInvite} style={{ display: 'flex', gap: '12px', maxWidth: '420px' }}>
+                  <form onSubmit={handleInvite} className={css.s30}>
                     <Input
                       name="inviteStudentId"
                       value={inviteStudentId}
                       onChange={(e) => setInviteStudentId(e.target.value)}
                       placeholder="Nhập ID Sinh viên..."
-                      required
-                      style={{ flex: 1 }}
-                    />
-                    <Button variant="primary" type="submit" loading={inviting} style={{ marginTop: '25px' }}>
+                      required className={css.s37} />
+                    <Button variant="primary" type="submit" loading={inviting} className={css.s31}>
                       <UserPlus size={16} /> Gửi lời mời
                     </Button>
                   </form>
@@ -435,11 +403,11 @@ export default function GroupsPage() {
           ) : (
             /* Student has NO group */
             <Card title="Thành lập nhóm mới" subtitle="Khởi tạo nhóm của riêng bạn để đăng ký đề tài">
-              <div style={{ maxWidth: '480px' }}>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              <div className={css.s32}>
+                <p className={css.s33}>
                   Bạn chưa có nhóm đồ án nào trong học kỳ này. Hãy đặt tên nhóm và ấn &quot;Khởi tạo nhóm&quot; để bắt đầu mời các thành viên khác.
                 </p>
-                <form onSubmit={handleCreateGroup} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <form onSubmit={handleCreateGroup} className={css.s34}>
                   <Input
                     label="Tên nhóm đồ án"
                     name="newGroupName"
@@ -448,7 +416,7 @@ export default function GroupsPage() {
                     placeholder="Ví dụ: Nhóm Nghiên cứu AI K65"
                     required
                   />
-                  <Button variant="primary" type="submit" loading={creating} style={{ alignSelf: 'flex-start' }}>
+                  <Button variant="primary" type="submit" loading={creating} className={css.s35}>
                     <Plus size={18} /> Khởi tạo nhóm
                   </Button>
                 </form>

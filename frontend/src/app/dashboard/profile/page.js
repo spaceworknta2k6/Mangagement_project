@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { Camera, UserCircle } from '@phosphor-icons/react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -11,6 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import { authService } from '@/services/auth.service';
 import useAuthStore from '@/store/auth.store';
 import { formatDate, getRoleLabel } from '@/lib/utils';
+import css from './page.module.css';
 
 const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1').replace('/api/v1', '');
 
@@ -67,9 +69,9 @@ function validateProfile(form) {
 
 function InfoRow({ label, value }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-      <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, textAlign: 'right' }}>
+    <div className={css.s1}>
+      <span className={css.s2}>{label}</span>
+      <span className={css.s3}>
         {value || text.empty}
       </span>
     </div>
@@ -165,7 +167,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '70px 0' }}>
+      <div className={css.s4}>
         <Spinner size="lg" />
       </div>
     );
@@ -173,47 +175,34 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: '24px' }}>
+      <div className={css.s5}>
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UserCircle size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s6}`}>
+            <UserCircle size={28} className={css.s7} />
             {text.title}
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s8}>
             {text.subtitle}
           </p>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px', alignItems: 'start' }}>
+      <div className={css.s9}>
         <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
-            <div
-              style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: 'var(--radius-lg)',
-                backgroundColor: 'var(--accent-glow)',
-                backgroundImage: avatarUrl ? `url(${avatarUrl})` : undefined,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                color: 'var(--accent)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid rgba(79,142,247,0.2)',
-                overflow: 'hidden',
-                flexShrink: 0,
-              }}
-            >
-              {!avatarUrl && <UserCircle size={40} weight="duotone" />}
+          <div className={css.s10}>
+            <div className={css.avatar}>
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt="" width={72} height={72} className={css.avatarImage} />
+              ) : (
+                <UserCircle size={40} weight="duotone" />
+              )}
             </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
+            <div className={css.s11}>
+              <h2 className={css.s12}>
                 {user.fullName || user.email}
               </h2>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '10px', flexWrap: 'wrap' }}>
-                <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleAvatarChange} style={{ display: 'none' }} />
+              <div className={css.s13}>
+                <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleAvatarChange} className={css.s14} />
                 <Button
                   type="button"
                   variant="secondary"
@@ -224,12 +213,12 @@ export default function ProfilePage() {
                 >
                   {text.avatar}
                 </Button>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{text.avatarHint}</span>
+                <span className={css.s15}>{text.avatarHint}</span>
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '12px' }}>
+          <div className={css.s16}>
             {roles.map((role) => (
               <Badge key={role} variant="neutral">{getRoleLabel(role)}</Badge>
             ))}
@@ -245,7 +234,7 @@ export default function ProfilePage() {
         </Card>
 
         <Card title={text.updateTitle} subtitle={text.updateSubtitle}>
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px', maxWidth: '620px' }}>
+          <form onSubmit={handleSubmit} className={css.s17}>
             <Input
               label={text.fullName}
               name="profile-full-name"
@@ -275,7 +264,7 @@ export default function ProfilePage() {
               />
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '4px' }}>
+            <div className={css.s18}>
               <Button type="submit" loading={submitting}>
                 {text.save}
               </Button>

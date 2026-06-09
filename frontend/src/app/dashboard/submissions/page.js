@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatDate, getTechnicalLabel, hasAnyRole } from '@/lib/utils';
 import { FileText, Calendar, Plus, Upload, Check, X, Shield, Clock, Download, PlusSquare, PencilSimple, Trash } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 export default function SubmissionsPage() {
   const user = useAuthStore((s) => s.user);
@@ -323,26 +324,17 @@ export default function SubmissionsPage() {
   return (
     <div>
       {/* Page Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '24px',
-          flexWrap: 'wrap',
-          gap: '16px',
-        }}
-      >
+      <div className={css.s1} >
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s2}`}>
+            <FileText size={28} className={css.s3} />
             Nộp báo cáo & Mốc tiến độ
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s4}>
             Quản lý các mốc thời gian, nộp tài liệu báo cáo và xem đánh giá chi tiết từ giảng viên
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className={css.s5}>
           {isSupervisor && (
             <Button variant="primary" size="sm" onClick={() => { setEditingMilestone(null); setShowCreateMilestoneModal(true); }}>
               <Plus size={16} />
@@ -354,34 +346,11 @@ export default function SubmissionsPage() {
 
       {/* Project Selector (for Staff/Lecturer) */}
       {!loading && projects.length > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '24px',
-            padding: '12px 16px',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-          }}
-        >
-          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Chọn dự án đồ án:</span>
+        <div className={css.s6} >
+          <span className={css.s7}>Chọn dự án đồ án:</span>
           <select
             value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
-            style={{
-              height: '36px',
-              padding: '0 12px',
-              fontSize: '13px',
-              color: 'var(--text-primary)',
-              backgroundColor: 'var(--bg-raised)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-              outline: 'none',
-              maxWidth: '460px',
-            }}
-          >
+            onChange={(e) => setSelectedProjectId(e.target.value)} className={css.s64} >
             {projects.map((p) => (
               <option key={p._id} value={p._id}>
                 {p.topicId?.title || 'Dự án chưa cập nhật đề tài'} (Nhóm: {p.groupId?.name})
@@ -393,23 +362,23 @@ export default function SubmissionsPage() {
 
       {/* Main milestones loading */}
       {loading || loadingMilestones ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+        <div className={css.s8}>
           <Spinner size="lg" />
         </div>
       ) : projects.length === 0 ? (
         <Card>
-          <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+          <div className={css.s9}>
             Chưa thuộc về dự án đồ án đang hoạt động nào. Sinh viên cần hoàn tất đăng ký đề tài để bắt đầu nộp bài.
           </div>
         </Card>
       ) : milestones.length === 0 ? (
         <Card>
-          <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+          <div className={css.s10}>
             Chưa có mốc thời gian nộp bài nào được thiết lập cho dự án này.
           </div>
         </Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className={css.s11}>
           {milestones.map((m) => {
             const hasSubmissions = m.submissions && m.submissions.length > 0;
             const hasFeedbacks = m.feedback && m.feedback.length > 0;
@@ -420,7 +389,7 @@ export default function SubmissionsPage() {
                 title={m.title}
                 subtitle={`Mô tả: ${m.description || 'Không có mô tả chi tiết.'}`}
                 actions={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className={css.s12}>
                     {getMilestoneStatusBadge(m.status)}
 
                     {/* Student Upload Button */}
@@ -463,38 +432,27 @@ export default function SubmissionsPage() {
                 }
               >
                 {/* Milestone details (Deadline) */}
-                <div style={{ display: 'flex', gap: '16px', fontSize: '13px', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
+                <div className={css.s13}>
+                  <span className={css.s14}>
                     <Calendar size={16} />
                     Hạn chót:
                   </span>
-                  <strong style={{ color: 'var(--error)', fontFamily: 'var(--font-geist-mono)' }}>{formatDate(m.deadline)}</strong>
+                  <strong className={css.s15}>{formatDate(m.deadline)}</strong>
                 </div>
 
                 {/* Submissions section details */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                <div className={css.s16}>
                   {hasSubmissions ? (
                     <div>
-                      <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>Tài liệu sinh viên đã nộp:</p>
+                      <p className={css.s17}>Tài liệu sinh viên đã nộp:</p>
                       {m.submissions.map((sub, idx) => (
                         <div
-                          key={idx}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '10px 14px',
-                            backgroundColor: 'var(--bg-raised)',
-                            border: '1px solid var(--border)',
-                            borderRadius: 'var(--radius-md)',
-                            marginBottom: '6px',
-                          }}
-                        >
+                          key={idx} className={css.s18} >
                           <div>
-                            <p style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                            <p className={css.s19}>
                               Ghi chú sinh viên: &quot;{sub.note || 'Không có ghi chú.'}&quot;
                             </p>
-                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            <p className={css.s20}>
                               Người nộp: {sub.submittedBy?.fullName || 'Sinh viên'} | Thời gian: {formatDate(sub.submittedAt)}
                             </p>
                           </div>
@@ -503,9 +461,7 @@ export default function SubmissionsPage() {
                               key={fId}
                               variant="secondary"
                               size="sm"
-                              onClick={() => handleDownloadFile(fId)}
-                              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-                            >
+                              onClick={() => handleDownloadFile(fId)} className={css.s65} >
                               <Download size={14} /> Tải báo cáo
                             </Button>
                           ))}
@@ -513,30 +469,28 @@ export default function SubmissionsPage() {
                       ))}
                     </div>
                   ) : (
-                    <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Nhóm sinh viên chưa nộp tài liệu báo cáo cho mốc này.</p>
+                    <p className={css.s21}>Nhóm sinh viên chưa nộp tài liệu báo cáo cho mốc này.</p>
                   )}
 
                   {/* Feedback section details */}
                   {hasFeedbacks && (
-                    <div style={{ borderTop: '1px dashed var(--border)', paddingTop: '10px', marginTop: '6px' }}>
-                      <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px' }}>Ý kiến nhận xét đánh giá từ Giảng viên:</p>
+                    <div className={css.s22}>
+                      <p className={css.s23}>Ý kiến nhận xét đánh giá từ Giảng viên:</p>
                       {m.feedback.map((feed, idx) => (
                         <div
                           key={idx}
-                          style={{
-                            padding: '10px 14px',
-                            backgroundColor: feed.status === 'accepted' ? 'var(--success-bg)' : 'var(--error-bg)',
-                            border: '1px solid rgba(255,255,255,0.05)',
-                            borderRadius: 'var(--radius-md)',
-                          }}
+                          className={[
+                            css.feedbackCard,
+                            feed.status === 'accepted' ? css.feedbackAccepted : css.feedbackRejected,
+                          ].filter(Boolean).join(' ')}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <strong style={{ color: feed.status === 'accepted' ? 'var(--success)' : 'var(--warning)' }}>
+                          <div className={css.s24}>
+                            <strong className={feed.status === 'accepted' ? css.feedbackStatusAccepted : css.feedbackStatusWarning}>
                               [{feed.status === 'accepted' ? 'ĐẠT YÊU CẦU' : feed.status === 'needs_revision' ? 'CẦN CHỈNH SỬA' : 'TỪ CHỐI'}]
                             </strong>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{formatDate(feed.createdAt)}</span>
+                            <span className={css.s25}>{formatDate(feed.createdAt)}</span>
                           </div>
-                          <p style={{ marginTop: '4px', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                          <p className={css.s26}>
                             Lời phê: &quot;{feed.comment}&quot;
                           </p>
                         </div>
@@ -552,87 +506,42 @@ export default function SubmissionsPage() {
 
       {/* Student Submit Report Modal */}
       {showSubmitModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '480px',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-            }}
-          >
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className={css.s27} >
+          <div className={css.s28} >
+            <div className={css.s29}>
+              <h3 className={css.s30}>
                 Nộp tài liệu báo cáo đồ án
               </h3>
               <button
-                onClick={() => setShowSubmitModal(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}
-              >
+                onClick={() => setShowSubmitModal(null)} className={css.s66} >
                 &times;
               </button>
             </div>
-            <form onSubmit={handleSubmissionSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSubmissionSubmit} className={css.s31}>
               {/* File upload selector */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>
-                  Chọn báo cáo (PDF, ZIP, DOCX, giới hạn 10MB) <span style={{ color: 'var(--error)' }}>*</span>
+              <div className={css.s32}>
+                <label className={css.s33}>
+                  Chọn báo cáo (PDF, ZIP, DOCX, giới hạn 10MB) <span className={css.s34}>*</span>
                 </label>
-                <div
-                  style={{
-                    border: '1px dashed var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '20px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    backgroundColor: 'var(--bg-raised)',
-                  }}
-                >
+                <div className={css.s35} >
                   <input
                     type="file"
-                    onChange={handleFileUpload}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      opacity: 0,
-                      cursor: 'pointer',
-                    }}
-                  />
+                    onChange={handleFileUpload} className={css.s36} />
                   {uploadingFile ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <div className={css.s37}>
                       <Spinner />
                       <span>Đang tải tệp tin và quét virus an toàn...</span>
                     </div>
                   ) : fileName ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                      <Check size={28} style={{ color: 'var(--success)' }} />
-                      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{fileName}</span>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Nhấp để chọn tệp tin khác</span>
+                    <div className={css.s38}>
+                      <Check size={28} className={css.s39} />
+                      <span className={css.s40}>{fileName}</span>
+                      <span className={css.s41}>Nhấp để chọn tệp tin khác</span>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                      <Upload size={28} style={{ color: 'var(--accent)' }} />
-                      <span style={{ color: 'var(--text-secondary)' }}>Kéo thả hoặc nhấp để chọn tệp tin tải lên</span>
+                    <div className={css.s42}>
+                      <Upload size={28} className={css.s43} />
+                      <span className={css.s44}>Kéo thả hoặc nhấp để chọn tệp tin tải lên</span>
                     </div>
                   )}
                 </div>
@@ -645,7 +554,7 @@ export default function SubmissionsPage() {
                 placeholder="Nhập lời chào hoặc thông điệp gửi GVHD..."
               />
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+              <div className={css.s45}>
                 <Button variant="secondary" onClick={() => setShowSubmitModal(null)}>Hủy</Button>
                 <Button variant="primary" type="submit" loading={submittingWork} disabled={!uploadedFileId}>
                   Nộp bài ngay
@@ -658,87 +567,39 @@ export default function SubmissionsPage() {
 
       {/* Lecturer Review Feedback Modal */}
       {showFeedbackModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '480px',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-            }}
-          >
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className={css.s46} >
+          <div className={css.s47} >
+            <div className={css.s48}>
+              <h3 className={css.s49}>
                 Đánh giá báo cáo đồ án của sinh viên
               </h3>
               <button
-                onClick={() => setShowFeedbackModal(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}
-              >
+                onClick={() => setShowFeedbackModal(null)} className={css.s67} >
                 &times;
               </button>
             </div>
-            <form onSubmit={handleFeedbackSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Kết quả thẩm định</label>
+            <form onSubmit={handleFeedbackSubmit} className={css.s50}>
+              <div className={css.s51}>
+                <label className={css.s52}>Kết quả thẩm định</label>
                 <select
                   value={feedbackStatus}
-                  onChange={(e) => setFeedbackStatus(e.target.value)}
-                  style={{
-                    height: '40px',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    color: 'var(--text-primary)',
-                    backgroundColor: 'var(--bg-raised)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    outline: 'none',
-                  }}
-                >
+                  onChange={(e) => setFeedbackStatus(e.target.value)} className={css.s68} >
                   <option value="accepted">Đạt yêu cầu (Accepted)</option>
                   <option value="needs_revision">Cần chỉnh sửa (Needs Revision)</option>
                   <option value="rejected">Từ chối (Rejected)</option>
                 </select>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Nhận xét chi tiết</label>
+              <div className={css.s53}>
+                <label className={css.s54}>Nhận xét chi tiết</label>
                 <textarea
                   value={feedbackComment}
                   onChange={(e) => setFeedbackComment(e.target.value)}
                   placeholder="Nhập lời phê bình hoặc hướng dẫn chỉnh sửa chi tiết cho sinh viên..."
-                  rows={4}
-                  style={{
-                    padding: '12px',
-                    fontSize: '14px',
-                    fontFamily: 'inherit',
-                    color: 'var(--text-primary)',
-                    backgroundColor: 'var(--bg-raised)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    outline: 'none',
-                    resize: 'none',
-                  }}
-                />
+                  rows={4} className={css.s69} />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+              <div className={css.s55}>
                 <Button variant="secondary" onClick={() => setShowFeedbackModal(null)}>Hủy</Button>
                 <Button variant="primary" type="submit" loading={submittingFeedback}>Gửi đánh giá</Button>
               </div>
@@ -749,43 +610,18 @@ export default function SubmissionsPage() {
 
       {/* Create New Milestone Modal */}
       {showCreateMilestoneModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '480px',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-            }}
-          >
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className={css.s56} >
+          <div className={css.s57} >
+            <div className={css.s58}>
+              <h3 className={css.s59}>
                 {editingMilestone ? 'Chỉnh sửa mốc nộp báo cáo' : 'Tạo mốc nộp báo cáo mới'}
               </h3>
               <button
-                onClick={() => { setShowCreateMilestoneModal(false); setEditingMilestone(null); }}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}
-              >
+                onClick={() => { setShowCreateMilestoneModal(false); setEditingMilestone(null); }} className={css.s70} >
                 &times;
               </button>
             </div>
-            <form onSubmit={handleCreateMilestone} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleCreateMilestone} className={css.s60}>
               <Input
                 label="Tên mốc báo cáo"
                 value={newMilestone.title}
@@ -793,24 +629,12 @@ export default function SubmissionsPage() {
                 required
               />
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Mô tả chi tiết</label>
+              <div className={css.s61}>
+                <label className={css.s62}>Mô tả chi tiết</label>
                 <textarea
                   value={newMilestone.description}
                   onChange={(e) => setNewMilestone(p => ({ ...p, description: e.target.value }))}
-                  rows={3}
-                  style={{
-                    padding: '12px',
-                    fontSize: '14px',
-                    fontFamily: 'inherit',
-                    color: 'var(--text-primary)',
-                    backgroundColor: 'var(--bg-raised)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    outline: 'none',
-                    resize: 'none',
-                  }}
-                />
+                  rows={3} className={css.s71} />
               </div>
 
               <Input
@@ -821,7 +645,7 @@ export default function SubmissionsPage() {
                 required
               />
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+              <div className={css.s63}>
                 <Button variant="secondary" onClick={() => { setShowCreateMilestoneModal(false); setEditingMilestone(null); }}>Hủy</Button>
                 <Button variant="primary" type="submit" loading={creatingMilestone}>
                   <PlusSquare size={16} /> {editingMilestone ? 'Cập nhật mốc' : 'Tạo mốc'}

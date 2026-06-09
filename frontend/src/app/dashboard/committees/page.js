@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatDate, getTechnicalLabel, hasAnyRole } from '@/lib/utils';
 import { Gavel, Plus, ArrowsClockwise, Users, Trash, CheckCircle, PlayCircle, PencilSimple } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 export default function CommitteesPage() {
   const { user, token } = useAuthStore();
@@ -214,7 +215,7 @@ export default function CommitteesPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+      <div className={css.s1}>
         <Spinner size="lg" />
       </div>
     );
@@ -224,18 +225,18 @@ export default function CommitteesPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div className={css.s2}>
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Gavel size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s3}`}>
+            <Gavel size={28} className={css.s4} />
             Quản lý Hội đồng
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s5}>
             Thành lập và phân công thành viên Hội đồng đánh giá đồ án
           </p>
         </div>
         
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className={css.s6}>
           <Button variant="outline" onClick={fetchData} icon={<ArrowsClockwise />} title="Làm mới" />
           {isStaff && (
             <Button variant="primary" icon={<Plus />} onClick={openCreateModal}>
@@ -245,37 +246,37 @@ export default function CommitteesPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px', position: 'relative', zIndex: 0 }}>
+      <div className={css.s7}>
         {committees.map((committee) => (
-          <Card key={committee._id} style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <Card key={committee._id} className={css.s8}>
+            <div className={css.s9}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <h3 className={css.s10}>
                   {committee.name}
                 </h3>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <div className={css.s11}>
                   Đợt: {committee.periodId?.name || 'Không xác định'}
                 </div>
               </div>
               {getStatusBadge(committee.status)}
             </div>
 
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+            <div className={css.s12}>
+              <div className={css.s13}>
                 <Users size={16} />
                 <span>Thành viên ({committee.members?.length || 0})</span>
               </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className={css.s14}>
                 {committee.members?.map((m, idx) => {
                   const lecturerInfo = getLecturerDisplay(m);
                   return (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', padding: '8px', backgroundColor: 'var(--surface-sunken)', borderRadius: '6px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
+                    <div key={idx} className={css.s15}>
+                      <div className={css.s16}>
+                        <span className={css.s17}>
                           {lecturerInfo.fullName}
                         </span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <span className={css.s18}>
                           {lecturerInfo.lecturerCode}
                         </span>
                       </div>
@@ -290,12 +291,12 @@ export default function CommitteesPage() {
               </div>
             </div>
             
-            <div style={{ borderTop: '1px solid var(--border)', marginTop: '16px', paddingTop: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <div className={css.s19}>
               Tạo lúc: {formatDate(committee.createdAt)}
             </div>
 
             {isStaff && (
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', justifyContent: 'flex-end' }}>
+              <div className={css.s20}>
                 {committee.status === 'draft' && (
                   <Button
                     variant="secondary"
@@ -343,7 +344,7 @@ export default function CommitteesPage() {
         ))}
 
         {committees.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', padding: '48px', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+          <div className={css.s21}>
             Chưa có hội đồng nào được tạo
           </div>
         )}
@@ -351,29 +352,19 @@ export default function CommitteesPage() {
 
       {/* Modal Tạo Hội đồng */}
       {showModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 50,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--surface)', width: '100%', maxWidth: '600px',
-            borderRadius: '12px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-            maxHeight: '90vh', display: 'flex', flexDirection: 'column'
-          }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600 }}>{editingCommittee ? 'Chỉnh sửa Hội đồng' : 'Tạo Hội đồng Đánh giá mới'}</h2>
+        <div className={css.s22}>
+          <div className={css.s23}>
+            <div className={css.s24}>
+              <h2 className={css.s25}>{editingCommittee ? 'Chỉnh sửa Hội đồng' : 'Tạo Hội đồng Đánh giá mới'}</h2>
             </div>
             
-            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-              <form id="committee-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className={css.s26}>
+              <form id="committee-form" onSubmit={handleSubmit} className={css.s27}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>Thuộc Đợt đồ án *</label>
+                  <label className={css.s28}>Thuộc Đợt đồ án *</label>
                   <select
                     value={form.periodId}
-                    onChange={(e) => setForm({...form, periodId: e.target.value})}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)' }}
-                    required
+                    onChange={(e) => setForm({...form, periodId: e.target.value})} required className={css.s39}
                   >
                     <option value="">-- Chọn đợt đồ án --</option>
                     {periods.map(p => (
@@ -390,9 +381,9 @@ export default function CommitteesPage() {
                   required
                 />
                 
-                <div style={{ marginTop: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500 }}>
+                <div className={css.s29}>
+                  <div className={css.s30}>
+                    <label className={css.s31}>
                       Thành viên Hội đồng * (Tối thiểu 3)
                     </label>
                     <Button variant="outline" size="sm" type="button" onClick={handleAddMember} icon={<Plus />}>
@@ -401,19 +392,17 @@ export default function CommitteesPage() {
                   </div>
                   
                   {form.members.length === 0 ? (
-                    <div style={{ padding: '24px', textAlign: 'center', border: '1px dashed var(--border)', borderRadius: '6px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    <div className={css.s32}>
                       Chưa có thành viên nào. Vui lòng thêm ít nhất 3 thành viên.
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className={css.s33}>
                       {form.members.map((member, index) => (
-                        <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                          <div style={{ flex: 1 }}>
+                        <div key={index} className={css.s34}>
+                          <div className={css.s35}>
                             <select
                               value={member.lecturerId}
-                              onChange={(e) => handleMemberChange(index, 'lecturerId', e.target.value)}
-                              style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)' }}
-                              required
+                              onChange={(e) => handleMemberChange(index, 'lecturerId', e.target.value)} required className={css.s40}
                             >
                               <option value="">-- Chọn Giảng viên --</option>
                               {lecturers.map(l => (
@@ -423,12 +412,10 @@ export default function CommitteesPage() {
                               ))}
                             </select>
                           </div>
-                          <div style={{ width: '150px' }}>
+                          <div className={css.s36}>
                             <select
                               value={member.role}
-                              onChange={(e) => handleMemberChange(index, 'role', e.target.value)}
-                              style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)' }}
-                              required
+                              onChange={(e) => handleMemberChange(index, 'role', e.target.value)} required className={css.s41}
                             >
                               <option value="COMMITTEE_CHAIR">Chủ tịch</option>
                               <option value="COMMITTEE_SECRETARY">Thư ký</option>
@@ -438,8 +425,8 @@ export default function CommitteesPage() {
                           </div>
                           <Button 
                             variant="outline" 
-                            type="button" 
-                            style={{ padding: '8px', borderColor: 'var(--danger)', color: 'var(--danger)' }}
+                            type="button"
+                            className={css.s37}
                             onClick={() => handleRemoveMember(index)}
                             icon={<Trash />}
                           />
@@ -451,7 +438,7 @@ export default function CommitteesPage() {
               </form>
             </div>
             
-            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--surface-sunken)', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+            <div className={css.s38}>
               <Button variant="ghost" onClick={() => { setShowModal(false); setEditingCommittee(null); }} type="button">Hủy</Button>
               <Button variant="primary" type="submit" form="committee-form" isLoading={submitting}>{editingCommittee ? 'Cập nhật Hội đồng' : 'Tạo Hội đồng'}</Button>
             </div>

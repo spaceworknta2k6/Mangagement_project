@@ -25,6 +25,7 @@ import {
   Eye,
   X
 } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 const ROLE_OPTIONS = [
   { value: 'SYSTEM_ADMIN', label: 'Quản trị viên', badge: 'error' },
@@ -202,13 +203,13 @@ export default function UsersPage() {
   return (
     <div>
       {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div className={css.s1}>
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Users size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s2}`}>
+            <Users size={28} className={css.s3} />
             Quản lý tài khoản & Phân quyền
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s4}>
             Gán vai trò hệ thống, khóa (ban), và quản lý trạng thái hoạt động của thành viên
           </p>
         </div>
@@ -218,9 +219,9 @@ export default function UsersPage() {
       </div>
 
       {/* Search & Filters */}
-      <Card style={{ marginBottom: '20px' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
-          <div style={{ flex: 1, minWidth: '240px' }}>
+      <Card className={css.s5}>
+        <form onSubmit={handleSearchSubmit} className={css.s6}>
+          <div className={css.s7}>
             <Input
               label="Tìm kiếm người dùng"
               placeholder="Nhập tên hoặc email..."
@@ -230,22 +231,11 @@ export default function UsersPage() {
             />
           </div>
 
-          <div style={{ width: '180px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Vai trò</label>
+          <div className={css.s8}>
+            <label className={css.s9}>Vai trò</label>
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              style={{
-                height: '40px',
-                padding: '0 12px',
-                fontSize: '14px',
-                color: 'var(--text-primary)',
-                backgroundColor: 'var(--bg-raised)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                outline: 'none',
-              }}
-            >
+              onChange={(e) => setRoleFilter(e.target.value)} className={css.s63} >
               <option value="">Tất cả vai trò</option>
               {ROLE_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -253,22 +243,11 @@ export default function UsersPage() {
             </select>
           </div>
 
-          <div style={{ width: '180px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Trạng thái</label>
+          <div className={css.s10}>
+            <label className={css.s11}>Trạng thái</label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              style={{
-                height: '40px',
-                padding: '0 12px',
-                fontSize: '14px',
-                color: 'var(--text-primary)',
-                backgroundColor: 'var(--bg-raised)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                outline: 'none',
-              }}
-            >
+              onChange={(e) => setStatusFilter(e.target.value)} className={css.s64} >
               <option value="">Tất cả trạng thái</option>
               <option value="active">Kích hoạt</option>
               <option value="inactive">Không hoạt động</option>
@@ -276,12 +255,12 @@ export default function UsersPage() {
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <Button variant="primary" type="submit" style={{ height: '40px' }} icon={<MagnifyingGlass size={16} />}>
+          <div className={css.s12}>
+            <Button variant="primary" type="submit" icon={<MagnifyingGlass size={16} className={css.s13} />}>
               Tìm kiếm
             </Button>
             {(search || roleFilter || statusFilter) && (
-              <Button variant="ghost" type="button" onClick={handleResetFilters} style={{ height: '40px' }}>
+              <Button variant="ghost" type="button" onClick={handleResetFilters} className={css.s14}>
                 Xóa lọc
               </Button>
             )}
@@ -291,52 +270,52 @@ export default function UsersPage() {
 
       {/* Users Table */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+        <div className={css.s15}>
           <Spinner size="lg" />
         </div>
       ) : users.length === 0 ? (
         <Card>
-          <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+          <div className={css.s16}>
             Không tìm thấy tài khoản nào khớp với bộ lọc tìm kiếm.
           </div>
         </Card>
       ) : (
-        <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+        <Card className={css.s17}>
+          <div className={css.s18}>
+            <table className={css.s19}>
               <thead>
-                <tr style={{ backgroundColor: 'var(--surface-sunken)', borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Họ và tên</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Email</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Vai trò</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Trạng thái</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Ngày tạo</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'right' }}>Thao tác</th>
+                <tr className={css.s20}>
+                  <th className={css.s21}>Họ và tên</th>
+                  <th className={css.s22}>Email</th>
+                  <th className={css.s23}>Vai trò</th>
+                  <th className={css.s24}>Trạng thái</th>
+                  <th className={css.s25}>Ngày tạo</th>
+                  <th className={css.s26}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((item) => {
                   const isSelf = currentUser && currentUser._id.toString() === item._id.toString();
                   return (
-                    <tr key={item._id} style={{ borderBottom: '1px solid var(--border)', transition: 'background-color 0.15s' }}>
-                      <td style={{ padding: '16px', fontWeight: 500, color: 'var(--text-primary)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <tr key={item._id} className={css.s27}>
+                      <td className={css.s28}>
+                        <div className={css.s29}>
                           {item.fullName}
-                          {isSelf && <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '4px', backgroundColor: 'var(--accent-glow)', color: 'var(--accent)', fontWeight: 600 }}>Tôi</span>}
+                          {isSelf && <span className={css.s30}>Tôi</span>}
                         </div>
                       </td>
-                      <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{item.email}</td>
-                      <td style={{ padding: '16px' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                      <td className={css.s31}>{item.email}</td>
+                      <td className={css.s32}>
+                        <div className={css.s33}>
                           {item.roles?.map(r => (
                             <Badge key={r} variant={getRoleBadgeVariant(r)}>{getRoleLabel(r)}</Badge>
                           ))}
                         </div>
                       </td>
-                      <td style={{ padding: '16px' }}>{getStatusBadge(item.status)}</td>
-                      <td style={{ padding: '16px', color: 'var(--text-muted)' }}>{formatDate(item.createdAt)}</td>
-                      <td style={{ padding: '16px', textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: '8px' }}>
+                      <td className={css.s34}>{getStatusBadge(item.status)}</td>
+                      <td className={css.s35}>{formatDate(item.createdAt)}</td>
+                      <td className={css.s36}>
+                        <div className={css.s37}>
                           <Button
                             variant="secondary"
                             size="sm"
@@ -368,55 +347,42 @@ export default function UsersPage() {
             totalItems={pagination.total}
             currentItemCount={users.length}
             itemLabel={'t\u00e0i kho\u1ea3n'}
-            onPageChange={setCurrentPage}
-            style={{ backgroundColor: 'var(--surface-sunken)' }}
-          />
+            onPageChange={setCurrentPage} className={css.s38} />
         </Card>
       )}
 
       {/* Edit Roles & Status Modal */}
       {showEditModal && selectedUser && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
-        }}>
-          <div style={{
-            width: '100%', maxWidth: '500px',
-            backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)', boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-            display: 'flex', flexDirection: 'column'
-          }}>
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldCheck size={20} style={{ color: 'var(--accent)' }} />
+        <div className={css.s39}>
+          <div className={css.s40}>
+            <div className={css.s41}>
+              <h3 className={css.s42}>
+                <ShieldCheck size={20} className={css.s43} />
                 Phân quyền & Cấu hình tài khoản
               </h3>
-              <button onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}><X size={20} /></button>
+              <button onClick={() => setShowEditModal(false)} className={css.s65}><X size={20} /></button>
             </div>
 
-            <form onSubmit={handleSaveUser} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <form onSubmit={handleSaveUser} className={css.s44}>
               <div>
-                <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedUser.fullName}</p>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{selectedUser.email}</p>
+                <p className={css.s45}>{selectedUser.fullName}</p>
+                <p className={css.s46}>{selectedUser.email}</p>
               </div>
 
               {/* Roles Section */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                <label className={css.s47}>
                   Vai trò (Roles)
                 </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className={css.s48}>
                   {ROLE_OPTIONS.map(opt => {
                     const isChecked = editRoles.includes(opt.value);
                     return (
-                      <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}>
+                      <label key={opt.value} className={css.s49}>
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => handleRoleToggle(opt.value)}
-                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                        />
+                          onChange={() => handleRoleToggle(opt.value)} className={css.s66} />
                         {opt.label}
                       </label>
                     );
@@ -426,48 +392,42 @@ export default function UsersPage() {
 
               {/* Status Section */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                <label className={css.s50}>
                   Trạng thái tài khoản (Status)
                 </label>
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                <div className={css.s51}>
+                  <label className={css.s52}>
                     <input
                       type="radio"
                       name="status"
                       value="active"
                       checked={editStatus === 'active'}
-                      onChange={() => setEditStatus('active')}
-                      style={{ cursor: 'pointer' }}
-                    />
+                      onChange={() => setEditStatus('active')} className={css.s67} />
                     Kích hoạt
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                  <label className={css.s53}>
                     <input
                       type="radio"
                       name="status"
                       value="inactive"
                       checked={editStatus === 'inactive'}
-                      onChange={() => setEditStatus('inactive')}
-                      style={{ cursor: 'pointer' }}
-                    />
+                      onChange={() => setEditStatus('inactive')} className={css.s68} />
                     Không hoạt động
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px' }}>
+                  <label className={css.s54}>
                     <input
                       type="radio"
                       name="status"
                       value="locked"
                       checked={editStatus === 'locked'}
-                      onChange={() => setEditStatus('locked')}
-                      style={{ cursor: 'pointer' }}
-                    />
+                      onChange={() => setEditStatus('locked')} className={css.s69} />
                     Khóa tài khoản
                   </label>
                 </div>
               </div>
 
               {/* Action buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+              <div className={css.s55}>
                 <Button variant="secondary" onClick={() => setShowEditModal(false)}>Hủy</Button>
                 <Button variant="primary" type="submit" loading={submitting}>Lưu thay đổi</Button>
               </div>
@@ -478,36 +438,24 @@ export default function UsersPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedUser && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.65)', zIndex: 100,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
-        }}>
-          <div style={{
-            width: '100%', maxWidth: '440px',
-            backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)', boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-            display: 'flex', flexDirection: 'column'
-          }}>
-            <div style={{ padding: '24px 24px 12px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <div style={{
-                padding: '8px', borderRadius: '50%', backgroundColor: 'var(--error-bg)', color: 'var(--error)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
+        <div className={css.s56}>
+          <div className={css.s57}>
+            <div className={css.s58}>
+              <div className={css.s59}>
                 <Warning size={24} weight="fill" />
               </div>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                <h3 className={css.s60}>
                   Xác nhận xóa tài khoản?
                 </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <p className={css.s61}>
                   Bạn có chắc chắn muốn xóa tài khoản của sinh viên/giảng viên <strong>{selectedUser.fullName} ({selectedUser.email})</strong>? 
                   Hành động này sẽ thực hiện soft-delete tài khoản này và hồ sơ liên quan của họ.
                 </p>
               </div>
             </div>
 
-            <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--surface-sunken)', borderBottomLeftRadius: 'var(--radius-lg)', borderBottomRightRadius: 'var(--radius-lg)' }}>
+            <div className={css.s62}>
               <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Hủy</Button>
               <Button variant="danger" onClick={handleDeleteConfirm} loading={submitting}>Đồng ý xóa</Button>
             </div>

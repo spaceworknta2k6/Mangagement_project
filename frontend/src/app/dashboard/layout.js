@@ -31,6 +31,7 @@ import Spinner from '@/components/ui/Spinner';
 import Button from '@/components/ui/Button';
 import { getPrimaryRole, getRoleLabel, hasAnyRole } from '@/lib/utils';
 import { ToastProvider } from '@/components/ui/Toast';
+import css from './layout.module.css';
 
 /* ─── Navigation Items ──────────────────────────────────────────────── */
 const NAV_ITEMS = [
@@ -61,78 +62,30 @@ function Sidebar({ collapsed, mobileOpen, onToggle, onNavigate, user }) {
 
   return (
     <aside
-      className="dashboard-sidebar"
+      className={[
+        'dashboard-sidebar',
+        css.sidebar,
+        collapsed ? css.sidebarCollapsed : '',
+      ].filter(Boolean).join(' ')}
       data-mobile-open={mobileOpen ? 'true' : 'false'}
-      style={{
-        width: collapsed ? '64px' : 'var(--sidebar-width)',
-        height: '100dvh',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        zIndex: 40,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: 'var(--bg-surface)',
-        borderRight: '1px solid var(--border)',
-        transition: 'width 0.2s ease',
-        overflow: 'hidden',
-      }}
     >
       {/* Logo area */}
       <div
         onClick={() => router.push('/dashboard')}
-        style={{
-          height: 'var(--header-height)',
-          display: 'flex',
-          alignItems: 'center',
-          padding: collapsed ? '0 20px' : '0 16px',
-          gap: '10px',
-          borderBottom: '1px solid var(--border)',
-          flexShrink: 0,
-          cursor: 'pointer',
-        }}
+        className={[css.logoArea, collapsed ? css.logoAreaCollapsed : ''].filter(Boolean).join(' ')}
       >
-        <div
-          style={{
-            width: '30px',
-            height: '30px',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'var(--accent-glow)',
-            border: '1px solid rgba(79,142,247,0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <GraduationCap size={18} weight="duotone" style={{ color: 'var(--accent)' }} />
+        <div className={css.s1} >
+          <GraduationCap size={18} weight="duotone" className={css.s2} />
         </div>
         {!collapsed && (
-          <span
-            style={{
-              fontSize: '15px',
-              fontWeight: 700,
-              letterSpacing: '-0.03em',
-              color: 'var(--text-primary)',
-              whiteSpace: 'nowrap',
-            }}
-          >
+          <span className={css.s3} >
             Karl
           </span>
         )}
       </div>
 
       {/* Nav items */}
-      <nav
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '8px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '2px',
-        }}
-      >
+      <nav className={css.s4} >
         {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -144,33 +97,13 @@ function Sidebar({ collapsed, mobileOpen, onToggle, onNavigate, user }) {
                 onNavigate?.();
               }}
               title={collapsed ? item.label : undefined}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: collapsed ? '10px 0' : '8px 12px',
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                width: '100%',
-                border: 'none',
-                cursor: 'pointer',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '13px',
-                fontWeight: isActive ? 600 : 400,
-                fontFamily: 'inherit',
-                color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                backgroundColor: isActive ? 'var(--accent-glow)' : 'transparent',
-                transition: 'background-color 0.15s, color 0.15s',
-                whiteSpace: 'nowrap',
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = 'var(--bg-raised)';
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
-              }}
+              className={[
+                css.navButton,
+                collapsed ? css.navButtonCollapsed : '',
+                isActive ? css.navButtonActive : '',
+              ].filter(Boolean).join(' ')}
             >
-              <Icon size={20} weight={isActive ? 'duotone' : 'regular'} style={{ flexShrink: 0 }} />
+              <Icon size={20} weight={isActive ? 'duotone' : 'regular'} className={css.s5} />
               {!collapsed && item.label}
             </button>
           );
@@ -178,42 +111,15 @@ function Sidebar({ collapsed, mobileOpen, onToggle, onNavigate, user }) {
       </nav>
 
       {/* Collapse toggle */}
-      <div
-        style={{
-          padding: '8px',
-          borderTop: '1px solid var(--border)',
-          flexShrink: 0,
-        }}
-      >
+      <div className={css.s6} >
         <button
           onClick={onToggle}
           title={collapsed ? 'Mở rộng' : 'Thu gọn'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            gap: '10px',
-            width: '100%',
-            padding: collapsed ? '10px 0' : '8px 12px',
-            border: 'none',
-            cursor: 'pointer',
-            borderRadius: 'var(--radius-md)',
-            fontSize: '13px',
-            fontFamily: 'inherit',
-            color: 'var(--text-muted)',
-            backgroundColor: 'transparent',
-            transition: 'background-color 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-raised)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          className={[css.collapseButton, collapsed ? css.collapseButtonCollapsed : ''].filter(Boolean).join(' ')}
         >
           <CaretLeft
             size={18}
-            style={{
-              transform: collapsed ? 'rotate(180deg)' : 'none',
-              transition: 'transform 0.2s',
-              flexShrink: 0,
-            }}
+            className={[css.collapseIcon, collapsed ? css.collapseIconCollapsed : ''].filter(Boolean).join(' ')}
           />
           {!collapsed && 'Thu gọn'}
         </button>
@@ -234,33 +140,11 @@ function Header({ user, onMobileMenuToggle }) {
   };
 
   return (
-    <header
-      style={{
-        height: 'var(--header-height)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 24px',
-        backgroundColor: 'var(--bg-surface)',
-        borderBottom: '1px solid var(--border)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 30,
-      }}
-      className="dashboard-header"
+    <header className={`dashboard-header ${css.s7}`}
     >
       {/* Mobile menu toggle */}
       <button
-        onClick={onMobileMenuToggle}
-        style={{
-          display: 'none',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'var(--text-secondary)',
-          padding: '4px',
-        }}
-        className="mobile-menu-btn"
+        onClick={onMobileMenuToggle} className={`mobile-menu-btn ${css.s8}`}
       >
         <List size={22} />
       </button>
@@ -268,42 +152,22 @@ function Header({ user, onMobileMenuToggle }) {
       <div /> {/* Spacer */}
 
       {/* User area */}
-      <div className="dashboard-user-area" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className={`dashboard-user-area ${css.s9}`}>
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '36px',
-            height: '36px',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'transparent',
-            cursor: 'pointer',
-            color: 'var(--text-muted)',
-            transition: 'background-color 0.15s, color 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--bg-raised)';
-            e.currentTarget.style.color = 'var(--accent)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = 'var(--text-muted)';
-          }}
+          className={css.s10}
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         {user && (
-          <div className="dashboard-user-meta" style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
+          <div className={`dashboard-user-meta ${css.s11}`}>
+            <p className={css.s12}>
               {user.fullName || user.name || user.email}
             </p>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            <p className={css.s13}>
               {getRoleLabel(getPrimaryRole(user))}
             </p>
           </div>
@@ -311,27 +175,7 @@ function Header({ user, onMobileMenuToggle }) {
         <button
           onClick={handleLogout}
           title="Đăng xuất"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '36px',
-            height: '36px',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'transparent',
-            cursor: 'pointer',
-            color: 'var(--text-muted)',
-            transition: 'background-color 0.15s, color 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--error-bg)';
-            e.currentTarget.style.color = 'var(--error)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.color = 'var(--text-muted)';
-          }}
+          className={css.s14}
         >
           <SignOut size={18} />
         </button>
@@ -415,17 +259,7 @@ export default function DashboardLayout({ children }) {
   // Loading state
   if (!ready) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100dvh',
-          gap: '12px',
-          color: 'var(--text-muted)',
-          fontSize: '14px',
-        }}
-      >
+      <div className={css.s15} >
         <Spinner />
         Đang tải...
       </div>
@@ -435,55 +269,17 @@ export default function DashboardLayout({ children }) {
   // Network error state
   if (networkError) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100dvh',
-          padding: '24px',
-          textAlign: 'center',
-          backgroundColor: 'var(--bg-surface)',
-        }}
-      >
-        <div
-          style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--error-bg)',
-            color: 'var(--error)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '20px',
-          }}
-        >
+      <div className={css.s16} >
+        <div className={css.s17} >
           <Warning size={32} weight="duotone" />
         </div>
-        <h2
-          style={{
-            fontSize: '20px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            marginBottom: '8px',
-          }}
-        >
+        <h2 className={css.s18} >
           Lỗi kết nối máy chủ
         </h2>
-        <p
-          style={{
-            fontSize: '14px',
-            color: 'var(--text-muted)',
-            maxWidth: '420px',
-            lineHeight: 1.5,
-            marginBottom: '24px',
-          }}
-        >
+        <p className={css.s19} >
           Hệ thống không thể tải thông tin tài khoản của bạn do sự cố kết nối mạng hoặc máy chủ đang khởi động lại. Phiên đăng nhập của bạn vẫn được giữ.
         </p>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div className={css.s20}>
           <Button variant="primary" onClick={() => { setReady(false); loadProfile(); }}>
             Thử lại
           </Button>
@@ -497,50 +293,14 @@ export default function DashboardLayout({ children }) {
 
 
   const accessDeniedView = (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '80px 24px',
-        textAlign: 'center',
-      }}
-    >
-      <div
-        style={{
-          width: '64px',
-          height: '64px',
-          borderRadius: '50%',
-          backgroundColor: 'var(--error-bg)',
-          color: 'var(--error)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '20px',
-        }}
-      >
+    <div className={css.s21} >
+      <div className={css.s22} >
         <Warning size={32} weight="duotone" />
       </div>
-      <h2
-        style={{
-          fontSize: '20px',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          marginBottom: '8px',
-        }}
-      >
+      <h2 className={css.s23} >
         Quyền truy cập bị từ chối
       </h2>
-      <p
-        style={{
-          fontSize: '14px',
-          color: 'var(--text-muted)',
-          maxWidth: '420px',
-          lineHeight: 1.5,
-          marginBottom: '24px',
-        }}
-      >
+      <p className={css.s24} >
         Tài khoản của bạn ({getRoleLabel(userRole)}) không có quyền truy cập chức năng này.
       </p>
       <Button variant="primary" onClick={() => router.push('/dashboard')}>
@@ -568,28 +328,18 @@ export default function DashboardLayout({ children }) {
       )}
 
       <div
-        style={{
-          marginLeft: collapsed ? '64px' : 'var(--sidebar-width)',
-          minHeight: '100dvh',
-          transition: 'margin-left 0.2s ease',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-        className="dashboard-shell"
+        className={[
+          'dashboard-shell',
+          css.shell,
+          collapsed ? css.shellCollapsed : '',
+        ].filter(Boolean).join(' ')}
       >
         <Header
           user={user}
           onMobileMenuToggle={() => setMobileMenuOpen((p) => !p)}
         />
 
-        <main
-          style={{
-            flex: 1,
-            padding: '24px',
-            maxWidth: '1400px',
-            width: '100%',
-          }}
-          className="dashboard-main"
+        <main className={`dashboard-main ${css.s25}`}
         >
           {isAuthorized ? children : accessDeniedView}
         </main>

@@ -19,6 +19,7 @@ import {
   Plus,
   X,
 } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 const emptyForm = {
   projectId: '',
@@ -73,15 +74,7 @@ function getDateInputValue(date) {
 function FieldLabel({ children, htmlFor }) {
   return (
     <label
-      htmlFor={htmlFor}
-      style={{
-        display: 'block',
-        fontSize: '13px',
-        fontWeight: 500,
-        marginBottom: '6px',
-        color: 'var(--text-secondary)',
-      }}
-    >
+      htmlFor={htmlFor} className={css.s1} >
       {children}
     </label>
   );
@@ -97,19 +90,7 @@ function SelectField({ id, label, value, onChange, children, disabled = false })
         value={value}
         onChange={onChange}
         disabled={disabled}
-        style={{
-          width: '100%',
-          height: '40px',
-          padding: '0 12px',
-          borderRadius: 'var(--radius-sm)',
-          border: '1px solid var(--border)',
-          backgroundColor: 'var(--bg-raised)',
-          color: 'var(--text-primary)',
-          fontFamily: 'inherit',
-          fontSize: '14px',
-          outline: 'none',
-          opacity: disabled ? 0.6 : 1,
-        }}
+        className={css.selectInput}
       >
         {children}
       </select>
@@ -127,20 +108,7 @@ function TextAreaField({ id, label, value, onChange, placeholder, rows = 4 }) {
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        rows={rows}
-        style={{
-          width: '100%',
-          padding: '12px',
-          borderRadius: 'var(--radius-sm)',
-          border: '1px solid var(--border)',
-          backgroundColor: 'var(--bg-raised)',
-          color: 'var(--text-primary)',
-          fontFamily: 'inherit',
-          fontSize: '14px',
-          resize: 'vertical',
-          outline: 'none',
-        }}
-      />
+        rows={rows} className={css.s2} />
     </div>
   );
 }
@@ -371,7 +339,7 @@ export default function ExtensionRequestsPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+      <div className={css.s3}>
         <Spinner size="lg" />
       </div>
     );
@@ -379,35 +347,28 @@ export default function ExtensionRequestsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '24px' }}>
+      <div className={css.s4}>
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Clock size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s5}`}>
+            <Clock size={28} className={css.s6} />
             Gia hạn deadline
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s7}>
             Sinh viên gửi yêu cầu, GVHD khuyến nghị và giáo vụ ra quyết định cuối cùng
           </p>
         </div>
         <Button variant="outline" onClick={loadData} icon={<ArrowsClockwise />} title="Làm mới" />
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: isStudent ? 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))' : '1fr',
-          gap: '16px',
-          alignItems: 'start',
-        }}
-      >
+      <div className={[css.extensionGrid, isStudent ? css.extensionGridStudent : ''].filter(Boolean).join(' ')}>
         {isStudent && (
           <Card title="Gửi yêu cầu gia hạn" subtitle="Áp dụng cho mốc tiến độ của dự án nhóm">
             {visibleProjects.length === 0 ? (
-              <div style={{ padding: '28px 12px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <div className={css.s8}>
                 Bạn chưa có dự án đang tham gia để gửi yêu cầu gia hạn.
               </div>
             ) : (
-              <form onSubmit={handleCreateRequest} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <form onSubmit={handleCreateRequest} className={css.s9}>
                 <SelectField id="extension-project" label="Dự án" value={form.projectId} onChange={(e) => handleProjectChange(e.target.value)}>
                   {visibleProjects.map((project) => (
                     <option key={project._id} value={project._id}>
@@ -465,82 +426,75 @@ export default function ExtensionRequestsPage() {
 
         <Card title="Danh sách yêu cầu" subtitle={isStudent ? 'Theo dõi trạng thái yêu cầu của nhóm' : 'Xử lý các yêu cầu gia hạn đang chờ'}>
           {requests.length === 0 ? (
-            <div style={{ padding: '42px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <Calendar size={36} weight="duotone" style={{ marginBottom: '10px' }} />
+            <div className={css.s10}>
+              <Calendar size={36} weight="duotone" className={css.s11} />
               <p>Chưa có yêu cầu gia hạn nào.</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className={css.s12}>
               {requests.map((request) => (
                 <div
-                  key={request._id}
-                  style={{
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'var(--surface-sunken)',
-                    padding: '16px',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.35 }}>
+                  key={request._id} className={css.s13} >
+                  <div className={css.s14}>
+                    <div className={css.s15}>
+                      <h3 className={css.s16}>
                         {getProjectTitle(request.projectId)}
                       </h3>
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      <p className={css.s17}>
                         Nhóm: {request.groupId?.name || 'Không xác định'} · {getTargetLabel(request)}
                       </p>
                     </div>
                     <StatusBadge status={request.status} />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+                  <div className={css.s18}>
                     <div>
                       <div className="text-label">Deadline mới</div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: '4px' }}>
+                      <div className={css.s19}>
                         {formatDateTime(request.requestedTo)}
                       </div>
                     </div>
                     <div>
                       <div className="text-label">GVHD</div>
-                      <div style={{ marginTop: '4px' }}>
+                      <div className={css.s20}>
                         <ApprovalBadge status={request.supervisorApproval?.status} />
                       </div>
                     </div>
                     <div>
                       <div className="text-label">Giáo vụ</div>
-                      <div style={{ marginTop: '4px' }}>
+                      <div className={css.s21}>
                         <ApprovalBadge status={request.facultyDecision?.status} />
                       </div>
                     </div>
                     <div>
                       <div className="text-label">Ngày gửi</div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginTop: '4px' }}>
+                      <div className={css.s22}>
                         {formatDateTime(request.createdAt)}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '12px' }}>
-                    <strong style={{ color: 'var(--text-primary)' }}>Lý do:</strong> {request.reason}
+                  <div className={css.s23}>
+                    <strong className={css.s24}>Lý do:</strong> {request.reason}
                   </div>
 
                   {(request.supervisorApproval?.note || request.facultyDecision?.note) && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '10px', marginBottom: '12px' }}>
+                    <div className={css.s25}>
                       {request.supervisorApproval?.note && (
-                        <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-raised)', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                          <strong style={{ color: 'var(--text-primary)' }}>Nhận xét GVHD:</strong> {request.supervisorApproval.note}
+                        <div className={css.s26}>
+                          <strong className={css.s27}>Nhận xét GVHD:</strong> {request.supervisorApproval.note}
                         </div>
                       )}
                       {request.facultyDecision?.note && (
-                        <div style={{ padding: '10px', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-raised)', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                          <strong style={{ color: 'var(--text-primary)' }}>Quyết định giáo vụ:</strong> {request.facultyDecision.note}
+                        <div className={css.s28}>
+                          <strong className={css.s29}>Quyết định giáo vụ:</strong> {request.facultyDecision.note}
                         </div>
                       )}
                     </div>
                   )}
 
                   {(canSupervisorReview(request) || canFacultyDecide(request)) && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                    <div className={css.s30}>
                       {canSupervisorReview(request) && (
                         <Button size="sm" variant="primary" icon={<FileText />} onClick={() => openReviewModal(request, 'supervisor')}>
                           Nhận xét GVHD
@@ -561,38 +515,18 @@ export default function ExtensionRequestsPage() {
       </div>
 
       {reviewModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 60,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-            backgroundColor: 'rgba(0,0,0,0.55)',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '540px',
-              borderRadius: 'var(--radius-lg)',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--border)' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className={css.s31} >
+          <div className={css.s32} >
+            <div className={css.s33}>
+              <h2 className={css.s34}>
                 {reviewModal.mode === 'faculty' ? 'Quyết định của giáo vụ' : 'Khuyến nghị của GVHD'}
               </h2>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              <p className={css.s35}>
                 {getProjectTitle(reviewModal.request.projectId)}
               </p>
             </div>
 
-            <form onSubmit={submitReview} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={submitReview} className={css.s36}>
               <SelectField id="extension-review-status" label="Kết quả" value={reviewStatus} onChange={(e) => setReviewStatus(e.target.value)}>
                 <option value="approved">Đồng ý gia hạn</option>
                 <option value="rejected">Từ chối gia hạn</option>
@@ -606,7 +540,7 @@ export default function ExtensionRequestsPage() {
                 placeholder={reviewModal.mode === 'faculty' ? 'Ghi rõ căn cứ phê duyệt hoặc từ chối...' : 'Nêu ý kiến chuyên môn cho giáo vụ...'}
               />
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '6px' }}>
+              <div className={css.s37}>
                 <Button variant="ghost" icon={<X />} onClick={() => setReviewModal(null)}>
                   Hủy
                 </Button>

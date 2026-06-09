@@ -11,6 +11,7 @@ import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
 import { ClipboardText, ArrowsClockwise, CheckCircle, Calculator } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 export default function ScoresPage() {
   const { user, token } = useAuthStore();
@@ -132,7 +133,7 @@ export default function ScoresPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+      <div className={css.s1}>
         <Spinner size="lg" />
       </div>
     );
@@ -140,13 +141,13 @@ export default function ScoresPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div className={css.s2}>
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ClipboardText size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s3}`}>
+            <ClipboardText size={28} className={css.s4} />
             Chấm điểm Đồ án
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s5}>
             Nhập điểm đánh giá dành cho Giảng viên (Hội đồng, Phản biện, Hướng dẫn)
           </p>
         </div>
@@ -154,27 +155,27 @@ export default function ScoresPage() {
         <Button variant="outline" onClick={fetchData} icon={<ArrowsClockwise />} title="Làm mới" />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
+      <div className={css.s6}>
         {sessions.map((session) => (
-          <Card key={session._id} style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <Card key={session._id} className={css.s7}>
+            <div className={css.s8}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <h3 className={css.s9}>
                   {session.projectId?.topicId?.title || 'Đồ án'}
                 </h3>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <div className={css.s10}>
                   Hội đồng: {session.committeeId?.name || 'Không xác định'}
                 </div>
               </div>
               <Badge variant="neutral">Ca {session.orderNumber}</Badge>
             </div>
 
-            <div style={{ flex: 1, backgroundColor: 'var(--surface-sunken)', padding: '12px', borderRadius: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <div className={css.s11}>
               <div><strong>Nhóm SV:</strong> {session.groupId?.name || 'Nhóm'}</div>
-              <div style={{ marginTop: '4px' }}><strong>Bảo vệ:</strong> {formatDate(session.defenseDate).split(' ')[0]}</div>
+              <div className={css.s12}><strong>Bảo vệ:</strong> {formatDate(session.defenseDate).split(' ')[0]}</div>
             </div>
             
-            <div style={{ borderTop: '1px solid var(--border)', marginTop: '16px', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+            <div className={css.s13}>
               <Button size="sm" variant="primary" icon={<CheckCircle />} onClick={() => handleOpenScoreModal(session)}>
                 Nhập phiếu điểm
               </Button>
@@ -183,7 +184,7 @@ export default function ScoresPage() {
         ))}
 
         {sessions.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', padding: '48px', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+          <div className={css.s14}>
             Bạn không có lịch bảo vệ nào cần chấm điểm
           </div>
         )}
@@ -191,35 +192,27 @@ export default function ScoresPage() {
 
       {/* Modal Chấm Điểm */}
       {showModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 50,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--surface)', width: '100%', maxWidth: '550px',
-            borderRadius: '12px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-            maxHeight: '90vh', display: 'flex', flexDirection: 'column'
-          }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600 }}>Phiếu chấm điểm</h2>
+        <div className={css.s15}>
+          <div className={css.s16}>
+            <div className={css.s17}>
+              <h2 className={css.s18}>Phiếu chấm điểm</h2>
             </div>
             
-            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-              <div style={{ marginBottom: '20px', padding: '12px', backgroundColor: 'var(--surface-sunken)', borderRadius: '8px', fontSize: '13px' }}>
+            <div className={css.s19}>
+              <div className={css.s20}>
                 <strong>Đề tài:</strong> {selectedSession?.projectId?.topicId?.title}<br/>
                 <strong>Nhóm:</strong> {selectedSession?.groupId?.name}
               </div>
 
-              <form id="score-form" onSubmit={handleSubmitScore} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form id="score-form" onSubmit={handleSubmitScore} className={css.s21}>
+                <div className={css.s22}>
                   {form.criteriaScores.map((c, index) => (
-                    <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>{c.criteriaName}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Tối đa: {c.maxScore} điểm</div>
+                    <div key={index} className={css.s23}>
+                      <div className={css.s24}>
+                        <div className={css.s25}>{c.criteriaName}</div>
+                        <div className={css.s26}>Tối đa: {c.maxScore} điểm</div>
                       </div>
-                      <div style={{ width: '100px' }}>
+                      <div className={css.s27}>
                         <Input
                           type="number"
                           step="0.1"
@@ -227,37 +220,33 @@ export default function ScoresPage() {
                           max={c.maxScore}
                           value={c.score}
                           onChange={(e) => handleScoreChange(index, e.target.value)}
-                          required
-                          style={{ textAlign: 'center', fontSize: '16px', fontWeight: 600 }}
-                        />
+                          required className={css.s33} />
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', backgroundColor: 'var(--accent)', color: '#fff', borderRadius: '8px', marginTop: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: 600 }}>
+                <div className={css.s28}>
+                  <div className={css.s29}>
                     <Calculator size={20} /> Tổng điểm
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: 700 }}>
+                  <div className={css.s30}>
                     {getTotalScore()} / 10
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>Nhận xét / Đánh giá</label>
+                  <label className={css.s31}>Nhận xét / Đánh giá</label>
                   <textarea
                     value={form.comment}
                     onChange={(e) => setForm({...form, comment: e.target.value})}
                     rows="3"
-                    placeholder="Nhập nhận xét của Giảng viên..."
-                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)', resize: 'vertical' }}
-                  ></textarea>
+                    placeholder="Nhập nhận xét của Giảng viên..." className={css.s34} ></textarea>
                 </div>
               </form>
             </div>
             
-            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--surface-sunken)', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+            <div className={css.s32}>
               <Button variant="ghost" onClick={() => setShowModal(false)} type="button">Hủy</Button>
               <Button variant="primary" type="submit" form="score-form" isLoading={submitting}>Nộp Phiếu Điểm</Button>
             </div>

@@ -7,6 +7,7 @@ import { Eye, EyeSlash, User, Lock, Question } from '@phosphor-icons/react';
 import useAuthStore from '@/store/auth.store';
 import useThemeStore from '@/store/theme.store';
 import { authService } from '@/services/auth.service';
+import styles from './page.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,126 +61,61 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{
-      position: 'relative',
-      minHeight: '100dvh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'hidden',
-    }}>
+    <div className={styles.page}>
       {/* Background image */}
-      <div style={{
-        position: 'absolute', inset: 0, zIndex: 0,
-      }}>
+      <div className={styles.background}>
         <Image
           src="/images/bg-login.jpg"
           alt="background"
           fill
-          style={{ objectFit: 'cover', objectPosition: 'center' }}
+          className={styles.backgroundImage}
           priority
         />
         {/* Blue overlay to match Phenikaa style */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, rgba(10,40,120,0.85) 0%, rgba(5,25,90,0.85) 100%)',
-        }} />
+        <div className={styles.backgroundOverlay} />
       </div>
 
       {/* Content wrapper */}
-      <div style={{
-        position: 'relative', zIndex: 10,
-        width: '100%', maxWidth: '420px',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center',
-        margin: '20px',
-      }}>
+      <div className={styles.content}>
         
         {/* Logo at Top */}
-        <div style={{ marginBottom: '32px' }}>
+        <div className={styles.logoWrap}>
           <Image
             src="/images/logo-Phenikaa-w.png"
             alt="Phenikaa University"
             width={280}
             height={80}
-            style={{ objectFit: 'contain' }}
+            className={styles.logo}
           />
         </div>
 
         {/* Main card */}
-        <div style={{
-          position: 'relative',
-          width: '100%',
-          background: 'linear-gradient(to top, rgb(240, 243, 253), rgb(178, 194, 240))',
-          borderRadius: '20px',
-          padding: '36px 40px',
-          boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
-          animation: 'fadeIn 0.4s ease',
-        }}>
+        <div className={styles.card}>
           {/* Decorative Plane (login-line-1.png) */}
-          <div style={{
-            position: 'absolute',
-            top: '-32px',
-            right: '-12px',
-            width: '274px',
-            height: '89px',
-            backgroundImage: 'url(/images/login-line-1.png)',
-            backgroundSize: 'auto',
-            backgroundPosition: '50% 0%',
-            backgroundRepeat: 'no-repeat',
-            pointerEvents: 'none',
-            zIndex: 10
-          }} />
+          <div className={styles.decorPlane} />
 
           {/* Decorative Line (login-line-2.png) */}
-          <div style={{
-            position: 'absolute',
-            bottom: '-24px',
-            left: '-16px',
-            width: '138px',
-            height: '74px',
-            backgroundImage: 'url(/images/login-line-2.png)',
-            backgroundSize: 'auto',
-            backgroundPosition: '50% 0%',
-            backgroundRepeat: 'no-repeat',
-            pointerEvents: 'none',
-            zIndex: 0
-          }} />
+          <div className={styles.decorLine} />
 
           {/* Title */}
-          <div style={{ textAlign: 'center', marginBottom: '24px', marginTop: '36px', position: 'relative', zIndex: 1 }}>
-            <h1 style={{
-              fontSize: '22px',
-              fontWeight: 700,
-              letterSpacing: '0.04em',
-              color: '#1a3d9e',
-              textTransform: 'uppercase',
-            }}>
+          <div className={styles.titleWrap}>
+            <h1 className={styles.title}>
               ĐĂNG NHẬP
             </h1>
           </div>
 
           {/* Error message */}
           {error && (
-            <div style={{
-              fontSize: '13px',
-              color: '#dc2626',
-              marginBottom: '8px',
-              position: 'relative',
-              zIndex: 1
-            }}>
+            <div className={styles.error}>
               {error}
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative', zIndex: 1 }} noValidate>
+          <form onSubmit={handleSubmit} className={styles.form} noValidate>
             {/* Email field */}
-            <div style={{ position: 'relative' }}>
-              <span style={{
-                position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
-                color: '#6b7280', display: 'flex', alignItems: 'center',
-              }}>
+            <div className={styles.field}>
+              <span className={styles.fieldIcon}>
                 <User size={18} />
               </span>
               <input
@@ -189,31 +125,13 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Nhập tài khoản hoặc email"
                 autoFocus
-                style={{
-                  width: '100%',
-                  height: '46px',
-                  paddingLeft: '44px',
-                  paddingRight: '16px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  color: '#111827',
-                  backgroundColor: '#fff',
-                  outline: 'none',
-                  transition: 'border-color 0.15s',
-                  fontFamily: 'inherit',
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#1a56db'}
-                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                className={styles.input}
               />
             </div>
 
             {/* Password field */}
-            <div style={{ position: 'relative' }}>
-              <span style={{
-                position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)',
-                color: '#6b7280', display: 'flex', alignItems: 'center',
-              }}>
+            <div className={styles.field}>
+              <span className={styles.fieldIcon}>
                 <Lock size={18} />
               </span>
               <input
@@ -222,40 +140,21 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Nhập mật khẩu"
-                style={{
-                  width: '100%',
-                  height: '46px',
-                  paddingLeft: '44px',
-                  paddingRight: '48px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  color: '#111827',
-                  backgroundColor: '#fff',
-                  outline: 'none',
-                  transition: 'border-color 0.15s',
-                  fontFamily: 'inherit',
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#1a56db'}
-                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                className={`${styles.input} ${styles.passwordInput}`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                style={{
-                  position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#6b7280', display: 'flex', alignItems: 'center', padding: '4px',
-                }}
+                className={styles.passwordButton}
               >
                 {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
               </button>
             </div>
 
             {/* Links Row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', marginTop: '4px', marginBottom: '8px' }}>
-              <a href="#" style={{ color: '#1a3d9e', textDecoration: 'none' }} onClick={(e) => e.preventDefault()}>Quên mật khẩu</a>
-              <a href="#" style={{ color: '#1a3d9e', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={(e) => e.preventDefault()}>
+            <div className={styles.linksRow}>
+              <a href="#" className={styles.link} onClick={(e) => e.preventDefault()}>Quên mật khẩu</a>
+              <a href="#" className={styles.helpLink} onClick={(e) => e.preventDefault()}>
                 <Question size={16} /> Trợ giúp!
               </a>
             </div>
@@ -264,81 +163,27 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              style={{
-                width: '100%',
-                height: '46px',
-                backgroundColor: loading ? '#3b5fbd' : '#1e3868',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '14px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'background-color 0.15s',
-                fontFamily: 'inherit',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#152a51'; }}
-              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = '#1e3868'; }}
+              className={styles.submitButton}
             >
               {loading && (
-                <span style={{
-                  width: '16px', height: '16px',
-                  border: '2px solid rgba(255,255,255,0.4)',
-                  borderTopColor: '#fff',
-                  borderRadius: '50%',
-                  animation: 'spin 0.7s linear infinite',
-                }} />
+                <span className={styles.spinner} />
               )}
               {loading ? 'ĐANG ĐĂNG NHẬP...' : 'ĐĂNG NHẬP'}
             </button>
           </form>
 
           {/* Divider */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '12px',
-            margin: '24px 0', color: '#9ca3af', fontSize: '12px',
-            position: 'relative', zIndex: 1
-          }}>
-            <div style={{ flex: 1, height: '1px', backgroundColor: '#cbd5e1' }} />
+          <div className={styles.divider}>
+            <div className={styles.dividerLine} />
             <span>Hoặc đăng nhập</span>
-            <div style={{ flex: 1, height: '1px', backgroundColor: '#cbd5e1' }} />
+            <div className={styles.dividerLine} />
           </div>
 
           {/* Google SSO button */}
           <button
             type="button"
             onClick={handleGoogleLogin}
-            style={{
-              width: '100%',
-              height: '46px',
-              backgroundColor: '#ffffff',
-              color: '#374151',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              fontFamily: 'inherit',
-              transition: 'background-color 0.15s, border-color 0.15s',
-              position: 'relative', zIndex: 1
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f9fafb';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ffffff';
-              e.currentTarget.style.borderColor = '#d1d5db';
-            }}
+            className={styles.googleButton}
           >
             {/* Google logo (inline SVG) */}
             <svg width="18" height="18" viewBox="0 0 24 24">
@@ -364,12 +209,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer text */}
-        <p style={{
-          marginTop: '32px',
-          color: 'rgba(255,255,255,0.7)',
-          fontSize: '12px',
-          textAlign: 'center'
-        }}>
+        <p className={styles.footer}>
           © 2026 Đại học Phenikaa - Hệ thống Karl
         </p>
       </div>

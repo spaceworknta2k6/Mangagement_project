@@ -2,12 +2,11 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 const User = require('../../models/User');
 const Student = require('../../models/Student');
 const Lecturer = require('../../models/Lecturer');
 const { getJwtSecret } = require('../../config/jwt');
+const { uploadImageBuffer } = require('../../config/cloudinary');
 
 const buildAuthResult = async (user) => {
   let studentId = undefined;
@@ -243,15 +242,15 @@ const updateAvatar = async (userId, file) => {
     throw { status: 400, message: 'Ảnh đại diện chỉ hỗ trợ JPG, PNG hoặc WEBP.' };
   }
 
-  const uploadDir = path.join(__dirname, '../../public/uploads/avatars');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+  const publicId = `${user._id}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+  const fileName = `${publicId}${extension}`;
+  const uploadResult = await uploadImageBuffer(file.buffer, {
+    folder: 'management-project/avatars',
+    publicId,
+    filename: fileName,
+  });
 
-  const fileName = `${user._id}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}${extension}`;
-  fs.writeFileSync(path.join(uploadDir, fileName), file.buffer);
-
-  user.avatarUrl = `/public/uploads/avatars/${fileName}`;
+  user.avatarUrl = uploadResult.secure_url;
   await user.save();
 
   return buildAuthResult(user);

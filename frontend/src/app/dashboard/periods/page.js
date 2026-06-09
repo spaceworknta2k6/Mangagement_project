@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatDate, getStatus } from '@/lib/utils';
 import { CalendarBlank, Plus, ArrowsClockwise, FilePlus, PencilSimple, Trash } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 export default function PeriodsPage() {
   const token = useAuthStore((s) => s.token);
@@ -216,24 +217,17 @@ export default function PeriodsPage() {
   return (
     <div>
       {/* Header section */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '24px',
-        }}
-      >
+      <div className={css.s1} >
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CalendarBlank size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s2}`}>
+            <CalendarBlank size={28} className={css.s3} />
             Quản lý Đợt đồ án
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s4}>
             Cấu hình thời gian, mốc bảo vệ và công thức tính điểm của đợt đồ án
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className={css.s5}>
           <Button variant="secondary" size="sm" onClick={fetchPeriods}>
             <ArrowsClockwise size={16} />
             Làm mới
@@ -247,23 +241,23 @@ export default function PeriodsPage() {
 
       {/* List items */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+        <div className={css.s6}>
           <Spinner size="lg" />
         </div>
       ) : periods.length === 0 ? (
         <Card>
-          <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+          <div className={css.s7}>
             Chưa có đợt đồ án nào được định cấu hình trên hệ thống. Hãy nhấp &quot;Khởi tạo đợt mới&quot; để bắt đầu.
           </div>
         </Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className={css.s8}>
           {periods.map((p) => {
             const statusInfo = getStatus(p.status);
             return (
               <Card key={p._id} title={p.name} subtitle={`Năm học: ${p.schoolYear} | Học kỳ: ${p.semester}`}
                 actions={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className={css.s9}>
                     <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                     <Button variant="secondary" size="sm" onClick={() => openEditModal(p)}>
                       <PencilSimple size={14} />
@@ -298,37 +292,29 @@ export default function PeriodsPage() {
                 }
               >
                 {/* Dates Timeline details */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: '16px',
-                    fontSize: '13px',
-                    color: 'var(--text-secondary)',
-                  }}
-                >
+                <div className={css.s10} >
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Thời hạn Đăng ký: </span>
-                    <strong style={{ fontFamily: 'var(--font-geist-mono)' }}>{formatDate(p.registrationStart)} - {formatDate(p.registrationEnd)}</strong>
+                    <span className={css.s11}>Thời hạn Đăng ký: </span>
+                    <strong className={css.s12}>{formatDate(p.registrationStart)} - {formatDate(p.registrationEnd)}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Hạn đổi đề tài: </span>
-                    <strong style={{ fontFamily: 'var(--font-geist-mono)' }}>{formatDate(p.topicChangeDeadline)}</strong>
+                    <span className={css.s13}>Hạn đổi đề tài: </span>
+                    <strong className={css.s14}>{formatDate(p.topicChangeDeadline)}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Thời gian thực hiện: </span>
-                    <strong style={{ fontFamily: 'var(--font-geist-mono)' }}>{formatDate(p.projectStart)} - {formatDate(p.projectEnd)}</strong>
+                    <span className={css.s15}>Thời gian thực hiện: </span>
+                    <strong className={css.s16}>{formatDate(p.projectStart)} - {formatDate(p.projectEnd)}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Hạn nộp báo cáo bảo vệ: </span>
-                    <strong style={{ fontFamily: 'var(--font-geist-mono)' }}>{formatDate(p.preDefenseSubmissionDeadline)}</strong>
+                    <span className={css.s17}>Hạn nộp báo cáo bảo vệ: </span>
+                    <strong className={css.s18}>{formatDate(p.preDefenseSubmissionDeadline)}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Thời gian bảo vệ: </span>
-                    <strong style={{ fontFamily: 'var(--font-geist-mono)' }}>{formatDate(p.defenseStart)} - {formatDate(p.defenseEnd)}</strong>
+                    <span className={css.s19}>Thời gian bảo vệ: </span>
+                    <strong className={css.s20}>{formatDate(p.defenseStart)} - {formatDate(p.defenseEnd)}</strong>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Công thức tính điểm: </span>
+                    <span className={css.s21}>Công thức tính điểm: </span>
                     <strong>HD: {p.scoringFormula?.supervisor} | PB: {p.scoringFormula?.reviewer} | HĐ: {p.scoringFormula?.committee}</strong>
                   </div>
                 </div>
@@ -340,74 +326,29 @@ export default function PeriodsPage() {
 
       {/* Modal create new */}
       {showModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-            overflowY: 'auto',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '720px',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-              display: 'flex',
-              flexDirection: 'column',
-              maxHeight: '90dvh',
-            }}
-          >
+        <div className={css.s22} >
+          <div className={css.s23} >
             {/* Modal Title Header */}
-            <div
-              style={{
-                padding: '16px 24px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <div className={css.s24} >
+              <h3 className={css.s25}>
                 {editingPeriod ? 'Chỉnh sửa đợt đồ án' : 'Khởi tạo đợt đồ án mới'}
               </h3>
               <button
-                onClick={() => { setShowModal(false); setEditingPeriod(null); }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  fontSize: '18px',
-                }}
-              >
+                onClick={() => { setShowModal(false); setEditingPeriod(null); }} className={css.s38} >
                 &times;
               </button>
             </div>
 
             {/* Modal Body form */}
-            <form onSubmit={handleSubmit} style={{ overflowY: 'auto', padding: '24px', flex: 1 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <form onSubmit={handleSubmit} className={css.s26}>
+              <div className={css.s27}>
                 <Input
                   label="Tên đợt đồ án"
                   name="name"
                   value={form.name}
                   onChange={handleChange}
                   error={formErrors.name}
-                  required
-                  style={{ gridColumn: 'span 2' }}
-                />
+                  required className={css.s28} />
 
                 <Input
                   label="Năm học"
@@ -426,25 +367,14 @@ export default function PeriodsPage() {
                   required
                 />
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>
-                    Loại đồ án <span style={{ color: 'var(--error)' }}>*</span>
+                <div className={css.s29}>
+                  <label className={css.s30}>
+                    Loại đồ án <span className={css.s31}>*</span>
                   </label>
                   <select
                     name="type"
                     value={form.type}
-                    onChange={handleChange}
-                    style={{
-                      height: '40px',
-                      padding: '0 12px',
-                      fontSize: '14px',
-                      color: 'var(--text-primary)',
-                      backgroundColor: 'var(--bg-raised)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-sm)',
-                      outline: 'none',
-                    }}
-                  >
+                    onChange={handleChange} className={css.s32} >
                     <option value="foundation_project">Đồ án cơ sở (Foundation Project)</option>
                     <option value="interdisciplinary_project">Đồ án liên ngành (Interdisciplinary Project)</option>
                   </select>
@@ -480,10 +410,10 @@ export default function PeriodsPage() {
               </div>
 
               {/* Scoring weights */}
-              <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)', marginBottom: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '4px' }}>
+              <h4 className={css.s33}>
                 Cấu hình Trọng số Điểm (Tổng phải = 1.0)
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div className={css.s34}>
                 <Input
                   label="Trọng số Giảng viên hướng dẫn"
                   name="supervisorWeight"
@@ -520,10 +450,10 @@ export default function PeriodsPage() {
               </div>
 
               {/* Timelines dates */}
-              <h4 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)', marginBottom: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '4px' }}>
+              <h4 className={css.s35}>
                 Các mốc thời gian & Hạn chót
               </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className={css.s36}>
                 <Input
                   label="Bắt đầu đăng ký đề tài"
                   name="registrationStart"
@@ -624,16 +554,7 @@ export default function PeriodsPage() {
               </div>
 
               {/* Action Buttons */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  gap: '12px',
-                  marginTop: '28px',
-                  borderTop: '1px solid var(--border)',
-                  paddingTop: '16px',
-                }}
-              >
+              <div className={css.s37} >
                 <Button variant="secondary" onClick={() => { setShowModal(false); setEditingPeriod(null); }}>
                   Hủy
                 </Button>

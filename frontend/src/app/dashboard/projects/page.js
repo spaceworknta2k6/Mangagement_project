@@ -10,6 +10,7 @@ import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { getTechnicalLabel, hasAnyRole } from '@/lib/utils';
 import { FolderSimple, UserCheck, ShieldCheck, CheckSquare, ArrowsClockwise } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 export default function ProjectsPage() {
   const user = useAuthStore((s) => s.user);
@@ -146,20 +147,13 @@ export default function ProjectsPage() {
   return (
     <div>
       {/* Page Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '24px',
-        }}
-      >
+      <div className={css.s1} >
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FolderSimple size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s2}`}>
+            <FolderSimple size={28} className={css.s3} />
             Quản lý Dự án Đồ án
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s4}>
             Xem thông tin tiến độ, phân công phản biện và quản lý vòng đời thực hiện đề tài đồ án tốt nghiệp
           </p>
         </div>
@@ -171,17 +165,17 @@ export default function ProjectsPage() {
 
       {/* Projects list */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+        <div className={css.s5}>
           <Spinner size="lg" />
         </div>
       ) : projects.length === 0 ? (
         <Card>
-          <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+          <div className={css.s6}>
             Chưa có dự án đồ án nào được khởi tạo trong đợt này.
           </div>
         </Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className={css.s7}>
           {projects.map((p) => {
             const allowedDefense = ['in_progress', 'pre_defense_submitted', 'supervisor_reviewed', 'reviewer_reviewed'].includes(p.status);
 
@@ -191,7 +185,7 @@ export default function ProjectsPage() {
                 title={p.topicId?.title || 'Đang chờ cập nhật đề tài'}
                 subtitle={`Nhóm: ${p.groupId?.name || 'Chưa rõ'} | Mã đợt: ${p.periodId?.name || '—'}`}
                 actions={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className={css.s8}>
                     {getProjectStatusBadge(p.status)}
 
                     {/* Student Start Project Action */}
@@ -231,26 +225,26 @@ export default function ProjectsPage() {
                   </div>
                 }
               >
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                <div className={css.s9}>
                   <div>
-                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Giảng viên hướng dẫn:</p>
-                    <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                    <p className={css.s10}>Giảng viên hướng dẫn:</p>
+                    <p className={css.s11}>
                       {p.supervisorId?.userId?.fullName || 'Chưa phân công'} ({p.supervisorId?.userId?.email || '—'})
                     </p>
                   </div>
                   <div>
-                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Giảng viên phản biện:</p>
-                    <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                    <p className={css.s12}>Giảng viên phản biện:</p>
+                    <p className={css.s13}>
                       {p.reviewerId?.userId?.fullName ? (
                         <span>{p.reviewerId.userId.fullName} ({p.reviewerId.userId.email})</span>
                       ) : (
-                        <span style={{ color: 'var(--warning)', fontStyle: 'italic' }}>Chưa phân công phản biện</span>
+                        <span className={css.s14}>Chưa phân công phản biện</span>
                       )}
                     </p>
                   </div>
-                  <div style={{ gridColumn: 'span 2' }}>
-                    <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Tóm tắt đề tài:</p>
-                    <p style={{ lineHeight: 1.5 }}>{p.topicId?.summary || 'Không có tóm tắt chi tiết.'}</p>
+                  <div className={css.s15}>
+                    <p className={css.s16}>Tóm tắt đề tài:</p>
+                    <p className={css.s17}>{p.topicId?.summary || 'Không có tóm tắt chi tiết.'}</p>
                   </div>
                 </div>
               </Card>
@@ -261,60 +255,24 @@ export default function ProjectsPage() {
 
       {/* Assign Reviewer Modal */}
       {showAssignModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '480px',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-            }}
-          >
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className={css.s18} >
+          <div className={css.s19} >
+            <div className={css.s20}>
+              <h3 className={css.s21}>
                 Phân công Giảng viên phản biện
               </h3>
               <button
-                onClick={() => setShowAssignModal(null)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}
-              >
+                onClick={() => setShowAssignModal(null)} className={css.s26} >
                 &times;
               </button>
             </div>
-            <form onSubmit={handleAssignReviewer} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Chọn giảng viên phản biện</label>
+            <form onSubmit={handleAssignReviewer} className={css.s22}>
+              <div className={css.s23}>
+                <label className={css.s24}>Chọn giảng viên phản biện</label>
                 <select
                   value={selectedReviewerId}
                   onChange={(e) => setSelectedReviewerId(e.target.value)}
-                  required
-                  style={{
-                    height: '40px',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    color: 'var(--text-primary)',
-                    backgroundColor: 'var(--bg-raised)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    outline: 'none',
-                  }}
-                >
+                  required className={css.s27} >
                   <option value="">-- Chọn giảng viên --</option>
                   {lecturers.map((l) => (
                     <option key={l._id} value={l._id}>
@@ -324,7 +282,7 @@ export default function ProjectsPage() {
                 </select>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+              <div className={css.s25}>
                 <Button variant="secondary" onClick={() => setShowAssignModal(null)}>Hủy</Button>
                 <Button variant="primary" type="submit" loading={submitting}>Xác nhận phân công</Button>
               </div>

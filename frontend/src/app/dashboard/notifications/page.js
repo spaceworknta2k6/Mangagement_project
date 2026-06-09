@@ -18,6 +18,7 @@ import {
   EnvelopeOpen,
   Warning,
 } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 function getNotificationTone(notification) {
   const type = String(notification.type || '').toUpperCase();
@@ -57,71 +58,43 @@ function NotificationRow({ notification, markingId, onMarkRead }) {
   const actionUrl = getNotificationActionUrl(notification);
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '40px minmax(0, 1fr) auto',
-        gap: '14px',
-        padding: '16px 20px',
-        borderBottom: '1px solid var(--border)',
-        backgroundColor: isRead ? 'transparent' : 'var(--accent-glow)',
-      }}
-    >
-      <div
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: isRead ? 'var(--bg-raised)' : 'var(--bg-surface)',
-          color: isRead ? 'var(--text-muted)' : 'var(--accent)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: '1px solid var(--border)',
-        }}
-      >
+    <div className={[css.notificationRow, !isRead ? css.notificationUnread : ''].filter(Boolean).join(' ')}>
+      <div className={[css.notificationIcon, !isRead ? css.notificationIconUnread : ''].filter(Boolean).join(' ')}>
         {isRead ? <EnvelopeOpen size={20} /> : <Bell size={20} weight="duotone" />}
       </div>
 
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '5px' }}>
-          <h3 style={{ fontSize: '14px', fontWeight: 650, color: 'var(--text-primary)' }}>
+      <div className={css.s1}>
+        <div className={css.s2}>
+          <h3 className={css.s3}>
             {notification.title || 'Thông báo hệ thống'}
           </h3>
           <Badge variant={tone}>{isRead ? 'Đã đọc' : 'Chưa đọc'}</Badge>
           {notification.type && <Badge variant="neutral">{getNotificationTypeLabel(notification.type)}</Badge>}
         </div>
 
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+        <p className={css.s4}>
           {notification.body || 'Không có nội dung chi tiết.'}
         </p>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '10px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+        <div className={css.s5}>
+          <span className={css.s6}>
             {formatDateTime(notification.createdAt)}
           </span>
           {notification.deadlineAt && (
-            <span style={{ fontSize: '12px', color: 'var(--warning)' }}>
+            <span className={css.s7}>
               Hạn: {formatDateTime(notification.deadlineAt)}
             </span>
           )}
           {actionUrl && (
             <Link
-              href={actionUrl}
-              style={{
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'var(--accent)',
-                textDecoration: 'none',
-              }}
-            >
+              href={actionUrl} className={css.s8} >
               Mở liên kết
             </Link>
           )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+      <div className={css.s9}>
         {!isRead && (
           <Button
             variant="secondary"
@@ -202,26 +175,18 @@ export default function NotificationsPage() {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: '16px',
-          marginBottom: '24px',
-        }}
-      >
+      <div className={css.s10} >
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Bell size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s11}`}>
+            <Bell size={28} className={css.s12} />
             Thông báo hệ thống
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s13}>
             Theo dõi các cập nhật mới về đề tài, báo cáo, hội đồng và các mốc quan trọng.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div className={css.s14}>
           <Button
             variant="secondary"
             size="sm"
@@ -243,38 +208,31 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '14px',
-          marginBottom: '18px',
-        }}
-      >
+      <div className={css.s15} >
         <Card>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Tổng thông báo</p>
-          <p style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{notifications.length}</p>
+          <p className={css.s16}>Tổng thông báo</p>
+          <p className={css.s17}>{notifications.length}</p>
         </Card>
         <Card>
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Chưa đọc</p>
-          <p style={{ fontSize: '24px', fontWeight: 700, color: unreadCount > 0 ? 'var(--warning)' : 'var(--success)' }}>
+          <p className={css.s18}>Chưa đọc</p>
+          <p className={[css.s17, unreadCount > 0 ? css.unreadWarning : css.unreadSuccess].filter(Boolean).join(' ')}>
             {unreadCount}
           </p>
         </Card>
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '70px 0' }}>
+        <div className={css.s19}>
           <Spinner size="lg" />
         </div>
       ) : notifications.length === 0 ? (
         <Card>
-          <div style={{ textAlign: 'center', padding: '42px 24px' }}>
-            <CheckCircle size={42} weight="duotone" style={{ color: 'var(--success)', marginBottom: '12px' }} />
-            <h3 style={{ fontSize: '16px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '6px' }}>
+          <div className={css.s20}>
+            <CheckCircle size={42} weight="duotone" className={css.s21} />
+            <h3 className={css.s22}>
               Chưa có thông báo
             </h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+            <p className={css.s23}>
               Khi có cập nhật mới, hệ thống sẽ hiển thị tại đây.
             </p>
           </div>
@@ -297,7 +255,7 @@ export default function NotificationsPage() {
       )}
 
       {!loading && notifications.some((notification) => !notification.actionUrl) && (
-        <p style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)' }}>
+        <p className={css.s24}>
           <Warning size={14} />
           Một số thông báo không có liên kết thao tác vì chỉ mang tính ghi nhận.
         </p>

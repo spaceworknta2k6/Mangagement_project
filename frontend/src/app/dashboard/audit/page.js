@@ -21,6 +21,7 @@ import {
   UserCircle,
   X,
 } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 const auditEntityTypeOptions = [
   { value: 'ProjectTopic', label: 'Đề tài' },
@@ -126,18 +127,19 @@ function translateReason(reason = '') {
   return String(reason).replace(/\[([a-zA-Z0-9_-]+)\]/g, (_, status) => `[${getStatusLabel(status)}]`);
 }
 
-function SelectField({ label, name, value, onChange, error, children, style }) {
+function SelectField({ label, name, value, onChange, error, children, className = '' }) {
+  const rootClass = [css.selectField, className].filter(Boolean).join(' ');
+  const selectClass = [
+    css.selectInput,
+    value ? '' : css.selectInputMuted,
+    error ? css.selectInputError : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', ...style }}>
+    <div className={rootClass}>
       {label && (
         <label
-          htmlFor={name}
-          style={{
-            fontSize: '13px',
-            fontWeight: 500,
-            color: 'var(--text-secondary)',
-          }}
-        >
+          htmlFor={name} className={css.s1} >
           {label}
         </label>
       )}
@@ -147,36 +149,13 @@ function SelectField({ label, name, value, onChange, error, children, style }) {
         name={name}
         value={value}
         onChange={onChange}
-        style={{
-          width: '100%',
-          height: '40px',
-          padding: '0 12px',
-          fontSize: '14px',
-          fontFamily: 'inherit',
-          color: value ? 'var(--text-primary)' : 'var(--text-muted)',
-          backgroundColor: 'var(--bg-raised)',
-          border: `1px solid ${error ? 'var(--error)' : 'var(--border)'}`,
-          borderRadius: 'var(--radius-sm)',
-          outline: 'none',
-          transition: 'border-color 0.15s, box-shadow 0.15s',
-          cursor: 'pointer',
-        }}
-        onFocus={(e) => {
-          if (!error) {
-            e.target.style.borderColor = 'var(--accent)';
-            e.target.style.boxShadow = '0 0 0 3px var(--accent-glow)';
-          }
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = error ? 'var(--error)' : 'var(--border)';
-          e.target.style.boxShadow = 'none';
-        }}
+        className={selectClass}
       >
         {children}
       </select>
 
       {error && (
-        <div style={{ fontSize: '12px', color: 'var(--error)' }}>
+        <div className={css.s2}>
           {error}
         </div>
       )}
@@ -186,9 +165,9 @@ function SelectField({ label, name, value, onChange, error, children, style }) {
 
 function DetailLine({ label, value }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '150px minmax(0, 1fr)', gap: '14px', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, wordBreak: 'break-word' }}>
+    <div className={css.s3}>
+      <span className={css.s4}>{label}</span>
+      <span className={css.s5}>
         {value || 'Không có'}
       </span>
     </div>
@@ -206,47 +185,25 @@ function AuditEventDetailDialog({ event, onClose }) {
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
-      }}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 220,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-        backgroundColor: 'rgba(15, 23, 42, 0.55)',
-      }}
-    >
+      }} className={css.s51} >
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="audit-detail-title"
-        style={{
-          width: '100%',
-          maxWidth: '720px',
-          maxHeight: '88dvh',
-          overflow: 'auto',
-          backgroundColor: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: '0 18px 60px rgba(15, 23, 42, 0.28)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', padding: '18px 22px', borderBottom: '1px solid var(--border)' }}>
+        aria-labelledby="audit-detail-title" className={css.s6} >
+        <div className={css.s7}>
           <div>
-            <h3 id="audit-detail-title" style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>
+            <h3 id="audit-detail-title" className={css.s8}>
               Chi tiết bản ghi nhật ký
             </h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <p className={css.s9}>
               {formatDateTime(event.createdAt)}
             </p>
           </div>
           <Button type="button" variant="secondary" size="sm" icon={<X size={16} />} onClick={onClose} />
         </div>
 
-        <div style={{ padding: '20px 22px' }}>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
+        <div className={css.s10}>
+          <div className={css.s11}>
             <Badge variant={getActionTone(event.action)}>{getAuditActionLabel(event.action)}</Badge>
             <Badge variant="neutral">{getEntityTypeLabel(event.entityType)}</Badge>
             {actorRoles.map((role) => (
@@ -264,23 +221,9 @@ function AuditEventDetailDialog({ event, onClose }) {
           <DetailLine label="Nội dung" value={event.reason ? translateReason(event.reason) : ''} />
 
           {metadata && (
-            <div style={{ marginTop: '16px' }}>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Dữ liệu bổ sung</p>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: '12px',
-                  backgroundColor: 'var(--bg-raised)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--text-secondary)',
-                  fontSize: '12px',
-                  lineHeight: 1.5,
-                  overflowX: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
+            <div className={css.s12}>
+              <p className={css.s13}>Dữ liệu bổ sung</p>
+              <pre className={css.s14} >
                 {metadata}
               </pre>
             </div>
@@ -306,53 +249,23 @@ function AuditEventRow({ event, onSelect }) {
           onSelect(event);
         }
       }}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '40px minmax(0, 1fr)',
-        gap: '14px',
-        padding: '16px 20px',
-        borderBottom: '1px solid var(--border)',
-        cursor: 'pointer',
-        transition: 'background-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'var(--bg-raised)';
-        e.currentTarget.style.transform = 'translateX(4px)';
-        e.currentTarget.style.boxShadow = 'inset 3px 0 0 var(--accent)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'transparent';
-        e.currentTarget.style.transform = 'translateX(0)';
-        e.currentTarget.style.boxShadow = 'inset 0 0 0 var(--accent)';
-      }}
+      className={css.s52}
     >
-      <div
-        style={{
-          width: '40px',
-          height: '40px',
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: 'var(--bg-raised)',
-          border: '1px solid var(--border)',
-          color: 'var(--accent)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <div className={css.s15} >
         <ShieldCheck size={20} weight="duotone" />
       </div>
 
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+      <div className={css.s16}>
+        <div className={css.s17}>
           <Badge variant={getActionTone(event.action)}>{getAuditActionLabel(event.action)}</Badge>
           <Badge variant="neutral">{getEntityTypeLabel(event.entityType)}</Badge>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <span className={css.s18}>
             {formatDateTime(event.createdAt)}
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className={css.s19}>
+          <span className={css.s20}>
             <UserCircle size={16} />
             {getActorName(event.actorId)}
           </span>
@@ -361,51 +274,30 @@ function AuditEventRow({ event, onSelect }) {
           ))}
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '8px',
-            marginBottom: event.reason || metadata ? '10px' : 0,
-          }}
-        >
-          <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Mã bản ghi: <span style={{ color: 'var(--text-secondary)' }}>{getId(event.entityId)}</span>
+        <div className={[css.eventMetaGrid, event.reason || metadata ? css.eventMetaGridSpaced : ''].filter(Boolean).join(' ')}>
+          <p className={css.s21}>
+            Mã bản ghi: <span className={css.s22}>{getId(event.entityId)}</span>
           </p>
           {(event.fromStatus || event.toStatus) && (
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Trạng thái: <span style={{ color: 'var(--text-secondary)' }}>{getStatusTransitionLabel(event.fromStatus, event.toStatus)}</span>
+            <p className={css.s23}>
+              Trạng thái: <span className={css.s24}>{getStatusTransitionLabel(event.fromStatus, event.toStatus)}</span>
             </p>
           )}
           {event.ipAddress && (
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              IP: <span style={{ color: 'var(--text-secondary)' }}>{event.ipAddress}</span>
+            <p className={css.s25}>
+              IP: <span className={css.s26}>{event.ipAddress}</span>
             </p>
           )}
         </div>
 
         {event.reason && (
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: metadata ? '10px' : 0 }}>
+          <p className={[css.eventReason, metadata ? css.eventReasonSpaced : ''].filter(Boolean).join(' ')}>
             {translateReason(event.reason)}
           </p>
         )}
 
         {metadata && (
-          <pre
-            style={{
-              margin: 0,
-              padding: '10px 12px',
-              backgroundColor: 'var(--bg-raised)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-secondary)',
-              fontSize: '12px',
-              lineHeight: 1.5,
-              overflowX: 'auto',
-              whiteSpace: 'pre-wrap',
-              wordBreak: 'break-word',
-            }}
-          >
+          <pre className={css.s27} >
             {truncate(metadata, 700)}
           </pre>
         )}
@@ -524,21 +416,13 @@ export default function AuditPage() {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: '16px',
-          marginBottom: '24px',
-        }}
-      >
+      <div className={css.s28} >
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ClockCounterClockwise size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s29}`}>
+            <ClockCounterClockwise size={28} className={css.s30} />
             Nhật ký hệ thống
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s31}>
             Truy vết các thay đổi trạng thái, phê duyệt và tác vụ quan trọng trong hệ thống.
           </p>
         </div>
@@ -552,15 +436,13 @@ export default function AuditPage() {
 
       {activeAuditTab === 'general' ? (
         <>
-          <Card style={{ marginBottom: '18px' }}>
-            <form onSubmit={handleApplyFilters} style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
+          <Card className={css.s32}>
+            <form onSubmit={handleApplyFilters} className={css.s33}>
               <SelectField
                 label="Đối tượng thay đổi"
                 name="audit-entity-type"
                 value={filters.entityType}
-                onChange={(e) => handleFilterChange('entityType', e.target.value)}
-                style={{ flex: '1 1 190px' }}
-              >
+                onChange={(e) => handleFilterChange('entityType', e.target.value)} className={css.s53} >
                 <option value="">Tất cả đối tượng</option>
                 {auditEntityTypeOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -573,16 +455,12 @@ export default function AuditPage() {
                 name="audit-actor-id"
                 placeholder="ID người dùng"
                 value={filters.actorId}
-                onChange={(e) => handleFilterChange('actorId', e.target.value)}
-                style={{ flex: '1 1 220px' }}
-              />
+                onChange={(e) => handleFilterChange('actorId', e.target.value)} className={css.s54} />
               <SelectField
                 label="Hành động"
                 name="audit-action"
                 value={filters.action}
-                onChange={(e) => handleFilterChange('action', e.target.value)}
-                style={{ flex: '1 1 190px' }}
-              >
+                onChange={(e) => handleFilterChange('action', e.target.value)} className={css.s55} >
                 <option value="">Tất cả hành động</option>
                 {auditActionOptions.map((action) => (
                   <option key={action} value={action}>
@@ -590,7 +468,7 @@ export default function AuditPage() {
                   </option>
                 ))}
               </SelectField>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className={css.s34}>
                 <Button type="submit" variant="primary" icon={<Funnel size={16} />}>
                   Lọc
                 </Button>
@@ -601,44 +479,37 @@ export default function AuditPage() {
             </form>
           </Card>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-              gap: '14px',
-              marginBottom: '18px',
-            }}
-          >
+          <div className={css.s35} >
             <Card>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Sự kiện đang hiển thị</p>
-              <p style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)' }}>{events.length}</p>
+              <p className={css.s36}>Sự kiện đang hiển thị</p>
+              <p className={css.s37}>{events.length}</p>
             </Card>
             <Card>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Bộ lọc đang bật</p>
-              <p style={{ fontSize: '24px', fontWeight: 700, color: activeFilterCount > 0 ? 'var(--accent)' : 'var(--text-primary)' }}>
+              <p className={css.s38}>Bộ lọc đang bật</p>
+              <p className={[css.s37, activeFilterCount > 0 ? css.metricAccent : ''].filter(Boolean).join(' ')}>
                 {activeFilterCount}
               </p>
             </Card>
           </div>
 
           {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '70px 0' }}>
+            <div className={css.s39}>
               <Spinner size="lg" />
             </div>
           ) : events.length === 0 ? (
             <Card>
-              <div style={{ textAlign: 'center', padding: '42px 24px' }}>
-                <ShieldCheck size={42} weight="duotone" style={{ color: 'var(--text-muted)', marginBottom: '12px' }} />
-                <h3 style={{ fontSize: '16px', fontWeight: 650, color: 'var(--text-primary)', marginBottom: '6px' }}>
+              <div className={css.s40}>
+                <ShieldCheck size={42} weight="duotone" className={css.s41} />
+                <h3 className={css.s42}>
                   Chưa có sự kiện phù hợp
                 </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                <p className={css.s43}>
                   Thử xóa bộ lọc hoặc kiểm tra lại dữ liệu audit trong backend.
                 </p>
               </div>
             </Card>
           ) : (
-            <Card title="Dòng sự kiện" subtitle="Sắp xếp từ mới nhất đến cũ nhất" noPadding style={{ marginBottom: '18px' }}>
+            <Card title="Dòng sự kiện" subtitle="Sắp xếp từ mới nhất đến cũ nhất" noPadding className={css.s44}>
               {paginatedEvents.map((event) => (
                 <AuditEventRow key={event._id} event={event} onSelect={setSelectedEvent} />
               ))}
@@ -655,15 +526,13 @@ export default function AuditPage() {
         </>
       ) : (
         <Card title="Lịch sử theo thực thể" subtitle="Tra cứu toàn bộ timeline của một bản ghi cụ thể">
-          <form onSubmit={handleLoadHistory} style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <form onSubmit={handleLoadHistory} className={css.s45}>
             <SelectField
               label="Đối tượng thay đổi"
               name="audit-history-entity-type"
               value={historyForm.entityType}
               onChange={(e) => setHistoryForm((prev) => ({ ...prev, entityType: e.target.value }))}
-              error={historyError && !historyForm.entityType.trim() ? historyError : ''}
-              style={{ flex: '1 1 190px' }}
-            >
+              error={historyError && !historyForm.entityType.trim() ? historyError : ''} className={css.s56} >
               <option value="">Chọn đối tượng</option>
               {auditEntityTypeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -677,11 +546,9 @@ export default function AuditPage() {
               placeholder="ID bản ghi"
               value={historyForm.entityId}
               onChange={(e) => setHistoryForm((prev) => ({ ...prev, entityId: e.target.value }))}
-              error={historyError && !historyForm.entityId.trim() ? historyError : ''}
-              style={{ flex: '2 1 280px' }}
-            />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 500, visibility: 'hidden', userSelect: 'none' }}>&nbsp;</span>
+              error={historyError && !historyForm.entityId.trim() ? historyError : ''} className={css.s57} />
+            <div className={css.s46}>
+              <span className={css.s47}>&nbsp;</span>
               <Button type="submit" loading={historyLoading} icon={<MagnifyingGlass size={16} />}>
                 Tra cứu
               </Button>
@@ -689,17 +556,17 @@ export default function AuditPage() {
           </form>
 
           {historyLoading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '28px 0' }}>
+            <div className={css.s48}>
               <Spinner />
             </div>
           ) : history.length > 0 ? (
-            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+            <div className={css.s49}>
               {history.map((event) => (
                 <AuditEventRow key={event._id} event={event} onSelect={setSelectedEvent} />
               ))}
             </div>
           ) : (
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+            <p className={css.s50}>
               Chọn đối tượng thay đổi và nhập ID bản ghi để xem lịch sử riêng của bản ghi.
             </p>
           )}

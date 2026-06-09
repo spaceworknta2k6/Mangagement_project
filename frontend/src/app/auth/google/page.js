@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
 import { authService } from '@/services/auth.service';
+import css from './page.module.css';
 
 /**
  * Trang callback sau khi Google redirect về.
@@ -54,26 +55,10 @@ export default function GoogleCallbackPage() {
   }, [router, setAuth]);
 
   return (
-    <div style={{
-      minHeight: '100dvh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, rgba(10,40,120,0.95) 0%, rgba(5,25,90,0.95) 100%)',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      padding: '24px',
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '420px',
-        padding: '40px 36px',
-        background: '#ffffff',
-        borderRadius: '16px',
-        boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
-        textAlign: 'center',
-      }}>
+    <div className={css.s1}>
+      <div className={css.s2}>
         {/* Google logo */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+        <div className={css.s3}>
           <svg width="40" height="40" viewBox="0 0 24 24">
             <path
               fill="#4285F4"
@@ -97,19 +82,11 @@ export default function GoogleCallbackPage() {
         {status === 'loading' && (
           <>
             {/* Spinner */}
-            <div style={{
-              width: '40px',
-              height: '40px',
-              border: '3px solid #e2e8f0',
-              borderTopColor: '#1a3d9e',
-              borderRadius: '50%',
-              animation: 'gg-spin 0.8s linear infinite',
-              margin: '0 auto 20px',
-            }} />
-            <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#1a3d9e', marginBottom: '8px' }}>
+            <div className={css.s4} />
+            <h1 className={css.s5}>
               Đang xác thực…
             </h1>
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6 }}>
+            <p className={css.s6}>
               Vui lòng chờ trong giây lát.
             </p>
           </>
@@ -118,16 +95,7 @@ export default function GoogleCallbackPage() {
         {status === 'error' && (
           <>
             {/* Error icon */}
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              background: '#fee2e2',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-            }}>
+            <div className={css.s7}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
@@ -135,46 +103,23 @@ export default function GoogleCallbackPage() {
               </svg>
             </div>
 
-            <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#dc2626', marginBottom: '12px' }}>
+            <h1 className={css.s8}>
               Đăng nhập thất bại
             </h1>
 
-            <p style={{
-              fontSize: '14px',
-              color: '#374151',
-              lineHeight: 1.6,
-              marginBottom: '8px',
-              padding: '12px 16px',
-              background: '#fef2f2',
-              borderRadius: '8px',
-              border: '1px solid #fecaca',
-            }}>
+            <p className={css.s9}>
               {errorMsg}
             </p>
 
-            <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '24px' }}>
+            <p className={css.s10}>
               Chỉ tài khoản Google của Phenikaa{' '}
-              <span style={{ fontWeight: 600, color: '#1a3d9e' }}>(@st.phenikaa-uni.edu.vn)</span>{' '}
+              <span className={css.s11}>(@st.phenikaa-uni.edu.vn)</span>{' '}
               mới được phép truy cập hệ thống.
             </p>
 
             <button
               onClick={() => router.replace('/auth/login')}
-              style={{
-                width: '100%',
-                height: '44px',
-                backgroundColor: '#1e3868',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'background-color 0.15s',
-                fontFamily: 'inherit',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#152a51')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1e3868')}
+              className={css.s12}
             >
               Quay lại đăng nhập
             </button>
@@ -182,11 +127,6 @@ export default function GoogleCallbackPage() {
         )}
       </div>
 
-      <style>{`
-        @keyframes gg-spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

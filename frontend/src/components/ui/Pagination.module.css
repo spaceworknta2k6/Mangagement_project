@@ -1,0 +1,84 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.compact {
+  padding: 16px;
+}
+
+.meta {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.metaCompact {
+  font-size: 12px;
+}
+
+.navButton {
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  justify-content: center;
+}
+
+.pageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 400;
+  transition: all 0.15s ease;
+}
+
+.pageButton:hover {
+  border-color: var(--text-secondary);
+  background-color: var(--bg-raised);
+}
+
+.pageButtonActive,
+.pageButtonActive:hover {
+  border-color: var(--accent);
+  background-color: var(--accent-glow);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.s1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.s2 {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.s3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.s4 {
+  color: var(--text-muted);
+  padding: 0 4px;
+  font-size: 13px;
+}

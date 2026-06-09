@@ -2,6 +2,7 @@
 
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import Button from '@/components/ui/Button';
+import css from './Pagination.module.css';
 
 function getVisiblePages(currentPage, totalPages, maxVisiblePages) {
   return Array.from({ length: totalPages }, (_, i) => i + 1).filter((page) => {
@@ -20,28 +21,19 @@ export default function Pagination({
   itemLabel = 'b\u1ea3n ghi',
   maxVisiblePages = 5,
   compact = false,
-  style,
+  className = '',
 }) {
   if (totalPages <= 1) return null;
 
   const visiblePages = getVisiblePages(currentPage, totalPages, maxVisiblePages);
   const startItem = totalItems && pageSize ? Math.min(totalItems, (currentPage - 1) * pageSize + 1) : null;
   const endItem = totalItems && pageSize ? Math.min(totalItems, currentPage * pageSize) : null;
+  const rootClass = [css.pagination, compact ? css.compact : '', className].filter(Boolean).join(' ');
+  const metaClass = [css.meta, compact ? css.metaCompact : ''].filter(Boolean).join(' ');
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: compact ? '16px' : '16px 20px',
-        borderTop: '1px solid var(--border)',
-        flexWrap: 'wrap',
-        gap: '12px',
-        ...style,
-      }}
-    >
-      <span style={{ fontSize: compact ? '12px' : '13px', color: 'var(--text-muted)' }}>
+    <div className={rootClass}>
+      <span className={metaClass}>
         {totalItems && pageSize ? (
           <>
             {'Hi\u1ec3n th\u1ecb '}<strong>{startItem}</strong>{' \u0111\u1ebfn '}<strong>{endItem}</strong>{' trong t\u1ed5ng s\u1ed1 '}
@@ -54,7 +46,7 @@ export default function Pagination({
         )}
       </span>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div className={css.s1}>
         <Button
           type="button"
           variant="secondary"
@@ -62,13 +54,13 @@ export default function Pagination({
           disabled={currentPage === 1}
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           icon={compact ? null : <CaretLeft size={16} />}
-          style={compact ? undefined : { minWidth: '36px', height: '36px', padding: 0, justifyContent: 'center' }}
+          className={compact ? '' : css.navButton}
         >
           {compact ? 'Tr\u01b0\u1edbc' : null}
         </Button>
 
         {compact ? (
-          <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '13px', fontWeight: 600 }}>
+          <div className={css.s2}>
             Trang {currentPage} / {totalPages}
           </div>
         ) : (
@@ -77,40 +69,14 @@ export default function Pagination({
             const isActive = page === currentPage;
 
             return (
-              <div key={page} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div key={page} className={css.s3}>
                 {showEllipsisBefore && (
-                  <span style={{ color: 'var(--text-muted)', padding: '0 4px', fontSize: '13px' }}>...</span>
+                  <span className={css.s4}>...</span>
                 )}
                 <button
                   type="button"
                   onClick={() => onPageChange(page)}
-                  style={{
-                    minWidth: '36px',
-                    height: '36px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: isActive ? '1px solid var(--accent)' : '1px solid var(--border)',
-                    backgroundColor: isActive ? 'var(--accent-glow)' : 'transparent',
-                    color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                    fontWeight: isActive ? 600 : 400,
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.borderColor = 'var(--text-secondary)';
-                      e.currentTarget.style.backgroundColor = 'var(--bg-raised)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.borderColor = 'var(--border)';
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }
-                  }}
+                  className={[css.pageButton, isActive ? css.pageButtonActive : ''].filter(Boolean).join(' ')}
                 >
                   {page}
                 </button>
@@ -126,7 +92,7 @@ export default function Pagination({
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           icon={compact ? null : <CaretRight size={16} />}
-          style={compact ? undefined : { minWidth: '36px', height: '36px', padding: 0, justifyContent: 'center' }}
+          className={compact ? '' : css.navButton}
         >
           {compact ? 'Sau' : null}
         </Button>

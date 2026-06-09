@@ -16,6 +16,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.up.railway.app',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
 };

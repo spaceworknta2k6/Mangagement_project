@@ -12,6 +12,7 @@ import Tabs from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate, getStatus, hasAnyRole } from '@/lib/utils';
 import { BookOpen, Plus, Check, X, Shield, Cpu, Sparkle, Pencil, Lightbulb, Star } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 const topicTabs = [
   { id: 'all', label: 'T\u1ea5t c\u1ea3' },
@@ -19,6 +20,12 @@ const topicTabs = [
   { id: 'approved', label: '\u0110\u00e3 duy\u1ec7t' },
   { id: 'rejected', label: 'T\u1eeb ch\u1ed1i' },
 ];
+
+function getConfidenceClass(confidence) {
+  if (confidence >= 75) return css.confidenceHigh;
+  if (confidence >= 50) return css.confidenceMedium;
+  return css.confidenceLow;
+}
 
 export default function TopicsPage() {
   const user = useAuthStore((s) => s.user);
@@ -261,25 +268,18 @@ export default function TopicsPage() {
   return (
     <div>
       {/* Page Header section */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '24px',
-        }}
-      >
+      <div className={css.s1} >
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <BookOpen size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s2}`}>
+            <BookOpen size={28} className={css.s3} />
             Quản lý Đề tài
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s4}>
             Xem danh sách đề tài đồ án tốt nghiệp, duyệt đề xuất và thực hiện kiểm tra AI
           </p>
         </div>
         {isStudent && (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className={css.s5}>
             <Button
               variant="secondary"
               size="sm"
@@ -291,7 +291,7 @@ export default function TopicsPage() {
                   handleSuggestTopics();
                 }
               }}
-              style={{ gap: '6px' }}
+              className={css.buttonGap}
             >
               <Lightbulb size={16} />
               Gợi ý đề tài cho tôi
@@ -308,17 +308,17 @@ export default function TopicsPage() {
 
       {/* List items */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+        <div className={css.s6}>
           <Spinner size="lg" />
         </div>
       ) : filteredTopics.length === 0 ? (
         <Card>
-          <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)' }}>
+          <div className={css.s7}>
             Chưa có đề tài nào thuộc danh mục này.
           </div>
         </Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className={css.s8}>
           {filteredTopics.map((t) => {
             const mappedStatus = (t.status === 'submitted' || t.status === 'ai_checked') ? 'pending_review' : t.status;
             const statusInfo = getStatus(mappedStatus);
@@ -330,7 +330,7 @@ export default function TopicsPage() {
                 title={t.title}
                 subtitle={`Sinh viên đề xuất: ${t.proposedByStudentId?.userId?.fullName || 'Giáo vụ'} | Học kỳ: ${t.periodId?.semester || '—'}`}
                 actions={
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className={css.s9}>
                     <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
 
                     {isStaff && (t.status === 'pending_review' || t.status === 'submitted' || t.status === 'ai_checked') && (
@@ -355,25 +355,17 @@ export default function TopicsPage() {
                   </div>
                 }
               >
-                <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  <p style={{ color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Tóm tắt đề tài:</p>
-                  <p style={{ marginBottom: '16px' }}>{t.summary || 'Không có tóm tắt chi tiết.'}</p>
+                <div className={css.s10}>
+                  <p className={css.s11}>Tóm tắt đề tài:</p>
+                  <p className={css.s12}>{t.summary || 'Không có tóm tắt chi tiết.'}</p>
 
                   {/* AI Duplicate Checker section */}
                   {isStaff && (
-                    <div
-                      style={{
-                        marginTop: '16px',
-                        padding: '12px 16px',
-                        backgroundColor: 'var(--bg-raised)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-md)',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Cpu size={18} style={{ color: 'var(--accent)' }} />
-                          <span style={{ fontWeight: 600 }}>Kiểm tra trùng lặp đề tài</span>
+                    <div className={css.s13} >
+                      <div className={css.s14}>
+                        <div className={css.s15}>
+                          <Cpu size={18} className={css.s16} />
+                          <span className={css.s17}>Kiểm tra trùng lặp đề tài</span>
                         </div>
                         <Button
                           variant="secondary"
@@ -387,27 +379,32 @@ export default function TopicsPage() {
 
                       {/* Display AI outcome */}
                       {aiJob && (
-                        <div style={{ marginTop: '12px', borderTop: '1px solid var(--border)', paddingTop: '10px' }}>
+                        <div className={css.s18}>
                           {aiJob.status === 'running' ? (
-                            <p style={{ color: 'var(--text-muted)' }}>AI đang phân tích độ tương đồng ngữ nghĩa...</p>
+                            <p className={css.s19}>AI đang phân tích độ tương đồng ngữ nghĩa...</p>
                           ) : aiJob.status === 'succeeded' ? (
                             <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                              <div className={css.s20}>
                                 <Badge variant={aiJob.result?.hasRisk ? 'error' : 'success'}>
                                   {aiJob.result?.hasRisk ? 'Có rủi ro trùng lặp cao' : 'An toàn'}
                                 </Badge>
-                                <span>Tỉ lệ trùng lặp: <strong style={{ color: aiJob.result?.hasRisk ? 'var(--error)' : 'var(--success)' }}>{aiJob.result?.riskScore}%</strong></span>
+                                <span>Tỉ lệ trùng lặp: <strong className={aiJob.result?.hasRisk ? css.riskHigh : css.riskLow}>{aiJob.result?.riskScore}%</strong></span>
                               </div>
                               
                               {aiJob.result?.hasRisk && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                  <p style={{ color: 'var(--text-muted)' }}>Lý giải của AI: {aiJob.result?.reasoning}</p>
+                                <div className={css.s21}>
+                                  <p className={css.s22}>Lý giải của AI: {aiJob.result?.reasoning}</p>
                                   {aiJob.manualOverride?.isOverridden ? (
-                                    <div style={{ padding: '8px', backgroundColor: 'var(--success-bg)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(34,197,94,0.15)' }}>
-                                      <strong style={{ color: 'var(--success)' }}>[ĐÃ GHI ĐÈ BỞI GIÁO VỤ]</strong> Lời phê: {aiJob.manualOverride?.comment}
+                                    <div className={css.s23}>
+                                      <strong className={css.s24}>[ĐÃ GHI ĐÈ BỞI GIÁO VỤ]</strong> Lời phê: {aiJob.manualOverride?.comment}
                                     </div>
                                   ) : (
-                                    <Button variant="danger" size="sm" style={{ alignSelf: 'flex-start', marginTop: '6px' }} onClick={() => setShowOverrideModal(aiJob._id)}>
+                                    <Button
+                                      variant="danger"
+                                      size="sm"
+                                      className={css.s25}
+                                      onClick={() => setShowOverrideModal(aiJob._id)}
+                                    >
                                       <Shield size={14} /> Phê duyệt ghi đè thủ công
                                     </Button>
                                   )}
@@ -415,7 +412,7 @@ export default function TopicsPage() {
                               )}
                             </div>
                           ) : (
-                            <p style={{ color: 'var(--error)' }}>AI kiểm tra thất bại: {aiJob.error}</p>
+                            <p className={css.s26}>AI kiểm tra thất bại: {aiJob.error}</p>
                           )}
                         </div>
                       )}
@@ -430,54 +427,19 @@ export default function TopicsPage() {
 
       {/* Propose Topic Modal */}
       {showProposeModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '520px',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyBetween: 'space-between' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className={css.s27} >
+          <div className={css.s28} >
+            <div className={css.s29}>
+              <h3 className={css.s30}>
                 {editingTopicId ? 'Chỉnh sửa đề tài đồ án' : 'Đề xuất đề tài đồ án mới'}
               </h3>
             </div>
-            <form onSubmit={handleSubmitTopic} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Chọn đợt đồ án</label>
+            <form onSubmit={handleSubmitTopic} className={css.s31}>
+              <div className={css.s32}>
+                <label className={css.s33}>Chọn đợt đồ án</label>
                 <select
                   value={form.periodId}
-                  onChange={(e) => setForm((p) => ({ ...p, periodId: e.target.value }))}
-                  style={{
-                    height: '40px',
-                    padding: '0 12px',
-                    fontSize: '14px',
-                    color: 'var(--text-primary)',
-                    backgroundColor: 'var(--bg-raised)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                  }}
-                >
+                  onChange={(e) => setForm((p) => ({ ...p, periodId: e.target.value }))} className={css.s70} >
                   {periods.map((p) => (
                     <option key={p._id} value={p._id}>{p.name}</option>
                   ))}
@@ -493,28 +455,16 @@ export default function TopicsPage() {
                 required
               />
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Tóm tắt/Nội dung thực hiện</label>
+              <div className={css.s34}>
+                <label className={css.s35}>Tóm tắt/Nội dung thực hiện</label>
                 <textarea
                   value={form.summary}
                   onChange={(e) => setForm((p) => ({ ...p, summary: e.target.value }))}
                   placeholder="Mô tả tóm tắt nội dung nghiên cứu, công nghệ sử dụng, và kết quả mong đợi..."
-                  rows={4}
-                  style={{
-                    padding: '12px',
-                    fontSize: '14px',
-                    fontFamily: 'inherit',
-                    color: 'var(--text-primary)',
-                    backgroundColor: 'var(--bg-raised)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    outline: 'none',
-                    resize: 'none',
-                  }}
-                />
+                  rows={4} className={css.s71} />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+              <div className={css.s36}>
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -536,60 +486,25 @@ export default function TopicsPage() {
 
       {/* Staff manual override modal */}
       {showOverrideModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '480px',
-              backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
-            }}
-          >
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className={css.s37} >
+          <div className={css.s38} >
+            <div className={css.s39}>
+              <h3 className={css.s40}>
                 Ghi đè thủ công kết quả trùng lặp AI
               </h3>
             </div>
-            <form onSubmit={handleOverrideSubmit} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Lời phê bình/Lý do duyệt ghi đè</label>
+            <form onSubmit={handleOverrideSubmit} className={css.s41}>
+              <div className={css.s42}>
+                <label className={css.s43}>Lời phê bình/Lý do duyệt ghi đè</label>
                 <textarea
                   value={overrideComment}
                   onChange={(e) => setOverrideComment(e.target.value)}
                   placeholder="Nhập lý do chi tiết từ Giáo vụ để lưu trữ nhật ký hệ thống (ví dụ: Hai đề tài sử dụng hai kiến trúc nghiệp vụ khác nhau hoàn toàn)..."
                   rows={4}
-                  required
-                  style={{
-                    padding: '12px',
-                    fontSize: '14px',
-                    fontFamily: 'inherit',
-                    color: 'var(--text-primary)',
-                    backgroundColor: 'var(--bg-raised)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    outline: 'none',
-                    resize: 'none',
-                  }}
-                />
+                  required className={css.s72} />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <div className={css.s44}>
                 <Button variant="secondary" onClick={() => setShowOverrideModal(null)}>Hủy</Button>
                 <Button variant="primary" type="submit" loading={overriding}>Xác nhận Ghi đè</Button>
               </div>
@@ -601,92 +516,40 @@ export default function TopicsPage() {
       {/* AI Suggestion Chat panel */}
       {chatOpen && (
         <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 100,
-            display: 'flex',
-            justifyContent: 'flex-end',
-          }}
+          className={css.s45}
           onClick={() => setChatOpen(false)}
         >
           <div
-            style={{
-              width: '100%',
-              maxWidth: '560px',
-              backgroundColor: 'var(--bg-surface)',
-              borderLeft: '1px solid var(--border)',
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%',
-              boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.25)',
-            }}
+            className={css.s46}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div
-              style={{
-                padding: '18px 24px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: 'var(--bg-surface)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  padding: '8px',
-                  borderRadius: '10px',
-                  backgroundColor: 'var(--accent-glow)',
-                  color: 'var(--accent)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
+            <div className={css.s47} >
+              <div className={css.s48}>
+                <div className={css.s49}>
                   <Cpu size={20} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+                  <h3 className={css.s50}>
                     Trợ lý Đề tài AI
                   </h3>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  <span className={css.s51}>
                     Tư vấn & điều chỉnh đề tài theo nguyện vọng của bạn
                   </span>
                 </div>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className={css.s52}>
                 <Button
                   variant="secondary"
                   size="sm"
                   loading={suggestLoading}
-                  onClick={() => handleSuggestTopics(true)}
-                  style={{ gap: '6px' }}
-                >
+                  onClick={() => handleSuggestTopics(true)} className={css.s73} >
                   <Sparkle size={13} /> Gợi ý lại
                 </Button>
                 <button
                   onClick={() => setChatOpen(false)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'var(--text-secondary)',
-                    padding: '8px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'background-color 0.2s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-raised)'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                  className={css.s74}
                 >
                   <X size={18} />
                 </button>
@@ -694,52 +557,22 @@ export default function TopicsPage() {
             </div>
 
             {/* Chat Messages */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '24px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '20px',
-                backgroundColor: 'var(--bg-raised)',
-              }}
-            >
+            <div className={css.s53} >
               {chatMessages.map((msg, idx) => (
                 <div
                   key={idx}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    width: '100%',
-                  }}
+                  className={[css.messageWrap, msg.role === 'user' ? css.messageWrapUser : css.messageWrapAssistant].filter(Boolean).join(' ')}
                 >
                   {msg.type === 'suggestions' ? (
-                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div style={{
-                        fontSize: '12px',
-                        color: 'var(--text-secondary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        fontWeight: 500,
-                      }}>
-                        <Cpu size={14} style={{ color: 'var(--accent)' }} />
+                    <div className={css.s54}>
+                      <div className={css.s55}>
+                        <Cpu size={14} className={css.s56} />
                         Phân tích hồ sơ hoàn tất &bull; {msg.suggestions.length} gợi ý phù hợp &bull;
-                        <span style={{ color: 'var(--accent)', fontWeight: 600 }}> Bấm vào đề tài để chỉnh sửa</span>
+                        <span className={css.s57}> Bấm vào đề tài để chỉnh sửa</span>
                       </div>
                       
                       {msg.suggestions.length === 0 ? (
-                        <div style={{
-                          padding: '24px',
-                          textAlign: 'center',
-                          color: 'var(--text-muted)',
-                          border: '1px dashed var(--border)',
-                          borderRadius: 'var(--radius-md)',
-                          fontSize: '13px',
-                          backgroundColor: 'var(--bg-surface)',
-                        }}>
+                        <div className={css.s58}>
                           Chưa tìm thấy đề tài phù hợp với hồ sơ hiện tại. Bạn có thể chat để mô tả định hướng của mình.
                         </div>
                       ) : (
@@ -749,77 +582,29 @@ export default function TopicsPage() {
                             onClick={() => {
                               setChatInput(`Tôi muốn điều chỉnh đề tài "${s.title}" theo hướng: `);
                             }}
-                            style={{
-                              padding: '16px',
-                              backgroundColor: 'var(--bg-surface)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 'var(--radius-md)',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '10px',
-                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                            }}
-                            onMouseEnter={e => {
-                              e.currentTarget.style.borderColor = 'var(--accent)';
-                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.1)';
-                            }}
-                            onMouseLeave={e => {
-                              e.currentTarget.style.borderColor = 'var(--border)';
-                              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
-                            }}
+                            className={css.s75}
                           >
-                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyBetween: 'space-between', gap: '12px' }}>
-                              <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                            <div className={css.s59}>
+                              <span className={css.s60}>
                                 {s.title}
                               </span>
-                              <span style={{
-                                flexShrink: 0,
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                padding: '2px 8px',
-                                borderRadius: '999px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '3px',
-                                backgroundColor: s.confidence >= 75 ? 'rgba(34,197,94,0.12)' : s.confidence >= 50 ? 'rgba(251,191,36,0.12)' : 'rgba(148,163,184,0.12)',
-                                color: s.confidence >= 75 ? 'var(--success)' : s.confidence >= 50 ? '#f59e0b' : 'var(--text-muted)',
-                              }}>
+                              <span className={[css.confidenceBadge, getConfidenceClass(s.confidence)].filter(Boolean).join(' ')}>
                                 <Star size={10} weight="fill" /> {s.confidence}%
                               </span>
                             </div>
                             
-                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                            <p className={css.s61}>
                               {s.reason}
                             </p>
                             
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              marginTop: '8px',
-                              paddingTop: '8px',
-                              borderTop: '1px solid var(--border)',
-                            }}>
-                              <div style={{
-                                fontSize: '11px',
-                                color: 'var(--accent)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontWeight: 500,
-                              }}>
+                            <div className={css.s62}>
+                              <div className={css.s63}>
                                 <Lightbulb size={12} /> Bấm để đề xuất chỉnh sửa
                               </div>
                               <Button
                                 variant="primary"
                                 size="sm"
-                                style={{
-                                  height: '26px',
-                                  padding: '0 10px',
-                                  fontSize: '11px',
-                                }}
+                                className={css.s64}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleSelectSuggestedTopic(s);
@@ -833,36 +618,11 @@ export default function TopicsPage() {
                       )}
                     </div>
                   ) : msg.role === 'user' ? (
-                    <div
-                      style={{
-                        maxWidth: '85%',
-                        padding: '12px 16px',
-                        backgroundColor: 'var(--accent)',
-                        color: 'white',
-                        borderRadius: '16px 16px 2px 16px',
-                        fontSize: '13.5px',
-                        lineHeight: 1.5,
-                        whiteSpace: 'pre-wrap',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      }}
-                    >
+                    <div className={css.s65} >
                       {msg.content}
                     </div>
                   ) : (
-                    <div
-                      style={{
-                        maxWidth: '90%',
-                        padding: '14px 18px',
-                        backgroundColor: 'var(--bg-surface)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '2px 16px 16px 16px',
-                        fontSize: '13.5px',
-                        lineHeight: 1.6,
-                        color: 'var(--text-primary)',
-                        whiteSpace: 'pre-wrap',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                      }}
-                    >
+                    <div className={css.s66} >
                       {msg.content}
                     </div>
                   )}
@@ -870,19 +630,7 @@ export default function TopicsPage() {
               ))}
 
               {chatLoading && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: 'var(--text-secondary)',
-                  fontSize: '13px',
-                  backgroundColor: 'var(--bg-surface)',
-                  padding: '10px 14px',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border)',
-                  alignSelf: 'flex-start',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                }}>
+                <div className={css.s67}>
                   <Spinner size="sm" />
                   <span>AI đang soạn câu trả lời...</span>
                 </div>
@@ -891,16 +639,7 @@ export default function TopicsPage() {
             </div>
 
             {/* Chat Input */}
-            <div
-              style={{
-                padding: '16px 20px',
-                borderTop: '1px solid var(--border)',
-                display: 'flex',
-                gap: '10px',
-                alignItems: 'flex-end',
-                backgroundColor: 'var(--bg-surface)',
-              }}
-            >
+            <div className={css.s68} >
               <textarea
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
@@ -912,29 +651,13 @@ export default function TopicsPage() {
                 }}
                 placeholder="Trao đổi với AI về đề tài của bạn... (Enter để gửi, Shift+Enter xuống dòng)"
                 rows={2}
-                disabled={chatLoading}
-                style={{
-                  flex: 1,
-                  padding: '12px 14px',
-                  fontSize: '13px',
-                  fontFamily: 'inherit',
-                  color: 'var(--text-primary)',
-                  backgroundColor: 'var(--bg-raised)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  outline: 'none',
-                  resize: 'none',
-                  lineHeight: 1.5,
-                }}
-              />
+                disabled={chatLoading} className={css.s76} />
               <Button
                 variant="primary"
                 size="sm"
                 loading={chatLoading}
                 disabled={!chatInput.trim()}
-                onClick={handleSendChat}
-                style={{ height: '42px', flexShrink: 0 }}
-              >
+                onClick={handleSendChat} className={css.s69} >
                 Gửi
               </Button>
             </div>

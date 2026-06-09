@@ -20,6 +20,7 @@ import {
   Clock,
   Warning,
 } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 function getId(value) {
   if (!value) return '';
@@ -57,52 +58,18 @@ function getDaysUntil(date) {
 }
 
 function StatCard({ icon: Icon, label, value, tone = 'info' }) {
-  const toneColor = {
-    info: 'var(--accent)',
-    warning: 'var(--warning)',
-    success: 'var(--success)',
-    error: 'var(--error)',
-  }[tone];
+  const toneClass = css[`tone${tone.charAt(0).toUpperCase()}${tone.slice(1)}`] || css.toneInfo;
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '14px',
-        padding: '18px 20px',
-        backgroundColor: 'var(--bg-surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        minHeight: '82px',
-      }}
-    >
-      <div
-        style={{
-          width: '42px',
-          height: '42px',
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: 'var(--accent-glow)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <Icon size={22} weight="duotone" style={{ color: toneColor }} />
+    <div className={css.s1} >
+      <div className={css.s2} >
+        <Icon size={22} weight="duotone" className={toneClass} />
       </div>
       <div>
-        <p
-          style={{
-            fontSize: '22px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            lineHeight: 1,
-          }}
-        >
+        <p className={css.s3} >
           {value ?? 0}
         </p>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+        <p className={css.s4}>
           {label}
         </p>
       </div>
@@ -112,49 +79,32 @@ function StatCard({ icon: Icon, label, value, tone = 'info' }) {
 
 function ActionItem({ item }) {
   const Icon = item.icon || Lightning;
+  const variant = item.variant || 'info';
+  const iconClass = [
+    css.actionIcon,
+    css[`actionIcon${variant.charAt(0).toUpperCase()}${variant.slice(1)}`] || css.actionIconInfo,
+  ].filter(Boolean).join(' ');
 
   return (
     <Link
-      href={item.href}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '36px minmax(0, 1fr) auto',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '14px 0',
-        color: 'inherit',
-        textDecoration: 'none',
-        borderBottom: '1px solid var(--border)',
-      }}
-    >
-      <div
-        style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: 'var(--radius-md)',
-          backgroundColor: item.variant === 'error' ? 'var(--error-bg)' : item.variant === 'warning' ? 'var(--warning-bg)' : 'var(--accent-glow)',
-          color: item.variant === 'error' ? 'var(--error)' : item.variant === 'warning' ? 'var(--warning)' : 'var(--accent)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      href={item.href} className={css.s5} >
+      <div className={iconClass}>
         <Icon size={19} weight="duotone" />
       </div>
 
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-          <p style={{ fontSize: '14px', fontWeight: 650, color: 'var(--text-primary)' }}>
+      <div className={css.s6}>
+        <div className={css.s7}>
+          <p className={css.s8}>
             {item.title}
           </p>
           <Badge variant={item.variant || 'info'}>{item.badge}</Badge>
         </div>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+        <p className={css.s9}>
           {item.description}
         </p>
       </div>
 
-      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent)', whiteSpace: 'nowrap' }}>
+      <span className={css.s10}>
         Xử lý
       </span>
     </Link>
@@ -168,23 +118,12 @@ function DeadlineItem({ item }) {
 
   return (
     <Link
-      href={item.href}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '12px',
-        padding: '12px 0',
-        color: 'inherit',
-        textDecoration: 'none',
-        borderBottom: '1px solid var(--border)',
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+      href={item.href} className={css.s11} >
+      <div className={css.s12}>
+        <p className={css.s13}>
           {item.title}
         </p>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px' }}>
+        <p className={css.s14}>
           {item.projectTitle}
         </p>
       </div>
@@ -198,21 +137,7 @@ function DeadlineItem({ item }) {
 function QuickAction({ icon: Icon, label, href }) {
   return (
     <Link
-      href={href}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        padding: '10px 14px',
-        backgroundColor: 'var(--bg-raised)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-        fontSize: '13px',
-        fontWeight: 500,
-        color: 'var(--text-secondary)',
-        textDecoration: 'none',
-      }}
-    >
+      href={href} className={css.s15} >
       <Icon size={18} weight="duotone" />
       {label}
     </Link>
@@ -460,7 +385,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '80px' }}>
+      <div className={css.s16}>
         <Spinner size="lg" />
       </div>
     );
@@ -471,23 +396,16 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: '28px' }}>
+      <div className={css.s17}>
         <h1 className="text-display">
           {greeting}, {user?.fullName || user?.name || 'người dùng'}
         </h1>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '6px' }}>
+        <p className={css.s18}>
           Hôm nay là {formatDate(new Date(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-          gap: '16px',
-          marginBottom: '28px',
-        }}
-      >
+      <div className={css.s19} >
         {isStaff && <StatCard icon={CalendarBlank} label="Đợt đồ án" value={stats.periods} />}
         <StatCard icon={Users} label="Nhóm" value={stats.groups} />
         <StatCard icon={BookOpen} label={isStaff ? 'Đề tài chờ duyệt' : 'Đề tài'} value={isStaff ? stats.pendingTopics : stats.topics} tone={isStaff && stats.pendingTopics > 0 ? 'warning' : 'info'} />
@@ -496,23 +414,15 @@ export default function DashboardPage() {
         {(isLecturer || hasAnyRole(user, ['SYSTEM_ADMIN'])) && <StatCard icon={FileText} label="Báo cáo cần xem" value={stats.submittedMilestones} tone={stats.submittedMilestones > 0 ? 'warning' : 'success'} />}
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '18px',
-          alignItems: 'start',
-          marginBottom: '28px',
-        }}
-      >
+      <div className={css.s20} >
         <Card title="Việc cần xử lý" subtitle="Các đầu việc quan trọng được gom theo vai trò của bạn">
           {actionItems.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center' }}>
-              <CheckCircle size={36} weight="duotone" style={{ color: 'var(--success)', marginBottom: '10px' }} />
-              <p style={{ fontSize: '14px', fontWeight: 650, color: 'var(--text-primary)' }}>
+            <div className={css.s21}>
+              <CheckCircle size={36} weight="duotone" className={css.s22} />
+              <p className={css.s23}>
                 Chưa có việc gấp cần xử lý
               </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              <p className={css.s24}>
                 Khi có đề tài, báo cáo, thông báo hoặc phân công mới, hệ thống sẽ đưa lên đây.
               </p>
             </div>
@@ -527,9 +437,9 @@ export default function DashboardPage() {
 
         <Card title="Deadline gần" subtitle="Các mốc nộp bài chưa khóa hoặc chưa đạt">
           {deadlines.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center' }}>
-              <Clock size={34} weight="duotone" style={{ color: 'var(--text-muted)', marginBottom: '10px' }} />
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+            <div className={css.s25}>
+              <Clock size={34} weight="duotone" className={css.s26} />
+              <p className={css.s27}>
                 Chưa có deadline mở cho các dự án hiện tại.
               </p>
             </div>
@@ -544,7 +454,7 @@ export default function DashboardPage() {
       </div>
 
       <Card title="Bắt đầu nhanh" subtitle="Các khu vực thường dùng">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+        <div className={css.s28}>
           <QuickAction icon={BookOpen} label="Xem đề tài" href="/dashboard/topics" />
           <QuickAction icon={Users} label="Quản lý nhóm" href="/dashboard/groups" />
           {(isStudent || isLecturer || hasAnyRole(user, ['SYSTEM_ADMIN'])) && <QuickAction icon={FileText} label="Nộp bài" href="/dashboard/submissions" />}

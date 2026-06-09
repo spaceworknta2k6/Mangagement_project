@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatDate, getTechnicalLabel, hasAnyRole } from '@/lib/utils';
 import { Sword, Plus, ArrowsClockwise, VideoCamera, MapPin, Clock, PencilSimple, Trash } from '@phosphor-icons/react';
+import css from './page.module.css';
 
 export default function DefensesPage() {
   const { user, token } = useAuthStore();
@@ -156,7 +157,7 @@ export default function DefensesPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+      <div className={css.s1}>
         <Spinner size="lg" />
       </div>
     );
@@ -166,18 +167,18 @@ export default function DefensesPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div className={css.s2}>
         <div>
-          <h1 className="text-display" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sword size={28} style={{ color: 'var(--accent)' }} />
+          <h1 className={`text-display ${css.s3}`}>
+            <Sword size={28} className={css.s4} />
             Lịch bảo vệ Đồ án
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+          <p className={css.s5}>
             Xem thời gian, ca thi, địa điểm phòng bảo vệ đồ án tốt nghiệp
           </p>
         </div>
         
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className={css.s6}>
           <Button variant="outline" onClick={fetchData} icon={<ArrowsClockwise />} title="Làm mới" />
           {isStaff && (
             <Button variant="primary" icon={<Plus />} onClick={openCreateModal}>
@@ -187,36 +188,36 @@ export default function DefensesPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
+      <div className={css.s7}>
         {sessions.map((session) => (
-          <Card key={session._id} style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <Card key={session._id} className={css.s8}>
+            <div className={css.s9}>
               <div>
-                <Badge variant="neutral" style={{ marginBottom: '8px' }}>
+                <Badge variant="neutral" className={css.s10}>
                   Ca số {session.orderNumber}
                 </Badge>
-                <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <h3 className={css.s11}>
                   {session.projectId?.topicId?.title || 'Đồ án chưa có tên'}
                 </h3>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <div className={css.s12}>
                   Hội đồng: {session.committeeId?.name || 'Không xác định'}
                 </div>
               </div>
             </div>
 
-            <div style={{ flex: 1, backgroundColor: 'var(--surface-sunken)', padding: '12px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <div className={css.s13}>
+              <div className={css.s14}>
                 <Clock size={16} />
                 <span>
                   {formatDate(session.defenseDate).split(' ')[0]} • {session.startTime} - {session.endTime}
                 </span>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <div className={css.s15}>
                 {session.mode === 'online' ? (
                   <>
                     <VideoCamera size={16} color="var(--primary)" />
-                    <a href={session.meetingUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
+                    <a href={session.meetingUrl} target="_blank" rel="noreferrer" className={css.s16}>
                       Tham gia Online
                     </a>
                   </>
@@ -229,10 +230,10 @@ export default function DefensesPage() {
               </div>
             </div>
             
-            <div style={{ borderTop: '1px solid var(--border)', marginTop: '16px', paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className={css.s17}>
               {getStatusBadge(session.status)}
               {isStaff && (
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div className={css.s18}>
                   {['scheduled', 'rescheduled'].includes(session.status) && (
                     <>
                       <Button size="sm" variant="secondary" onClick={() => openEditModal(session)}>
@@ -255,7 +256,7 @@ export default function DefensesPage() {
         ))}
 
         {sessions.length === 0 && (
-          <div style={{ gridColumn: '1 / -1', padding: '48px', textAlign: 'center', color: 'var(--text-muted)', backgroundColor: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+          <div className={css.s19}>
             Chưa có lịch bảo vệ nào được xếp
           </div>
         )}
@@ -263,29 +264,19 @@ export default function DefensesPage() {
 
       {/* Modal Xếp Lịch Bảo Vệ */}
       {showModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 50,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--surface)', width: '100%', maxWidth: '600px',
-            borderRadius: '12px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-            maxHeight: '90vh', display: 'flex', flexDirection: 'column'
-          }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 600 }}>{editingSession ? 'Chỉnh sửa lịch bảo vệ' : 'Xếp lịch bảo vệ Đồ án'}</h2>
+        <div className={css.s20}>
+          <div className={css.s21}>
+            <div className={css.s22}>
+              <h2 className={css.s23}>{editingSession ? 'Chỉnh sửa lịch bảo vệ' : 'Xếp lịch bảo vệ Đồ án'}</h2>
             </div>
             
-            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-              <form id="defense-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className={css.s24}>
+              <form id="defense-form" onSubmit={handleSubmit} className={css.s25}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>Dự án cần bảo vệ *</label>
+                  <label className={css.s26}>Dự án cần bảo vệ *</label>
                   <select
                     value={form.projectId}
-                    onChange={(e) => setForm({...form, projectId: e.target.value})}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)' }}
-                    required
+                    onChange={(e) => setForm({...form, projectId: e.target.value})} required className={css.s38}
                   >
                     <option value="">-- Chọn Dự án --</option>
                     {projects.map(p => (
@@ -295,12 +286,10 @@ export default function DefensesPage() {
                 </div>
                 
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>Hội đồng đánh giá *</label>
+                  <label className={css.s27}>Hội đồng đánh giá *</label>
                   <select
                     value={form.committeeId}
-                    onChange={(e) => setForm({...form, committeeId: e.target.value})}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)' }}
-                    required
+                    onChange={(e) => setForm({...form, committeeId: e.target.value})} required className={css.s39}
                   >
                     <option value="">-- Chọn Hội đồng --</option>
                     {committees.map(c => (
@@ -311,21 +300,19 @@ export default function DefensesPage() {
                   </select>
                 </div>
 
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>Hình thức *</label>
+                <div className={css.s28}>
+                  <div className={css.s29}>
+                    <label className={css.s30}>Hình thức *</label>
                     <select
                       value={form.mode}
-                      onChange={(e) => setForm({...form, mode: e.target.value})}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)' }}
-                      required
+                      onChange={(e) => setForm({...form, mode: e.target.value})} required className={css.s40}
                     >
                       <option value="offline">Trực tiếp (Offline)</option>
                       <option value="online">Trực tuyến (Online)</option>
                     </select>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>Số thứ tự bảo vệ *</label>
+                  <div className={css.s31}>
+                    <label className={css.s32}>Số thứ tự bảo vệ *</label>
                     <Input
                       type="number"
                       min="1"
@@ -354,9 +341,9 @@ export default function DefensesPage() {
                   />
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div className={css.s33}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>Ngày bảo vệ *</label>
+                    <label className={css.s34}>Ngày bảo vệ *</label>
                     <Input
                       type="date"
                       value={form.defenseDate}
@@ -365,7 +352,7 @@ export default function DefensesPage() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>Giờ bắt đầu *</label>
+                    <label className={css.s35}>Giờ bắt đầu *</label>
                     <Input
                       type="time"
                       value={form.startTime}
@@ -374,7 +361,7 @@ export default function DefensesPage() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px' }}>Giờ kết thúc *</label>
+                    <label className={css.s36}>Giờ kết thúc *</label>
                     <Input
                       type="time"
                       value={form.endTime}
@@ -386,7 +373,7 @@ export default function DefensesPage() {
               </form>
             </div>
             
-            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--surface-sunken)', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+            <div className={css.s37}>
               <Button variant="ghost" onClick={() => { setShowModal(false); setEditingSession(null); }} type="button">Hủy</Button>
               <Button variant="primary" type="submit" form="defense-form" isLoading={submitting}>{editingSession ? 'Cập nhật lịch' : 'Xếp lịch'}</Button>
             </div>
