@@ -166,6 +166,7 @@ export default function ChatPage() {
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const selectedRoomIdRef = useRef('');
+  const previousRoomIdRef = useRef('');
   const currentUserIdRef = useRef('');
   const [rooms, setRooms] = useState([]);
   const [selectedRoomId, setSelectedRoomId] = useState('');
@@ -426,11 +427,30 @@ export default function ChatPage() {
     if (imageInputRef.current) imageInputRef.current.value = '';
   };
 
+  useEffect(() => {
+    if (!selectedRoomId) return;
+    if (!previousRoomIdRef.current) {
+      previousRoomIdRef.current = selectedRoomId;
+      return;
+    }
+    if (previousRoomIdRef.current === selectedRoomId || isUploadingAttachment) return;
+
+    clearAttachment();
+    setDraft('');
+    setEmojiOpen(false);
+    setSearchQuery('');
+    previousRoomIdRef.current = selectedRoomId;
+  }, [selectedRoomId, isUploadingAttachment]);
+
   const handleSelectRoom = (roomId) => {
     if (isUploadingAttachment) {
       toast.error('Vui lòng chờ tệp tải lên xong trước khi đổi phòng chat.');
       return;
     }
+    if (roomId === selectedRoomId) return;
+    clearAttachment();
+    setDraft('');
+    setEmojiOpen(false);
     setSelectedRoomId(roomId);
     setSearchQuery('');
   };
