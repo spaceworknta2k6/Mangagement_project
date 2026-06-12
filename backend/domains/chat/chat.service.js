@@ -5,6 +5,8 @@ const ChatMessage = require('../../models/ChatMessage');
 const ProjectGroup = require('../../models/ProjectGroup');
 const Lecturer = require('../../models/Lecturer');
 const filesService = require('../files/files.service');
+const notificationsService = require('../notifications/notifications.service');
+const WorkflowEvent = require('../../models/WorkflowEvent');
 const { uploadImageBuffer } = require('../../config/cloudinary');
 
 const toId = (value) => String(value?._id || value || '');
@@ -23,6 +25,48 @@ const populateRoom = (query) => query
 const populateMessage = (query) => query
   .populate('senderId', 'fullName email avatarUrl roles')
   .populate('attachments.fileId', 'originalName mimeClient mimeVerified size scanStatus accessPolicy');
+
+const createChatAuditEvent = async ({ roomId, user, action, reason, metadata = {} }) => {
+  try {
+    await WorkflowEvent.create({
+      entityType: 'ChatRoom',
+      entityId: roomId,
+      toStatus: 'active',
+      actorId: user._id,
+      actorRoles: user.roles || [],
+      action,
+      reason,
+      metadata,
+    });
+  } catch (error) {
+    console.error('Chat audit event failed:', error.message);
+  }
+};
+
+const notifyRoomMembers = async (room, sender, message) => {
+  const recipientIds = (room.memberIds || [])
+    .map(toId)
+    .filter((memberId) => memberId && memberId !== toId(sender._id));
+  if (recipientIds.length === 0) return;
+
+  const senderName = sender.fullName || sender.email || 'Người dùng';
+  const hasAttachment = (message.attachments || []).length > 0;
+  const body = message.body || (hasAttachment ? 'Đã gửi một tệp đính kèm.' : 'Đã gửi một tin nhắn mới.');
+
+  try {
+    await Promise.all(recipientIds.map((recipientId) => notificationsService.createNotification({
+      recipientId,
+      type: 'CHAT_MESSAGE',
+      title: `Tin nhắn mới từ ${senderName}`,
+      body,
+      entityType: 'ChatRoom',
+      entityId: room._id,
+      actionUrl: `/dashboard/chat?room=${room._id}`,
+    })));
+  } catch (error) {
+    console.error('Chat notification failed:', error.message);
+  }
+};
 
 const getAcceptedGroupMemberUserIds = async (group) => {
   const populatedGroup = await ProjectGroup.findById(group._id)
@@ -313,6 +357,13 @@ const inviteLecturerToGroup = async (roomId, user, payload = {}) => {
   }
 
   await room.save();
+  await createChatAuditEvent({
+    roomId,
+    user,
+    action: 'INVITE_LECTURER_TO_CHAT_GROUP',
+    reason: 'Mời giảng viên vào nhóm chat.',
+    metadata: { lecturerUserId: toId(lecturerUserId) },
+  });
   return await populateRoom(ChatRoom.findById(room._id)).lean();
 };
 
@@ -403,7 +454,9 @@ const sendMessage = async (roomId, user, body) => {
   });
 
   await ChatRoom.findByIdAndUpdate(roomId, { lastMessageAt: message.createdAt });
-  return await populateMessage(ChatMessage.findById(message._id)).lean();
+  const populatedMessage = await populateMessage(ChatMessage.findById(message._id)).lean();
+  await notifyRoomMembers(room, user, populatedMessage);
+  return populatedMessage;
 };
 
 const getAttachmentKind = (mimeType) => {
@@ -439,7 +492,21 @@ const sendAttachmentMessage = async (roomId, user, { body, file } = {}) => {
   });
 
   await ChatRoom.findByIdAndUpdate(roomId, { lastMessageAt: message.createdAt });
-  return await populateMessage(ChatMessage.findById(message._id)).lean();
+  const populatedMessage = await populateMessage(ChatMessage.findById(message._id)).lean();
+  await notifyRoomMembers(room, user, populatedMessage);
+  await createChatAuditEvent({
+    roomId,
+    user,
+    action: 'CHAT_SEND_ATTACHMENT',
+    reason: 'Gửi tệp trong phòng chat.',
+    metadata: {
+      messageId: toId(message._id),
+      fileName: asset.originalName,
+      fileSize: asset.size,
+      mimeType,
+    },
+  });
+  return populatedMessage;
 };
 
 const deleteMessage = async (roomId, messageId, user) => {
@@ -466,6 +533,13 @@ const deleteMessage = async (roomId, messageId, user) => {
 
   const latest = await ChatMessage.findOne({ roomId, isDeleted: false }).sort({ createdAt: -1 }).select('createdAt');
   await ChatRoom.findByIdAndUpdate(roomId, { lastMessageAt: latest?.createdAt || null });
+  await createChatAuditEvent({
+    roomId,
+    user,
+    action: 'CHAT_RECALL_MESSAGE',
+    reason: 'Thu hồi tin nhắn trong phòng chat.',
+    metadata: { messageId },
+  });
 
   return { roomId, messageId };
 };

@@ -56,5 +56,8 @@ const WorkflowEventSchema = new mongoose.Schema({
 
 // Compound index to compile and audit transaction history on an entity
 WorkflowEventSchema.index({ entityType: 1, entityId: 1, createdAt: -1 });
+WorkflowEventSchema.index({ createdAt: -1 });
+WorkflowEventSchema.index({ entityType: 1, action: 1, createdAt: -1 });
+WorkflowEventSchema.index({ actorId: 1, createdAt: -1 });
 
 module.exports = mongoose.model('WorkflowEvent', WorkflowEventSchema);

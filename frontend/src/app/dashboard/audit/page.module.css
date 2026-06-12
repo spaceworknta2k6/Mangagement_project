@@ -46,6 +46,14 @@
   flex: 2 1 280px;
 }
 
+.filterSearch {
+  flex: 2 1 320px;
+}
+
+.filterDate {
+  flex: 1 1 160px;
+}
+
 .eventMetaGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

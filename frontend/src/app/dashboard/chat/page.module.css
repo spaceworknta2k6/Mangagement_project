@@ -815,16 +815,49 @@
 @media (max-width: 900px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    min-height: auto;
   }
 
-  .roomList,
+  .roomsPanel {
+    max-height: 38dvh;
+  }
+
+  .chatPanel {
+    min-height: 68dvh;
+  }
+
+  .roomList {
+    max-height: calc(38dvh - 84px);
+  }
+
   .messages {
     max-height: none;
+    min-height: 44dvh;
+    padding: 14px;
+  }
+
+  .panelHeader {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .searchBox {
+    order: -1;
+    width: 100%;
   }
 
   .composer {
     grid-template-columns: 1fr auto;
     align-items: end;
+    gap: 10px;
+    padding: 12px;
   }
 
   .composerTools {
@@ -839,5 +872,63 @@
 
   .pendingAttachment {
     width: 100%;
+  }
+
+  .bubble {
+    max-width: min(520px, 86%);
+  }
+
+  .imageAttachment,
+  .fileAttachment {
+    min-width: 0;
+  }
+
+  .imagePreviewButton {
+    width: 104px;
+    height: 78px;
+  }
+
+  .imageModal {
+    width: 94vw;
+    height: 78vh;
+  }
+}
+
+@media (max-width: 560px) {
+  .panelHeader {
+    padding: 12px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .roomButton {
+    padding: 12px;
+  }
+
+  .messageAvatar {
+    display: none;
+  }
+
+  .bubble {
+    max-width: 92%;
+  }
+
+  .composer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .composer > button {
+    width: 100%;
+  }
+
+  .composerTools {
+    justify-self: start;
+  }
+
+  .emojiMenu {
+    left: 0;
+    transform: none;
   }
 }

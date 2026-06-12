@@ -78,6 +78,8 @@ const auditTabOptions = auditTabs.map((tab) => ({
   label: auditTabLabels[tab.id] || tab.label,
 }));
 
+const PAGE_SIZE = 10;
+
 function getId(value) {
   if (!value) return '';
   if (typeof value === 'string') return value;
@@ -311,21 +313,31 @@ export default function AuditPage() {
   const toast = useToast();
   const [events, setEvents] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 4;
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 1,
+    limit: PAGE_SIZE,
+  });
   const [activeAuditTab, setActiveAuditTab] = useState('general');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filters, setFilters] = useState({
+    search: '',
     entityType: '',
     actorId: '',
     action: '',
+    fromDate: '',
+    toDate: '',
   });
   const [appliedFilters, setAppliedFilters] = useState({
+    search: '',
     entityType: '',
     actorId: '',
     action: '',
+    fromDate: '',
+    toDate: '',
   });
   const [historyForm, setHistoryForm] = useState({
     entityType: '',
@@ -337,15 +349,6 @@ export default function AuditPage() {
     () => Object.values(appliedFilters).filter(Boolean).length,
     [appliedFilters]
   );
-  const totalPages = useMemo(
-    () => Math.ceil(events.length / PAGE_SIZE),
-    [events]
-  );
-  const paginatedEvents = useMemo(
-    () => events.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [events, currentPage]
-  );
-
   const fetchEvents = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -354,16 +357,22 @@ export default function AuditPage() {
       Object.entries(appliedFilters).forEach(([key, value]) => {
         if (value.trim()) params.set(key, value.trim());
       });
+      params.set('page', String(currentPage));
+      params.set('limit', String(PAGE_SIZE));
       const suffix = params.toString() ? `?${params.toString()}` : '';
       const res = await api.get(`/audit/events${suffix}`, token);
       setEvents(res.data || []);
-      setCurrentPage(1);
+      setPagination({
+        total: res.pagination?.total || 0,
+        totalPages: res.pagination?.totalPages || 1,
+        limit: res.pagination?.limit || PAGE_SIZE,
+      });
     } catch (err) {
       toast.error(err.message || 'Không thể tải nhật ký hệ thống.');
     } finally {
       setLoading(false);
     }
-  }, [appliedFilters, toast, token]);
+  }, [appliedFilters, currentPage, toast, token]);
 
   useEffect(() => {
     fetchEvents();
@@ -438,6 +447,12 @@ export default function AuditPage() {
         <>
           <Card className={css.s32}>
             <form onSubmit={handleApplyFilters} className={css.s33}>
+              <Input
+                label="Tìm kiếm"
+                name="audit-search"
+                placeholder="Hành động, nội dung, mã bản ghi"
+                value={filters.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)} className={css.filterSearch} />
               <SelectField
                 label="Đối tượng thay đổi"
                 name="audit-entity-type"
@@ -468,6 +483,18 @@ export default function AuditPage() {
                   </option>
                 ))}
               </SelectField>
+              <Input
+                label="Từ ngày"
+                name="audit-from-date"
+                type="date"
+                value={filters.fromDate}
+                onChange={(e) => handleFilterChange('fromDate', e.target.value)} className={css.filterDate} />
+              <Input
+                label="Đến ngày"
+                name="audit-to-date"
+                type="date"
+                value={filters.toDate}
+                onChange={(e) => handleFilterChange('toDate', e.target.value)} className={css.filterDate} />
               <div className={css.s34}>
                 <Button type="submit" variant="primary" icon={<Funnel size={16} />}>
                   Lọc
@@ -482,7 +509,7 @@ export default function AuditPage() {
           <div className={css.s35} >
             <Card>
               <p className={css.s36}>Sự kiện đang hiển thị</p>
-              <p className={css.s37}>{events.length}</p>
+              <p className={css.s37}>{pagination.total}</p>
             </Card>
             <Card>
               <p className={css.s38}>Bộ lọc đang bật</p>
@@ -510,14 +537,14 @@ export default function AuditPage() {
             </Card>
           ) : (
             <Card title="Dòng sự kiện" subtitle="Sắp xếp từ mới nhất đến cũ nhất" noPadding className={css.s44}>
-              {paginatedEvents.map((event) => (
+              {events.map((event) => (
                 <AuditEventRow key={event._id} event={event} onSelect={setSelectedEvent} />
               ))}
               <Pagination
                 currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={events.length}
-                pageSize={PAGE_SIZE}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.total}
+                pageSize={pagination.limit}
                 itemLabel={'b\u1ea3n ghi'}
                 onPageChange={setCurrentPage}
               />

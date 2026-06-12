@@ -27,6 +27,7 @@ const SUITES = [
   { file: 'committees-scores.test.js',   label: 'Committees, Defenses & Scores' },
   { file: 'notifications-audit.test.js', label: 'Notifications & Audit Logs' },
   { file: 'files-security.test.js',      label: 'File Security' },
+  { file: 'chat.test.js',                label: 'Chat Rooms & Attachments' },
   { file: 'ai-integration.test.js',      label: 'Gemini AI Integration' },
 ];
 

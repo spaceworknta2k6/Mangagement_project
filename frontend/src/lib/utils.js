@@ -65,21 +65,51 @@ const STATUS_MAP = {
   // Group statuses
   forming: { label: 'Đang thành lập', variant: 'info' },
   confirmed: { label: 'Đã xác nhận', variant: 'success' },
+  invited: { label: 'Đã mời', variant: 'warning' },
+  removed: { label: 'Đã rút', variant: 'error' },
   // Topic statuses
+  assigned: { label: 'Đã phân công', variant: 'info' },
+  ai_checked: { label: 'Đã kiểm tra AI', variant: 'info' },
   pending_review: { label: 'Chờ duyệt', variant: 'warning' },
   approved: { label: 'Đã duyệt', variant: 'success' },
   rejected: { label: 'Từ chối', variant: 'error' },
   needs_revision: { label: 'Yêu cầu chỉnh sửa', variant: 'warning' },
+  locked: { label: 'Đã khóa', variant: 'success' },
+  changed: { label: 'Đã thay đổi', variant: 'info' },
+  cancelled: { label: 'Đã hủy', variant: 'error' },
+  // Project statuses
+  pre_defense_submitted: { label: 'Đã nộp trước bảo vệ', variant: 'info' },
+  supervisor_reviewed: { label: 'GVHD đã nhận xét', variant: 'success' },
+  reviewer_reviewed: { label: 'GVPB đã nhận xét', variant: 'success' },
+  defense_eligible: { label: 'Đủ điều kiện bảo vệ', variant: 'success' },
+  defended: { label: 'Đã bảo vệ', variant: 'success' },
+  post_defense_revision: { label: 'Chỉnh sửa sau bảo vệ', variant: 'warning' },
+  finalized: { label: 'Đã hoàn tất', variant: 'success' },
+  failed: { label: 'Không đạt', variant: 'error' },
   // Submission statuses
+  missing: { label: 'Thiếu hồ sơ', variant: 'warning' },
+  open: { label: 'Đang mở', variant: 'info' },
   submitted: { label: 'Đã nộp', variant: 'info' },
+  accepted: { label: 'Đã chấp nhận', variant: 'success' },
   graded: { label: 'Đã chấm', variant: 'success' },
   late: { label: 'Trễ hạn', variant: 'error' },
   // Defense statuses
   scheduled: { label: 'Đã lên lịch', variant: 'info' },
   started: { label: 'Đang diễn ra', variant: 'warning' },
+  rescheduled: { label: 'Đã đổi lịch', variant: 'warning' },
+  no_show: { label: 'Vắng mặt', variant: 'error' },
   // Score statuses
-  locked: { label: 'Đã khoá', variant: 'success' },
   published: { label: 'Đã công bố', variant: 'success' },
+  // Common/system statuses
+  active: { label: 'Đang hoạt động', variant: 'success' },
+  inactive: { label: 'Ngưng hoạt động', variant: 'neutral' },
+  pending: { label: 'Đang chờ', variant: 'warning' },
+  expired: { label: 'Đã hết hạn', variant: 'error' },
+  queued: { label: 'Đang xếp hàng', variant: 'warning' },
+  running: { label: 'Đang chạy', variant: 'warning' },
+  succeeded: { label: 'Thành công', variant: 'success' },
+  clean: { label: 'Sạch', variant: 'success' },
+  infected: { label: 'Có mã độc', variant: 'error' },
 };
 
 export function getStatus(status) {

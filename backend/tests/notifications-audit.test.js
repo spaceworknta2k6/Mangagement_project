@@ -176,10 +176,41 @@ const runIntegrationTests = async () => {
       });
       const auditResult = await auditRes.json();
       console.log('HTTP Status:', auditRes.status);
-      if (!auditResult.success || auditResult.data.length !== 2) {
+      if (!auditResult.success || auditResult.data.length !== 2 || auditResult.pagination.total !== 2) {
         throw new Error(`❌ Test 5 Failed: View system events failed. Length: ${auditResult.data?.length}`);
       }
       console.log(`✅ Test 5 Passed: Successfully retrieved ${auditResult.data.length} global audit events.`);
+
+      console.log('\n--- Test 5b: Server-side audit pagination and search ---');
+      const pagedAuditRes = await fetch(`http://localhost:${TEST_PORT}/api/v1/audit/events?entityType=TestProject&page=1&limit=1`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${tokenStaff}` }
+      });
+      const pagedAuditResult = await pagedAuditRes.json();
+      if (!pagedAuditResult.success || pagedAuditResult.data.length !== 1 || pagedAuditResult.pagination.total !== 2 || pagedAuditResult.pagination.totalPages !== 2) {
+        throw new Error('❌ Test 5b Failed: Audit pagination metadata is incorrect.');
+      }
+
+      const searchAuditRes = await fetch(`http://localhost:${TEST_PORT}/api/v1/audit/events?entityType=TestProject&search=START_PROJECT`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${tokenStaff}` }
+      });
+      const searchAuditResult = await searchAuditRes.json();
+      if (!searchAuditResult.success || searchAuditResult.data.length !== 1 || searchAuditResult.data[0].action !== 'START_PROJECT') {
+        throw new Error('❌ Test 5b Failed: Audit search did not return the expected event.');
+      }
+
+      const fromDate = encodeURIComponent(new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+      const toDate = encodeURIComponent(new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
+      const dateAuditRes = await fetch(`http://localhost:${TEST_PORT}/api/v1/audit/events?entityType=TestProject&fromDate=${fromDate}&toDate=${toDate}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${tokenStaff}` }
+      });
+      const dateAuditResult = await dateAuditRes.json();
+      if (!dateAuditResult.success || dateAuditResult.pagination.total !== 2) {
+        throw new Error('❌ Test 5b Failed: Audit date range filter did not include seeded events.');
+      }
+      console.log('✅ Test 5b Passed: Pagination, search, and date range filters work.');
 
       // 7. View entity history as Staff
       console.log(`\n--- Test 6: GET /api/v1/audit/entities/TestProject/:id (View entity history as Staff) ---`);
