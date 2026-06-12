@@ -1,12 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
 import api from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
 import { hasAnyRole } from '@/lib/utils';
 
 export function useSubmissions() {
+  const router = useRouter();
+  const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
@@ -74,7 +77,15 @@ export function useSubmissions() {
 
       setProjects(list);
       if (list.length > 0) {
-        setSelectedProjectId(list[0]._id);
+        let initialId = list[0]._id;
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const urlProjId = params.get('projectId');
+          if (urlProjId && list.some((p) => p._id === urlProjId)) {
+            initialId = urlProjId;
+          }
+        }
+        setSelectedProjectId(initialId);
       }
     } catch (err) {
       toast.error(err.message || 'Lỗi khi tải danh sách dự án');
@@ -108,6 +119,18 @@ export function useSubmissions() {
       queueMicrotask(() => loadMilestones(selectedProjectId));
     }
   }, [loadMilestones, selectedProjectId]);
+
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    const params = new URLSearchParams();
+    params.set('projectId', selectedProjectId);
+    const nextUrl = `${pathname}?${params.toString()}`;
+    if (typeof window === 'undefined') return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl !== nextUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [selectedProjectId, pathname, router]);
 
   // File Upload handler (Multipart)
   const handleFileUpload = async (e) => {
