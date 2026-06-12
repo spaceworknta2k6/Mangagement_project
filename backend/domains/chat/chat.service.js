@@ -4,6 +4,7 @@ const ChatRoom = require('../../models/ChatRoom');
 const ChatMessage = require('../../models/ChatMessage');
 const ProjectGroup = require('../../models/ProjectGroup');
 const Lecturer = require('../../models/Lecturer');
+const filesService = require('../files/files.service');
 const { uploadImageBuffer } = require('../../config/cloudinary');
 
 const toId = (value) => String(value?._id || value || '');
@@ -19,7 +20,9 @@ const populateRoom = (query) => query
   .populate('requestedBy', 'fullName email avatarUrl roles')
   .populate('acceptedBy', 'fullName email avatarUrl roles');
 
-const populateMessage = (query) => query.populate('senderId', 'fullName email avatarUrl roles');
+const populateMessage = (query) => query
+  .populate('senderId', 'fullName email avatarUrl roles')
+  .populate('attachments.fileId', 'originalName mimeClient mimeVerified size scanStatus accessPolicy');
 
 const getAcceptedGroupMemberUserIds = async (group) => {
   const populatedGroup = await ProjectGroup.findById(group._id)
@@ -97,12 +100,25 @@ const getRooms = async (user) => {
     { $group: { _id: '$roomId', latest: { $first: '$$ROOT' } } },
   ]);
   const latestByRoom = new Map(latestMessages.map((item) => [toId(item._id), item.latest]));
+  const unreadCounts = await ChatMessage.aggregate([
+    {
+      $match: {
+        roomId: { $in: roomIds },
+        isDeleted: false,
+        senderId: { $ne: user._id },
+        readBy: { $not: { $elemMatch: { userId: user._id } } },
+      },
+    },
+    { $group: { _id: '$roomId', count: { $sum: 1 } } },
+  ]);
+  const unreadByRoom = new Map(unreadCounts.map((item) => [toId(item._id), item.count]));
 
   return rooms.map((room) => ({
     ...room,
     latestMessage: (room.groupTeacherInvites || []).some(
       (invite) => toId(invite.lecturerUserId) === toId(user._id) && invite.status === 'pending'
     ) ? null : latestByRoom.get(toId(room._id)) || null,
+    unreadCount: unreadByRoom.get(toId(room._id)) || 0,
   }));
 };
 
@@ -348,6 +364,25 @@ const getMessages = async (roomId, user, { limit = 50, before } = {}) => {
   return messages.reverse();
 };
 
+const markRoomRead = async (roomId, user) => {
+  const room = await getRoomForUser(roomId, user);
+  if ((room.type === 'direct' && room.status !== 'accepted') || getPendingGroupInvite(room, user)) {
+    return { modifiedCount: 0 };
+  }
+
+  const result = await ChatMessage.updateMany(
+    {
+      roomId,
+      isDeleted: false,
+      senderId: { $ne: user._id },
+      readBy: { $not: { $elemMatch: { userId: user._id } } },
+    },
+    { $push: { readBy: { userId: user._id, readAt: new Date() } } }
+  );
+
+  return { modifiedCount: result.modifiedCount || 0 };
+};
+
 const sendMessage = async (roomId, user, body) => {
   const text = String(body || '').trim();
   if (!text) {
@@ -371,11 +406,78 @@ const sendMessage = async (roomId, user, body) => {
   return await populateMessage(ChatMessage.findById(message._id)).lean();
 };
 
+const getAttachmentKind = (mimeType) => {
+  return String(mimeType || '').startsWith('image/') ? 'image' : 'file';
+};
+
+const sendAttachmentMessage = async (roomId, user, { body, file } = {}) => {
+  const text = String(body || '').trim();
+  if (!file) {
+    throw { status: 400, message: 'Vui lòng chọn tệp cần gửi.' };
+  }
+  if (text.length > 4000) {
+    throw { status: 422, message: 'Tin nhắn không được vượt quá 4000 ký tự.' };
+  }
+
+  const room = await getRoomForUser(roomId, user);
+  assertRoomCanSend(room, user);
+
+  const asset = await filesService.uploadFile(file, 'chat_room', roomId, user);
+  const mimeType = asset.mimeVerified || asset.mimeClient;
+  const message = await ChatMessage.create({
+    roomId,
+    senderId: user._id,
+    body: text,
+    attachments: [{
+      fileId: asset._id,
+      originalName: asset.originalName,
+      mimeType,
+      size: asset.size,
+      kind: getAttachmentKind(mimeType),
+    }],
+    readBy: [{ userId: user._id }],
+  });
+
+  await ChatRoom.findByIdAndUpdate(roomId, { lastMessageAt: message.createdAt });
+  return await populateMessage(ChatMessage.findById(message._id)).lean();
+};
+
+const deleteMessage = async (roomId, messageId, user) => {
+  const room = await getRoomForUser(roomId, user);
+  if ((room.type === 'direct' && room.status !== 'accepted') || getPendingGroupInvite(room, user)) {
+    throw { status: 403, message: 'Bạn không có quyền thu hồi tin nhắn trong phòng này.' };
+  }
+  if (!mongoose.Types.ObjectId.isValid(messageId)) {
+    throw { status: 422, message: 'Mã tin nhắn không hợp lệ.' };
+  }
+
+  const message = await ChatMessage.findOne({ _id: messageId, roomId, isDeleted: false });
+  if (!message) {
+    throw { status: 404, message: 'Tin nhắn không tồn tại.' };
+  }
+  if (toId(message.senderId) !== toId(user._id)) {
+    throw { status: 403, message: 'Bạn chỉ có thể thu hồi tin nhắn của chính mình.' };
+  }
+
+  message.isDeleted = true;
+  message.deletedAt = new Date();
+  message.deletedBy = user._id;
+  await message.save();
+
+  const latest = await ChatMessage.findOne({ roomId, isDeleted: false }).sort({ createdAt: -1 }).select('createdAt');
+  await ChatRoom.findByIdAndUpdate(roomId, { lastMessageAt: latest?.createdAt || null });
+
+  return { roomId, messageId };
+};
+
 module.exports = {
   getRooms,
   getRoomForUser,
   getMessages,
+  markRoomRead,
   sendMessage,
+  sendAttachmentMessage,
+  deleteMessage,
   requestDirectRoom,
   acceptDirectRoom,
   updateGroupSettings,

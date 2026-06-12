@@ -94,6 +94,7 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+app.set('io', io);
 require('./domains/chat/chat.socket')(io);
 
 module.exports = { app, server, io };

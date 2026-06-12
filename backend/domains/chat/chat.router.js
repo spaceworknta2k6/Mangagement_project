@@ -10,12 +10,20 @@ const groupAvatarUpload = multer({
   limits: { fileSize: 2 * 1024 * 1024 },
 });
 
+const messageAttachmentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 30 * 1024 * 1024 },
+});
+
 router.use(protect);
 
 router.get('/rooms', chatController.getRooms);
 router.post('/direct-rooms', chatController.requestDirectRoom);
 router.get('/rooms/:roomId/messages', chatController.getMessages);
+router.post('/rooms/:roomId/read', chatController.markRoomRead);
 router.post('/rooms/:roomId/messages', chatController.sendMessage);
+router.post('/rooms/:roomId/messages/attachments', messageAttachmentUpload.single('file'), chatController.sendAttachmentMessage);
+router.delete('/rooms/:roomId/messages/:messageId', chatController.deleteMessage);
 router.post('/rooms/:roomId/accept', chatController.acceptDirectRoom);
 router.patch('/rooms/:roomId/group-settings', chatController.updateGroupSettings);
 router.patch('/rooms/:roomId/group-avatar', groupAvatarUpload.single('avatar'), chatController.uploadGroupAvatar);

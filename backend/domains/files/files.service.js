@@ -28,6 +28,11 @@ const detectMimeFromMagicBytes = (buffer) => {
   if (hex === '25504446') return 'application/pdf';
   if (hex === '89504E47') return 'image/png';
   if (hex.startsWith('FFD8FF')) return 'image/jpeg';
+  if (
+    buffer.length >= 12 &&
+    buffer.toString('ascii', 0, 4) === 'RIFF' &&
+    buffer.toString('ascii', 8, 12) === 'WEBP'
+  ) return 'image/webp';
   if (hex === '504B0304') return 'application/zip'; // Standard ZIP / DOCX / PPTX PK header
   return null;
 };
@@ -40,6 +45,7 @@ const isMimeCompatible = (verifiedMime, clientMime, originalName) => {
   }
   if (verifiedMime === 'image/png' && clientMime === 'image/png') return true;
   if (verifiedMime === 'image/jpeg' && (clientMime === 'image/jpeg' || clientMime === 'image/jpg')) return true;
+  if (verifiedMime === 'image/webp' && clientMime === 'image/webp') return true;
 
   if (verifiedMime === 'application/zip') {
     const allowedExtensions = ['.zip', '.docx', '.pptx', '.xlsx'];
@@ -50,6 +56,27 @@ const isMimeCompatible = (verifiedMime, clientMime, originalName) => {
   }
 
   return false;
+};
+
+const checkChatRoomFileAccess = async (asset, user) => {
+  if (asset.ownerType !== 'chat_room' || !asset.ownerId) return null;
+
+  const ChatRoom = require('../../models/ChatRoom');
+  const room = await ChatRoom.findOne({
+    _id: asset.ownerId,
+    isDeleted: { $ne: true },
+    memberIds: user._id,
+  });
+
+  if (!room) {
+    throw { status: 403, message: 'Bạn không có quyền tải tệp trong phòng chat này.' };
+  }
+
+  if (room.type === 'direct' && room.status !== 'accepted') {
+    throw { status: 403, message: 'Phòng chat riêng chưa được xác nhận.' };
+  }
+
+  return asset;
 };
 
 const uploadFile = async (multerFile, ownerType, ownerId, user) => {
@@ -114,6 +141,9 @@ const checkFileAccess = async (id, user) => {
   if (hasAnyRole(user, ['SYSTEM_ADMIN', 'FACULTY_STAFF', 'DEPARTMENT_STAFF'])) {
     return asset;
   }
+
+  const chatRoomAsset = await checkChatRoomFileAccess(asset, user);
+  if (chatRoomAsset) return chatRoomAsset;
 
   // Case 2: Uploader is the owner
   if (asset.uploadedBy.toString() === user._id.toString()) {

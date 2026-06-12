@@ -5,11 +5,18 @@ import { io } from 'socket.io-client';
 import {
   ArrowsClockwise,
   ChatsCircle,
+  DownloadSimple,
   DotsThreeVertical,
+  File,
   ImageSquare,
   Info,
+  MagnifyingGlass,
+  Paperclip,
   PaperPlaneTilt,
   PencilSimple,
+  Smiley,
+  Trash,
+  X,
   UserCheck,
   UserPlus,
 } from '@phosphor-icons/react';
@@ -26,6 +33,8 @@ import css from './page.module.css';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 const SOCKET_URL = API_BASE_URL.replace('/api/v1', '');
 const DEFAULT_GROUP_AVATAR_URL = process.env.NEXT_PUBLIC_DEFAULT_GROUP_AVATAR_URL || 'https://cdn-icons-png.flaticon.com/512/166/166258.png';
+const CHAT_EMOJIS = ['👍', '❤️', '😂', '🎉', '🙏', '👏', '🔥', '✅', '📌', '💡', '👀', '🚀'];
+const CHAT_ATTACHMENT_LIMIT = 30 * 1024 * 1024;
 
 function getId(value) {
   return String(value?._id || value?.id || value || '');
@@ -67,6 +76,86 @@ function getPendingGroupInvite(room, user) {
   );
 }
 
+function getAttachmentLabel(message) {
+  const firstAttachment = message?.attachments?.[0];
+  if (!firstAttachment) return 'ChÆ°a cÃ³ tin nháº¯n';
+  return firstAttachment.kind === 'image' ? 'Đã gửi một ảnh' : `Đã gửi tệp ${firstAttachment.originalName || ''}`.trim();
+}
+
+function getLatestMessageText(message) {
+  if (!message) return 'ChÆ°a cÃ³ tin nháº¯n';
+  return message.body || getAttachmentLabel(message);
+}
+
+function formatFileSize(size) {
+  const value = Number(size) || 0;
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  return `${(value / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function getAttachmentId(attachment) {
+  return getId(attachment?.fileId) || getId(attachment);
+}
+
+function MessageAttachment({ attachment, token, onDownload, onPreview }) {
+  const [imageUrl, setImageUrl] = useState('');
+  const isImage = attachment.kind === 'image';
+  const fileId = getAttachmentId(attachment);
+
+  useEffect(() => {
+    if (!isImage || !fileId || !token) return undefined;
+
+    let cancelled = false;
+    const loadImageUrl = async () => {
+      try {
+        const res = await api.get(`/files/${fileId}/download-url`, token);
+        let nextUrl = res.data?.downloadUrl || '';
+        if (nextUrl.startsWith('/')) {
+          nextUrl = `${SOCKET_URL}${nextUrl}`;
+        }
+        if (!cancelled) setImageUrl(nextUrl);
+      } catch {
+        if (!cancelled) setImageUrl('');
+      }
+    };
+
+    loadImageUrl();
+    return () => {
+      cancelled = true;
+    };
+  }, [fileId, isImage, token]);
+
+  return (
+    <div className={isImage ? css.imageAttachment : css.fileAttachment}>
+      {isImage && imageUrl ? (
+        <button
+          type="button"
+          className={css.imagePreviewButton}
+          style={{ backgroundImage: `url("${imageUrl}")` }}
+          onClick={() => onPreview({ url: imageUrl, name: attachment.originalName || 'Ảnh đính kèm', fileId })}
+          aria-label={attachment.originalName || 'Ảnh đính kèm'}
+        />
+      ) : (
+        <span className={css.fileIcon}>
+          {isImage ? <ImageSquare size={20} /> : <File size={20} />}
+        </span>
+      )}
+      <button type="button" className={css.fileInfo} onClick={() => onDownload(fileId)}>
+        <strong>{attachment.originalName || 'Tệp đính kèm'}</strong>
+        <span>{formatFileSize(attachment.size)}</span>
+      </button>
+      <Button
+        variant="ghost"
+        size="sm"
+        title="Tải xuống"
+        onClick={() => onDownload(fileId)}
+        icon={<DownloadSimple size={15} />}
+      />
+    </div>
+  );
+}
+
 export default function ChatPage() {
   const { token, user } = useAuthStore();
   const toast = useToast();
@@ -74,6 +163,8 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const typingStopTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
   const selectedRoomIdRef = useRef('');
   const currentUserIdRef = useRef('');
   const [rooms, setRooms] = useState([]);
@@ -82,7 +173,15 @@ export default function ChatPage() {
   const [draft, setDraft] = useState('');
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [olderLoading, setOlderLoading] = useState(false);
+  const [hasOlderMessages, setHasOlderMessages] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [attachmentFile, setAttachmentFile] = useState(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
+  const [deletingMessageId, setDeletingMessageId] = useState('');
   const [accepting, setAccepting] = useState(false);
   const [lecturers, setLecturers] = useState([]);
   const [groupMenuOpen, setGroupMenuOpen] = useState(false);
@@ -103,6 +202,19 @@ export default function ChatPage() {
   const canAcceptDirect = isPendingDirect && getId(selectedRoom?.requestedBy) !== getId(user);
   const canAcceptGroup = Boolean(pendingGroupInvite);
   const canSend = Boolean(selectedRoomId) && !isPendingDirect && !pendingGroupInvite;
+  const isUploadingAttachment = sending && Boolean(attachmentFile);
+  const visibleMessages = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return messages;
+    return messages.filter((message) => {
+      const body = String(message.body || '').toLowerCase();
+      const attachmentNames = (message.attachments || [])
+        .map((attachment) => attachment.originalName || '')
+        .join(' ')
+        .toLowerCase();
+      return body.includes(query) || attachmentNames.includes(query);
+    });
+  }, [messages, searchQuery]);
 
   useEffect(() => {
     selectedRoomIdRef.current = selectedRoomId;
@@ -115,6 +227,37 @@ export default function ChatPage() {
   const updateRoom = (nextRoom) => {
     setRooms((prev) => prev.map((room) => (getId(room) === getId(nextRoom) ? nextRoom : room)));
   };
+
+  const markRoomRead = useCallback(async (roomId) => {
+    if (!token || !roomId) return;
+    try {
+      await api.post(`/chat/rooms/${roomId}/read`, {}, token);
+      setRooms((prev) => prev.map((room) => (
+        getId(room) === getId(roomId) ? { ...room, unreadCount: 0 } : room
+      )));
+    } catch {
+      // Read receipts are best-effort and should not interrupt chat.
+    }
+  }, [token]);
+
+  const appendMessage = useCallback((message, { incrementUnread = false } = {}) => {
+    setMessages((prev) => {
+      if (prev.some((item) => getId(item) === getId(message))) return prev;
+      return [...prev, message];
+    });
+    setRooms((prev) =>
+      prev.map((room) =>
+        getId(room) === getId(message.roomId)
+          ? {
+              ...room,
+              latestMessage: message,
+              lastMessageAt: message.createdAt,
+              unreadCount: incrementUnread ? (Number(room.unreadCount) || 0) + 1 : room.unreadCount,
+            }
+          : room
+      )
+    );
+  }, []);
 
   const fetchRooms = useCallback(async () => {
     if (!token) return;
@@ -136,13 +279,35 @@ export default function ChatPage() {
     setMessagesLoading(true);
     try {
       const res = await api.get(`/chat/rooms/${roomId}/messages`, token);
-      setMessages(res.data || []);
+      const nextMessages = res.data || [];
+      setMessages(nextMessages);
+      setHasOlderMessages(nextMessages.length >= 50);
+      markRoomRead(roomId);
     } catch (err) {
       toast.error(err.message || 'Không thể tải tin nhắn.');
     } finally {
       setMessagesLoading(false);
     }
-  }, [toast, token]);
+  }, [markRoomRead, toast, token]);
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!token || !selectedRoomId || olderLoading || messages.length === 0) return;
+    setOlderLoading(true);
+    try {
+      const before = encodeURIComponent(messages[0].createdAt);
+      const res = await api.get(`/chat/rooms/${selectedRoomId}/messages?before=${before}`, token);
+      const olderMessages = res.data || [];
+      setMessages((prev) => {
+        const seen = new Set(prev.map((message) => getId(message)));
+        return [...olderMessages.filter((message) => !seen.has(getId(message))), ...prev];
+      });
+      setHasOlderMessages(olderMessages.length >= 50);
+    } catch (err) {
+      toast.error(err.message || 'Không thể tải tin nhắn cũ.');
+    } finally {
+      setOlderLoading(false);
+    }
+  }, [messages, olderLoading, selectedRoomId, toast, token]);
 
   const fetchLecturers = useCallback(async () => {
     if (!token) return;
@@ -182,17 +347,21 @@ export default function ChatPage() {
 
     socket.on('chat:message', (message) => {
       setTypingUsers((prev) => prev.filter((item) => getId(item) !== getId(message.senderId)));
-      setMessages((prev) => {
-        if (prev.some((item) => getId(item) === getId(message))) return prev;
-        return [...prev, message];
-      });
-      setRooms((prev) =>
-        prev.map((room) =>
-          getId(room) === getId(message.roomId)
-            ? { ...room, latestMessage: message, lastMessageAt: message.createdAt }
-            : room
-        )
-      );
+      const isCurrentRoom = getId(message.roomId) === selectedRoomIdRef.current;
+      const isMine = getId(message.senderId) === currentUserIdRef.current;
+      appendMessage(message, { incrementUnread: !isCurrentRoom && !isMine });
+      if (isCurrentRoom && !isMine) {
+        markRoomRead(message.roomId);
+      }
+    });
+
+    socket.on('chat:message-deleted', ({ roomId, messageId }) => {
+      setMessages((prev) => prev.filter((message) => getId(message) !== getId(messageId)));
+      setRooms((prev) => prev.map((room) => (
+        getId(room) === getId(roomId) && getId(room.latestMessage) === getId(messageId)
+          ? { ...room, latestMessage: null }
+          : room
+      )));
     });
 
     socket.on('chat:typing', ({ roomId, isTyping, user: typingUser }) => {
@@ -207,7 +376,7 @@ export default function ChatPage() {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [toast, token]);
+  }, [appendMessage, markRoomRead, toast, token]);
 
   useEffect(() => {
     if (!selectedRoomId) {
@@ -250,13 +419,127 @@ export default function ChatPage() {
     setSelectedLecturerUserId('');
   };
 
+  const clearAttachment = () => {
+    setAttachmentFile(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
+  const handleSelectRoom = (roomId) => {
+    if (isUploadingAttachment) {
+      toast.error('Vui lòng chờ tệp tải lên xong trước khi đổi phòng chat.');
+      return;
+    }
+    setSelectedRoomId(roomId);
+    setSearchQuery('');
+  };
+
+  const selectAttachment = (file, imageOnly = false) => {
+    if (!file) return;
+    if (file.size > CHAT_ATTACHMENT_LIMIT) {
+      toast.error('Tệp gửi trong chat không được vượt quá 30MB.');
+      clearAttachment();
+      return;
+    }
+    if (imageOnly && !['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Ảnh chat chỉ hỗ trợ JPG, PNG hoặc WEBP.');
+      clearAttachment();
+      return;
+    }
+    setAttachmentFile(file);
+  };
+
+  const handleDownloadAttachment = async (fileId) => {
+    if (!fileId) return;
+    try {
+      const res = await api.get(`/files/${fileId}/download-url`, token);
+      let downloadUrl = res.data?.downloadUrl;
+      if (downloadUrl?.startsWith('/')) {
+        downloadUrl = `${SOCKET_URL}${downloadUrl}`;
+      }
+      window.open(downloadUrl || `${SOCKET_URL}/api/v1/files/${fileId}/download`, '_blank');
+    } catch (err) {
+      toast.error(err.message || 'Không thể tải tệp đính kèm.');
+    }
+  };
+
+  const handleDeleteMessage = async (message) => {
+    const messageId = getId(message);
+    if (!selectedRoomId || !messageId || deletingMessageId) return;
+
+    setDeletingMessageId(messageId);
+    try {
+      await api.delete(`/chat/rooms/${selectedRoomId}/messages/${messageId}`, token);
+      setMessages((prev) => prev.filter((item) => getId(item) !== messageId));
+      setRooms((prev) => prev.map((room) => (
+        getId(room) === selectedRoomId && getId(room.latestMessage) === messageId
+          ? { ...room, latestMessage: null }
+          : room
+      )));
+      toast.success('Đã thu hồi tin nhắn.');
+    } catch (err) {
+      toast.error(err.message || 'Không thể thu hồi tin nhắn.');
+    } finally {
+      setDeletingMessageId('');
+    }
+  };
+
+  const uploadAttachmentMessage = async (body) => {
+    const formData = new FormData();
+    formData.append('file', attachmentFile);
+    formData.append('body', body);
+
+    return await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_BASE_URL}/chat/rooms/${selectedRoomId}/messages/attachments`);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return;
+        setUploadProgress(Math.max(1, Math.round((event.loaded / event.total) * 100)));
+      };
+      xhr.onload = () => {
+        let data = {};
+        try {
+          data = JSON.parse(xhr.responseText || '{}');
+        } catch {
+          data = {};
+        }
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject(new Error(data.message || 'Không thể gửi tệp đính kèm.'));
+          return;
+        }
+        resolve(data.data);
+      };
+      xhr.onerror = () => reject(new Error('Không thể gửi tệp đính kèm.'));
+      xhr.send(formData);
+    });
+  };
+
   const handleSend = async (event) => {
     event.preventDefault();
     const body = draft.trim();
-    if (!body || !canSend || sending) return;
+    if ((!body && !attachmentFile) || !canSend || sending) return;
 
     setSending(true);
+    setUploadProgress(attachmentFile ? 1 : 0);
     socketRef.current?.emit('chat:typing', { roomId: selectedRoomId, isTyping: false });
+    if (attachmentFile) {
+      try {
+        const message = await uploadAttachmentMessage(body);
+        appendMessage(message);
+        setDraft('');
+        clearAttachment();
+        setEmojiOpen(false);
+      } catch (err) {
+        toast.error(err.message || 'Không thể gửi tệp đính kèm.');
+      } finally {
+        setUploadProgress(0);
+        setSending(false);
+      }
+      return;
+    }
+
     const socket = socketRef.current;
     if (socket?.connected) {
       socket.emit('chat:message', { roomId: selectedRoomId, body }, (ack) => {
@@ -272,7 +555,7 @@ export default function ChatPage() {
 
     try {
       const res = await api.post(`/chat/rooms/${selectedRoomId}/messages`, { body }, token);
-      setMessages((prev) => [...prev, res.data]);
+      appendMessage(res.data);
       setDraft('');
     } catch (err) {
       toast.error(err.message || 'Không thể gửi tin nhắn.');
@@ -448,13 +731,14 @@ export default function ChatPage() {
           <div className={css.roomList}>
             {rooms.map((room) => {
               const roomId = getId(room);
-              const latest = room.latestMessage?.body || 'Chưa có tin nhắn';
+              const latest = getLatestMessageText(room.latestMessage);
               return (
                 <button
                   key={roomId}
+                  disabled={isUploadingAttachment}
                   type="button"
                   className={[css.roomButton, selectedRoomId === roomId ? css.roomButtonActive : ''].filter(Boolean).join(' ')}
-                  onClick={() => setSelectedRoomId(roomId)}
+                  onClick={() => handleSelectRoom(roomId)}
                 >
                   <div className={css.roomName}>
                     <span className={css.roomTitleWrap}>
@@ -463,6 +747,7 @@ export default function ChatPage() {
                     </span>
                     {room.type === 'direct' && room.status === 'pending' && <Badge variant="warning">Chờ xác nhận</Badge>}
                     {getPendingGroupInvite(room, user) && <Badge variant="warning">Lời mời</Badge>}
+                    {Number(room.unreadCount) > 0 && <Badge variant="info">{room.unreadCount}</Badge>}
                   </div>
                   <p className={css.roomMeta}>{latest}</p>
                 </button>
@@ -492,6 +777,21 @@ export default function ChatPage() {
             )}
           </div>
           <div className={css.headerActions}>
+            {selectedRoomId && !isPendingDirect && !pendingGroupInvite && (
+              <label className={css.searchBox}>
+                <MagnifyingGlass size={15} />
+                <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Tìm trong chat"
+                />
+                {searchQuery && (
+                  <button type="button" onClick={() => setSearchQuery('')} aria-label="Xóa tìm kiếm">
+                    <X size={13} />
+                  </button>
+                )}
+              </label>
+            )}
             {canAcceptDirect && (
               <Button
                 variant="primary"
@@ -550,18 +850,51 @@ export default function ChatPage() {
           <div className={css.loading}><Spinner /></div>
         ) : (
           <div className={css.messages}>
-            {messages.length === 0 ? (
-              <div className={css.empty}>Chưa có tin nhắn trong phòng này.</div>
+            {hasOlderMessages && !searchQuery && messages.length > 0 && (
+              <button
+                type="button"
+                className={css.loadOlderButton}
+                onClick={loadOlderMessages}
+                disabled={olderLoading}
+              >
+                {olderLoading ? 'Đang tải...' : 'Tải tin nhắn cũ hơn'}
+              </button>
+            )}
+            {visibleMessages.length === 0 ? (
+              <div className={css.empty}>
+                {searchQuery ? 'Không tìm thấy tin nhắn phù hợp.' : 'Chưa có tin nhắn trong phòng này.'}
+              </div>
             ) : (
-              messages.map((message) => {
+              visibleMessages.map((message) => {
                 const mine = getId(message.senderId) === getId(user);
                 return (
                   <div key={getId(message)} className={[css.messageRow, mine ? css.messageMine : ''].filter(Boolean).join(' ')}>
                     {!mine && <span className={css.messageAvatar} style={getUserAvatarStyle(message.senderId)} />}
                     <div className={css.bubble}>
                       {!mine && <p className={css.sender}>{getSenderName(message)}</p>}
-                      <p className={css.body}>{message.body}</p>
+                      {message.body && <p className={css.body}>{message.body}</p>}
+                      {(message.attachments || []).map((attachment) => (
+                        <MessageAttachment
+                          key={getAttachmentId(attachment)}
+                          attachment={attachment}
+                          token={token}
+                          onDownload={handleDownloadAttachment}
+                          onPreview={setPreviewImage}
+                        />
+                      ))}
                       <p className={css.time}>{formatDateTime(message.createdAt)}</p>
+                      {mine && (
+                        <button
+                          type="button"
+                          className={css.deleteMessageButton}
+                          onClick={() => handleDeleteMessage(message)}
+                          disabled={deletingMessageId === getId(message)}
+                          title="Thu hồi tin nhắn"
+                        >
+                          <Trash size={13} />
+                          Thu hồi
+                        </button>
+                      )}
                     </div>
                     {mine && <span className={css.messageAvatar} style={getUserAvatarStyle(user)} />}
                   </div>
@@ -583,22 +916,97 @@ export default function ChatPage() {
         )}
 
         <form className={css.composer} onSubmit={handleSend}>
-          <textarea
-            className={css.input}
-            value={draft}
-            onChange={(event) => emitTyping(event.target.value)}
-            placeholder={selectedRoomId ? 'Nhập tin nhắn...' : 'Chọn phòng chat trước'}
-            disabled={!canSend || sending}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                handleSend(event);
-              }
-            }}
+          <input
+            ref={fileInputRef}
+            type="file"
+            className={css.hiddenFileInput}
+            accept=".pdf,.zip,.docx,.pptx,.xlsx,image/png,image/jpeg,image/webp"
+            onChange={(event) => selectAttachment(event.target.files?.[0] || null)}
           />
+          <input
+            ref={imageInputRef}
+            type="file"
+            className={css.hiddenFileInput}
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(event) => selectAttachment(event.target.files?.[0] || null, true)}
+          />
+          <div className={css.composerTools}>
+            <Button
+              variant="ghost"
+              size="sm"
+              title="Gửi tệp"
+              disabled={!canSend || sending}
+              onClick={() => fileInputRef.current?.click()}
+              icon={<Paperclip size={17} />}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              title="Gửi ảnh"
+              disabled={!canSend || sending}
+              onClick={() => imageInputRef.current?.click()}
+              icon={<ImageSquare size={17} />}
+            />
+            <div className={css.emojiWrap}>
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Chèn icon"
+                disabled={!canSend || sending}
+                onClick={() => setEmojiOpen((prev) => !prev)}
+                icon={<Smiley size={17} />}
+              />
+              {emojiOpen && (
+                <div className={css.emojiMenu}>
+                  {CHAT_EMOJIS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => {
+                        emitTyping(`${draft}${emoji}`);
+                        setEmojiOpen(false);
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className={css.composerField}>
+            {attachmentFile && (
+              <div className={css.pendingAttachment}>
+                <span>{attachmentFile.type.startsWith('image/') ? <ImageSquare size={16} /> : <File size={16} />}</span>
+                <strong>{attachmentFile.name}</strong>
+                <em>{isUploadingAttachment ? `${uploadProgress || 1}%` : formatFileSize(attachmentFile.size)}</em>
+                <button type="button" onClick={clearAttachment} disabled={isUploadingAttachment} aria-label="Bỏ tệp đính kèm">
+                  <X size={14} />
+                </button>
+                {isUploadingAttachment && (
+                  <span className={css.uploadProgressTrack}>
+                    <span style={{ width: `${uploadProgress || 1}%` }} />
+                  </span>
+                )}
+              </div>
+            )}
+            <textarea
+              className={css.input}
+              value={draft}
+              onChange={(event) => emitTyping(event.target.value)}
+              placeholder={selectedRoomId ? 'Nhập tin nhắn...' : 'Chọn phòng chat trước'}
+              disabled={!canSend || sending}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  handleSend(event);
+                }
+              }}
+            />
+          </div>
           <Button
             type="submit"
-            disabled={!canSend || !draft.trim()}
+            disabled={!canSend || (!draft.trim() && !attachmentFile)}
             loading={sending}
             icon={<PaperPlaneTilt size={16} />}
           >
@@ -606,6 +1014,35 @@ export default function ChatPage() {
           </Button>
         </form>
       </section>
+
+      {previewImage && (
+        <div className={css.modalBackdrop} onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setPreviewImage(null);
+        }}>
+          <div className={css.imageModal}>
+            <div className={css.imageModalHeader}>
+              <strong>{previewImage.name}</strong>
+              <div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Tải xuống"
+                  onClick={() => handleDownloadAttachment(previewImage.fileId)}
+                  icon={<DownloadSimple size={16} />}
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Đóng"
+                  onClick={() => setPreviewImage(null)}
+                  icon={<X size={16} />}
+                />
+              </div>
+            </div>
+            <div className={css.imageModalBody} style={{ backgroundImage: `url("${previewImage.url}")` }} />
+          </div>
+        </div>
+      )}
 
       {configMode && (
         <div className={css.modalBackdrop} onMouseDown={(event) => {
