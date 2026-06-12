@@ -13,10 +13,10 @@ const protect = async (req, res, next) => {
   const tokenPair = cookies
     .split(';')
     .map((item) => item.trim())
-    .find((item) => item.startsWith('episteme_token='));
+    .find((item) => item.startsWith('karl_token='));
   
   if (tokenPair) {
-    token = decodeURIComponent(tokenPair.slice('episteme_token='.length));
+    token = decodeURIComponent(tokenPair.slice('karl_token='.length));
   }
 
   // 2. Fallback: Retrieve token from Authorization header (Bearer <token>)

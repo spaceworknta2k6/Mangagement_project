@@ -42,7 +42,7 @@ const LecturerSchema = new mongoose.Schema({
   organization: {
     type: String,
     trim: true,
-    default: 'HUST',
+    default: 'PHENIKAA',
   },
   status: {
     type: String,

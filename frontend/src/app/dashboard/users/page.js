@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
@@ -35,20 +36,64 @@ const ROLE_OPTIONS = [
   { value: 'STUDENT', label: 'Sinh viên', badge: 'success' }
 ];
 
+const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+const DEFAULT_FILTERS = {
+  search: '',
+  role: '',
+  status: '',
+};
+
+function getSafePositiveInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function getSafePageSize(value) {
+  const parsed = Number(value);
+  return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : PAGE_SIZE;
+}
+
+function getInitialUsersQuery() {
+  if (typeof window === 'undefined') {
+    return {
+      page: 1,
+      limit: PAGE_SIZE,
+      filters: DEFAULT_FILTERS,
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return {
+    page: getSafePositiveInt(params.get('page'), 1),
+    limit: getSafePageSize(params.get('limit')),
+    filters: {
+      search: params.get('search') || '',
+      role: params.get('role') || '',
+      status: params.get('status') || '',
+    },
+  };
+}
+
 export default function UsersPage() {
   const { token, user: currentUser } = useAuthStore();
   const toast = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialQuery = useMemo(() => getInitialUsersQuery(), []);
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({ total: 0, page: 1, pages: 1, limit: 10 });
+  const [pagination, setPagination] = useState({ total: 0, page: initialQuery.page, pages: 1, limit: initialQuery.limit });
 
   // Filters State
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchInput, setSearchInput] = useState(initialQuery.filters.search);
+  const [search, setSearch] = useState(initialQuery.filters.search);
+  const [roleFilter, setRoleFilter] = useState(initialQuery.filters.role);
+  const [statusFilter, setStatusFilter] = useState(initialQuery.filters.status);
+  const [currentPage, setCurrentPage] = useState(initialQuery.page);
+  const [pageSize, setPageSize] = useState(initialQuery.limit);
 
   // Modals State
   const [selectedUser, setSelectedUser] = useState(null);
@@ -68,7 +113,7 @@ export default function UsersPage() {
         role: roleFilter,
         status: statusFilter,
         page: currentPage.toString(),
-        limit: '10'
+        limit: String(pageSize)
       });
 
       const res = await api.get(`/users?${queryParams.toString()}`, token);
@@ -81,13 +126,29 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, search, roleFilter, statusFilter, currentPage, toast]);
+  }, [token, search, roleFilter, statusFilter, currentPage, pageSize, toast]);
 
   useEffect(() => {
     if (token) {
       fetchUsers();
     }
   }, [token, fetchUsers]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('page', String(currentPage));
+    params.set('limit', String(pageSize));
+    if (search.trim()) params.set('search', search.trim());
+    if (roleFilter.trim()) params.set('role', roleFilter.trim());
+    if (statusFilter.trim()) params.set('status', statusFilter.trim());
+
+    const nextUrl = `${pathname}?${params.toString()}`;
+    if (typeof window === 'undefined') return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl !== nextUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [currentPage, pageSize, pathname, roleFilter, router, search, statusFilter]);
 
   // Handle Search and Filter Resets
   const handleSearchSubmit = (e) => {
@@ -97,10 +158,15 @@ export default function UsersPage() {
   };
 
   const handleResetFilters = () => {
-    setSearchInput('');
-    setSearch('');
-    setRoleFilter('');
-    setStatusFilter('');
+    setSearchInput(DEFAULT_FILTERS.search);
+    setSearch(DEFAULT_FILTERS.search);
+    setRoleFilter(DEFAULT_FILTERS.role);
+    setStatusFilter(DEFAULT_FILTERS.status);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (nextPageSize) => {
+    setPageSize(nextPageSize);
     setCurrentPage(1);
   };
 
@@ -235,7 +301,10 @@ export default function UsersPage() {
             <label className={css.s9}>Vai trò</label>
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)} className={css.s63} >
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+                setCurrentPage(1);
+              }} className={css.s63} >
               <option value="">Tất cả vai trò</option>
               {ROLE_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -247,7 +316,10 @@ export default function UsersPage() {
             <label className={css.s11}>Trạng thái</label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)} className={css.s64} >
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }} className={css.s64} >
               <option value="">Tất cả trạng thái</option>
               <option value="active">Kích hoạt</option>
               <option value="inactive">Không hoạt động</option>
@@ -345,7 +417,11 @@ export default function UsersPage() {
             currentPage={currentPage}
             totalPages={pagination.pages}
             totalItems={pagination.total}
+            pageSize={pagination.limit}
             currentItemCount={users.length}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            onPageSizeChange={handlePageSizeChange}
+            isLoading={loading}
             itemLabel={'t\u00e0i kho\u1ea3n'}
             onPageChange={setCurrentPage} className={css.s38} />
         </Card>

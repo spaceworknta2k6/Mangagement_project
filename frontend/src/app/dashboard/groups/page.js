@@ -1,23 +1,57 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
+import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { getStatus, hasAnyRole } from '@/lib/utils';
-import { Users, Plus, Check, UserPlus, Warning, PencilSimple, Trash } from '@phosphor-icons/react';
+import { Users, Plus, Check, UserPlus, Warning, PencilSimple, Trash, MagnifyingGlass } from '@phosphor-icons/react';
 import css from './page.module.css';
 
+const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
+function getSafePositiveInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function getSafePageSize(value) {
+  const parsed = Number(value);
+  return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : PAGE_SIZE;
+}
+
+function getInitialQuery() {
+  if (typeof window === 'undefined') return { page: 1, limit: PAGE_SIZE, search: '' };
+  const params = new URLSearchParams(window.location.search);
+  return {
+    page: getSafePositiveInt(params.get('page'), 1),
+    limit: getSafePageSize(params.get('limit')),
+    search: params.get('search') || '',
+  };
+}
+
 export default function GroupsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
+
+  const initialQuery = useMemo(() => getInitialQuery(), []);
+  const [currentPage, setCurrentPage] = useState(initialQuery.page);
+  const [pageSize, setPageSize] = useState(initialQuery.limit);
+  const [searchInput, setSearchInput] = useState(initialQuery.search);
+  const [search, setSearch] = useState(initialQuery.search);
 
   const [periods, setPeriods] = useState([]);
   const [selectedPeriodId, setSelectedPeriodId] = useState('');
@@ -198,6 +232,51 @@ export default function GroupsPage() {
     else fetchStudentGroupData();
   };
 
+  const visibleGroups = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return groups;
+    return groups.filter((g) => {
+      const values = [g.name, g.leaderStudentId?.userId?.fullName, g.leaderStudentId?.userId?.email];
+      return values.some((v) => String(v || '').toLowerCase().includes(keyword));
+    });
+  }, [groups, search]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleGroups.length / pageSize));
+  const pagedGroups = visibleGroups.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    if (!isStaff) return;
+    const params = new URLSearchParams();
+    params.set('page', String(currentPage));
+    params.set('limit', String(pageSize));
+    if (search.trim()) params.set('search', search.trim());
+    const nextUrl = `${pathname}?${params.toString()}`;
+    if (typeof window === 'undefined') return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl !== nextUrl) router.replace(nextUrl, { scroll: false });
+  }, [currentPage, isStaff, pageSize, pathname, router, search]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setSearch(searchInput);
+    setCurrentPage(1);
+  };
+
+  const handleResetSearch = () => {
+    setSearchInput('');
+    setSearch('');
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (nextSize) => {
+    setPageSize(nextSize);
+    setCurrentPage(1);
+  };
+
   const handleEditGroup = async (group) => {
     const name = window.prompt('Tên nhóm mới', group.name);
     if (!name || !name.trim() || name.trim() === group.name) return;
@@ -258,15 +337,29 @@ export default function GroupsPage() {
             </select>
           </div>
 
-          {groups.length === 0 ? (
+          {/* Search form (staff only) */}
+          <form onSubmit={handleSearchSubmit} className={css.searchRow}>
+            <Input
+              placeholder="Tìm theo tên nhóm, trưởng nhóm..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              icon={<MagnifyingGlass size={16} />}
+            />
+            <Button type="submit" variant="secondary" size="sm">Tìm</Button>
+            {search && (
+              <Button type="button" variant="ghost" size="sm" onClick={handleResetSearch}>Xóa</Button>
+            )}
+          </form>
+
+          {visibleGroups.length === 0 ? (
             <Card>
               <div className={css.s8}>
-                Chưa có nhóm nào được đăng ký trong đợt này.
+                {search ? `Không tìm thấy kết quả cho "${search}".` : 'Chưa có nhóm nào được đăng ký trong đợt này.'}
               </div>
             </Card>
           ) : (
             <div className={css.s9}>
-              {groups.map((g) => {
+              {pagedGroups.map((g) => {
                 const statusInfo = getStatus(g.status);
                 return (
                   <Card key={g._id} title={g.name} subtitle={`Trưởng nhóm: ${g.leaderStudentId?.userId?.fullName || 'Không rõ'}`}
@@ -306,6 +399,15 @@ export default function GroupsPage() {
                   </Card>
                 );
               })}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={handlePageSizeChange}
+                totalItems={visibleGroups.length}
+              />
             </div>
           )}
         </div>

@@ -85,7 +85,7 @@ app.use((err, req, res, next) => {
 // Boot listening server
 const server = app.listen(PORT, () => {
   console.log(`Server compiled successfully in [${process.env.NODE_ENV}] mode.`);
-  console.log(`Episteme API Server listening on: http://localhost:${PORT}`);
+  console.log(`Karl API Server listening on: http://localhost:${PORT}`);
 });
 
 const io = new Server(server, {

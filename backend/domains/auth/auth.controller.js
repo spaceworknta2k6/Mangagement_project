@@ -41,7 +41,7 @@ const login = async (req, res, next) => {
     const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
     res.setHeader(
       'Set-Cookie',
-      `episteme_token=${encodeURIComponent(result.accessToken)}; HttpOnly; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax; Path=/${secure}`
+      `karl_token=${encodeURIComponent(result.accessToken)}; HttpOnly; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax; Path=/${secure}`
     );
     
     return res.status(200).json({
@@ -184,7 +184,7 @@ const consumeGoogleSession = async (req, res) => {
   const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
-    `episteme_token=${encodeURIComponent(session.data.accessToken)}; HttpOnly; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax; Path=/${secure}`
+    `karl_token=${encodeURIComponent(session.data.accessToken)}; HttpOnly; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax; Path=/${secure}`
   );
 
   return res.status(200).json({
@@ -261,7 +261,7 @@ const logout = async (req, res, next) => {
     // Clear httpOnly session cookie
     res.setHeader(
       'Set-Cookie',
-      'episteme_token=; HttpOnly; Max-Age=0; SameSite=Lax; Path=/'
+      'karl_token=; HttpOnly; Max-Age=0; SameSite=Lax; Path=/'
     );
     return res.status(200).json({
       success: true,

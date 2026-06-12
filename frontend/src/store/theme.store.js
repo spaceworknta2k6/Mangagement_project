@@ -14,7 +14,7 @@ const useThemeStore = create(
         document.documentElement.setAttribute('data-theme', get().theme);
       },
     }),
-    { name: 'episteme-theme' }
+    { name: 'karl-theme' }
   )
 );
 

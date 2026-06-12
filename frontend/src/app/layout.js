@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: 'Karl — Quản lý Đồ án Tốt nghiệp',
-  description: 'Hệ thống quản lý đồ án tốt nghiệp dành cho Đại học Bách Khoa Hà Nội',
+  description: 'Hệ thống quản lý đồ án tốt nghiệp dành cho Trường Đại học Phenikaa',
 };
 
 export default function RootLayout({ children }) {

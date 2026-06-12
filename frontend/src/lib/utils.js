@@ -1,5 +1,5 @@
 /**
- * Utility helpers for Episteme frontend.
+ * Utility helpers for Karl frontend.
  */
 
 /**

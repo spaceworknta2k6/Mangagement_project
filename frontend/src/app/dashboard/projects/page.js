@@ -1,23 +1,56 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import Input from '@/components/ui/Input';
+import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { getTechnicalLabel, hasAnyRole } from '@/lib/utils';
-import { FolderSimple, UserCheck, ShieldCheck, CheckSquare, ArrowsClockwise, ChatsCircle } from '@phosphor-icons/react';
+import { FolderSimple, UserCheck, ShieldCheck, CheckSquare, ArrowsClockwise, ChatsCircle, MagnifyingGlass } from '@phosphor-icons/react';
 import css from './page.module.css';
+
+const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
+function getSafePositiveInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function getSafePageSize(value) {
+  const parsed = Number(value);
+  return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : PAGE_SIZE;
+}
+
+function getInitialQuery() {
+  if (typeof window === 'undefined') return { page: 1, limit: PAGE_SIZE, search: '' };
+  const params = new URLSearchParams(window.location.search);
+  return {
+    page: getSafePositiveInt(params.get('page'), 1),
+    limit: getSafePageSize(params.get('limit')),
+    search: params.get('search') || '',
+  };
+}
 
 export default function ProjectsPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
+
+  const initialQuery = useMemo(() => getInitialQuery(), []);
+  const [currentPage, setCurrentPage] = useState(initialQuery.page);
+  const [pageSize, setPageSize] = useState(initialQuery.limit);
+  const [searchInput, setSearchInput] = useState(initialQuery.search);
+  const [search, setSearch] = useState(initialQuery.search);
 
   const [projects, setProjects] = useState([]);
   const [lecturers, setLecturers] = useState([]);
@@ -73,6 +106,56 @@ export default function ProjectsPage() {
       loadData();
     }
   }, [loadData, token]);
+
+  const visibleProjects = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return projects;
+    return projects.filter((p) => {
+      const values = [
+        p.topicId?.title,
+        p.groupId?.name,
+        p.periodId?.name,
+        p.supervisorId?.userId?.fullName,
+        p.reviewerId?.userId?.fullName,
+      ];
+      return values.some((v) => String(v || '').toLowerCase().includes(keyword));
+    });
+  }, [projects, search]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleProjects.length / pageSize));
+  const pagedProjects = visibleProjects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('page', String(currentPage));
+    params.set('limit', String(pageSize));
+    if (search.trim()) params.set('search', search.trim());
+    const nextUrl = `${pathname}?${params.toString()}`;
+    if (typeof window === 'undefined') return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl !== nextUrl) router.replace(nextUrl, { scroll: false });
+  }, [currentPage, pageSize, pathname, router, search]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setSearch(searchInput);
+    setCurrentPage(1);
+  };
+
+  const handleResetSearch = () => {
+    setSearchInput('');
+    setSearch('');
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (nextSize) => {
+    setPageSize(nextSize);
+    setCurrentPage(1);
+  };
 
   const handleStartProject = async (id) => {
     try {
@@ -186,19 +269,32 @@ export default function ProjectsPage() {
       </div>
 
       {/* Projects list */}
+      <form onSubmit={handleSearchSubmit} className={css.searchRow}>
+        <Input
+          placeholder="Tìm theo tên đề tài, nhóm, GVHD..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          icon={<MagnifyingGlass size={16} />}
+        />
+        <Button type="submit" variant="secondary" size="sm">Tìm</Button>
+        {search && (
+          <Button type="button" variant="ghost" size="sm" onClick={handleResetSearch}>Xóa</Button>
+        )}
+      </form>
+
       {loading ? (
         <div className={css.s5}>
           <Spinner size="lg" />
         </div>
-      ) : projects.length === 0 ? (
+      ) : visibleProjects.length === 0 ? (
         <Card>
           <div className={css.s6}>
-            Chưa có dự án đồ án nào được khởi tạo trong đợt này.
+            {search ? `Không tìm thấy kết quả cho "${search}".` : 'Chưa có dự án đồ án nào được khởi tạo trong đợt này.'}
           </div>
         </Card>
       ) : (
         <div className={css.s7}>
-          {projects.map((p) => {
+          {pagedProjects.map((p) => {
             const allowedDefense = ['in_progress', 'pre_defense_submitted', 'supervisor_reviewed', 'reviewer_reviewed'].includes(p.status);
 
             return (
@@ -296,6 +392,15 @@ export default function ProjectsPage() {
               </Card>
             );
           })}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+            totalItems={visibleProjects.length}
+          />
         </div>
       )}
 

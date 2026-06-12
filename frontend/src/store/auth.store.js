@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import Cookies from 'js-cookie';
 
-const COOKIE_KEY = 'episteme_token';
+const COOKIE_KEY = 'karl_token';
 
 const useAuthStore = create((set) => ({
   token: null,

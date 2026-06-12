@@ -17,8 +17,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border);
+}
+
+.s1 > :first-child {
+  flex: 1;
+  min-width: 0;
 }
 
 .s2 {
@@ -37,4 +43,5 @@
 .s4 {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }

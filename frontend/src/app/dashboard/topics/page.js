@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTopics } from './hooks/useTopics';
 import TopicCard from './components/TopicCard';
 import TopicModal from './components/TopicModal';
@@ -7,9 +9,11 @@ import OverrideModal from './components/OverrideModal';
 import AiChatPanel from './components/AiChatPanel';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
 import Tabs from '@/components/ui/Tabs';
-import { BookOpen, Plus, Lightbulb } from '@phosphor-icons/react';
+import { BookOpen, Plus, Lightbulb, MagnifyingGlass } from '@phosphor-icons/react';
 import css from './page.module.css';
 
 const topicTabs = [
@@ -19,7 +23,49 @@ const topicTabs = [
   { id: 'rejected', label: 'Từ chối' },
 ];
 
+const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+const VALID_TABS = topicTabs.map((tab) => tab.id);
+
+function getSafePositiveInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function getSafePageSize(value) {
+  const parsed = Number(value);
+  return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : PAGE_SIZE;
+}
+
+function getInitialTopicsQuery() {
+  if (typeof window === 'undefined') {
+    return {
+      page: 1,
+      limit: PAGE_SIZE,
+      tab: 'all',
+      search: '',
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab') || 'all';
+  return {
+    page: getSafePositiveInt(params.get('page'), 1),
+    limit: getSafePageSize(params.get('limit')),
+    tab: VALID_TABS.includes(tab) ? tab : 'all',
+    search: params.get('search') || '',
+  };
+}
+
 export default function TopicsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialQuery = useMemo(() => getInitialTopicsQuery(), []);
+  const [currentPage, setCurrentPage] = useState(initialQuery.page);
+  const [pageSize, setPageSize] = useState(initialQuery.limit);
+  const [searchInput, setSearchInput] = useState(initialQuery.search);
+  const [search, setSearch] = useState(initialQuery.search);
   const {
     user,
     periods,
@@ -61,7 +107,68 @@ export default function TopicsPage() {
     handleCheckDuplicate,
     handleOverrideSubmit,
     filteredTopics,
-  } = useTopics();
+  } = useTopics(initialQuery.tab);
+
+  const visibleTopics = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return filteredTopics;
+    return filteredTopics.filter((topic) => {
+      const values = [
+        topic.title,
+        topic.summary,
+        topic.groupId?.name,
+        topic.periodId?.name,
+        topic.proposedSupervisorId?.userId?.fullName,
+      ];
+      return values.some((value) => String(value || '').toLowerCase().includes(keyword));
+    });
+  }, [filteredTopics, search]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleTopics.length / pageSize));
+  const pagedTopics = visibleTopics.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('page', String(currentPage));
+    params.set('limit', String(pageSize));
+    if (activeTab !== 'all') params.set('tab', activeTab);
+    if (search.trim()) params.set('search', search.trim());
+
+    const nextUrl = `${pathname}?${params.toString()}`;
+    if (typeof window === 'undefined') return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl !== nextUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [activeTab, currentPage, pageSize, pathname, router, search]);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setSearch(searchInput);
+    setCurrentPage(1);
+  };
+
+  const handleResetSearch = () => {
+    setSearchInput('');
+    setSearch('');
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (nextPageSize) => {
+    setPageSize(nextPageSize);
+    setCurrentPage(1);
+  };
 
   return (
     <div>
@@ -102,20 +209,36 @@ export default function TopicsPage() {
         )}
       </div>
 
-      <Tabs tabs={topicTabs} activeTab={activeTab} onChange={setActiveTab} />
+      <Tabs tabs={topicTabs} activeTab={activeTab} onChange={handleTabChange} />
+
+      {/* Search form */}
+      <form onSubmit={handleSearchSubmit} className={css.searchRow}>
+        <Input
+          placeholder="Tìm theo tên đề tài, nhóm, GVHD..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          icon={<MagnifyingGlass size={16} />}
+        />
+        <Button type="submit" variant="secondary" size="sm">Tìm</Button>
+        {search && (
+          <Button type="button" variant="ghost" size="sm" onClick={handleResetSearch}>Xóa</Button>
+        )}
+      </form>
 
       {/* List items */}
       {loading ? (
         <div className={css.s6}>
           <Spinner size="lg" />
         </div>
-      ) : filteredTopics.length === 0 ? (
+      ) : visibleTopics.length === 0 ? (
         <Card>
-          <div className={css.s7}>Chưa có đề tài nào thuộc danh mục này.</div>
+          <div className={css.s7}>
+            {search ? `Không tìm thấy kết quả cho "${search}".` : 'Chưa có đề tài nào thuộc danh mục này.'}
+          </div>
         </Card>
       ) : (
         <div className={css.s8}>
-          {filteredTopics.map((t) => (
+          {pagedTopics.map((t) => (
             <TopicCard
               key={t._id}
               topic={t}
@@ -132,6 +255,15 @@ export default function TopicsPage() {
               setShowOverrideModal={setShowOverrideModal}
             />
           ))}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={handlePageSizeChange}
+            totalItems={visibleTopics.length}
+          />
         </div>
       )}
 

@@ -1,21 +1,56 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
+import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
-import { ClipboardText, ArrowsClockwise, CheckCircle, Calculator } from '@phosphor-icons/react';
+import { ClipboardText, ArrowsClockwise, CheckCircle, Calculator, MagnifyingGlass } from '@phosphor-icons/react';
 import css from './page.module.css';
 
+const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
+function getSafePositiveInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function getSafePageSize(value) {
+  const parsed = Number(value);
+  return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : PAGE_SIZE;
+}
+
+function getInitialQuery() {
+  if (typeof window === 'undefined') return { page: 1, limit: PAGE_SIZE, search: '' };
+  const params = new URLSearchParams(window.location.search);
+  return {
+    page: getSafePositiveInt(params.get('page'), 1),
+    limit: getSafePageSize(params.get('limit')),
+    search: params.get('search') || '',
+  };
+}
+
 export default function ScoresPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const { user, token } = useAuthStore();
   const toast = useToast();
+
+  const initialQuery = useMemo(() => getInitialQuery(), []);
+  const [currentPage, setCurrentPage] = useState(initialQuery.page);
+  const [pageSize, setPageSize] = useState(initialQuery.limit);
+  const [searchInput, setSearchInput] = useState(initialQuery.search);
+  const [search, setSearch] = useState(initialQuery.search);
+
   
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -131,16 +166,60 @@ export default function ScoresPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className={css.s1}>
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  const visibleSessions = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return sessions;
+    return sessions.filter((s) => {
+      const values = [
+        s.projectId?.topicId?.title,
+        s.committeeId?.name,
+        s.groupId?.name,
+      ];
+      return values.some((v) => String(v || '').toLowerCase().includes(keyword));
+    });
+  }, [sessions, search]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleSessions.length / pageSize));
+  const pagedSessions = visibleSessions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('page', String(currentPage));
+    params.set('limit', String(pageSize));
+    if (search.trim()) params.set('search', search.trim());
+    const nextUrl = `${pathname}?${params.toString()}`;
+    if (typeof window === 'undefined') return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl !== nextUrl) router.replace(nextUrl, { scroll: false });
+  }, [currentPage, pageSize, pathname, router, search]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setSearch(searchInput);
+    setCurrentPage(1);
+  };
+
+  const handleResetSearch = () => {
+    setSearchInput('');
+    setSearch('');
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (nextSize) => {
+    setPageSize(nextSize);
+    setCurrentPage(1);
+  };
 
   return (
     <div>
+      {loading ? (
+        <div className={css.s1}><Spinner size="lg" /></div>
+      ) : (
+        <>
       <div className={css.s2}>
         <div>
           <h1 className={`text-display ${css.s3}`}>
@@ -155,8 +234,21 @@ export default function ScoresPage() {
         <Button variant="outline" onClick={fetchData} icon={<ArrowsClockwise />} title="Làm mới" />
       </div>
 
+      <form onSubmit={handleSearchSubmit} className={css.searchRow}>
+        <Input
+          placeholder="Tìm theo tên đề tài, hội đồng, nhóm..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          icon={<MagnifyingGlass size={16} />}
+        />
+        <Button type="submit" variant="secondary" size="sm">Tìm</Button>
+        {search && (
+          <Button type="button" variant="ghost" size="sm" onClick={handleResetSearch}>Xóa</Button>
+        )}
+      </form>
+
       <div className={css.s6}>
-        {sessions.map((session) => (
+        {pagedSessions.map((session) => (
           <Card key={session._id} className={css.s7}>
             <div className={css.s8}>
               <div>
@@ -183,12 +275,21 @@ export default function ScoresPage() {
           </Card>
         ))}
 
-        {sessions.length === 0 && (
+        {visibleSessions.length === 0 && (
           <div className={css.s14}>
-            Bạn không có lịch bảo vệ nào cần chấm điểm
+            {search ? `Không tìm thấy kết quả cho "${search}".` : 'Bạn không có lịch bảo vệ nào cần chấm điểm'}
           </div>
         )}
       </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={handlePageSizeChange}
+        totalItems={visibleSessions.length}
+      />
 
       {/* Modal Chấm Điểm */}
       {showModal && (
@@ -252,6 +353,8 @@ export default function ScoresPage() {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

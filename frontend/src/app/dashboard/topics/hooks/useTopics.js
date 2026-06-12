@@ -6,7 +6,7 @@ import api from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
 import { hasAnyRole } from '@/lib/utils';
 
-export function useTopics() {
+export function useTopics(initialActiveTab = 'all') {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
@@ -15,7 +15,7 @@ export function useTopics() {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showProposeModal, setShowProposeModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState(initialActiveTab);
 
   // AI states
   const [aiCheckingId, setAiCheckingId] = useState(null);

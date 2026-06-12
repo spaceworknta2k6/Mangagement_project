@@ -12,7 +12,7 @@ const DEFAULT_FORM_STATE = {
   type: 'foundation_project',
   minGroupSize: '1',
   maxGroupSize: '3',
-  rubricVersion: 'HUST-SET-2026',
+  rubricVersion: 'PHENIKAA-KARL-2026',
   supervisorWeight: '0.3',
   reviewerWeight: '0.2',
   committeeWeight: '0.5',

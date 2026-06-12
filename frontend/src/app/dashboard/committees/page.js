@@ -1,22 +1,56 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
+import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { formatDate, getTechnicalLabel, hasAnyRole } from '@/lib/utils';
-import { Gavel, Plus, ArrowsClockwise, Users, Trash, CheckCircle, PlayCircle, PencilSimple } from '@phosphor-icons/react';
+import { Gavel, Plus, ArrowsClockwise, Users, Trash, CheckCircle, PlayCircle, PencilSimple, MagnifyingGlass } from '@phosphor-icons/react';
 import css from './page.module.css';
 
+const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
+function getSafePositiveInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function getSafePageSize(value) {
+  const parsed = Number(value);
+  return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : PAGE_SIZE;
+}
+
+function getInitialQuery() {
+  if (typeof window === 'undefined') return { page: 1, limit: PAGE_SIZE, search: '' };
+  const params = new URLSearchParams(window.location.search);
+  return {
+    page: getSafePositiveInt(params.get('page'), 1),
+    limit: getSafePageSize(params.get('limit')),
+    search: params.get('search') || '',
+  };
+}
+
 export default function CommitteesPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const { user, token } = useAuthStore();
   const toast = useToast();
+
+  const initialQuery = useMemo(() => getInitialQuery(), []);
+  const [currentPage, setCurrentPage] = useState(initialQuery.page);
+  const [pageSize, setPageSize] = useState(initialQuery.limit);
+  const [searchInput, setSearchInput] = useState(initialQuery.search);
+  const [search, setSearch] = useState(initialQuery.search);
   
   const [committees, setCommittees] = useState([]);
   const [lecturers, setLecturers] = useState([]);
@@ -213,18 +247,58 @@ export default function CommitteesPage() {
     };
   };
 
-  if (loading) {
-    return (
-      <div className={css.s1}>
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
   const isStaff = hasAnyRole(user, ['SYSTEM_ADMIN', 'FACULTY_STAFF', 'DEPARTMENT_STAFF']);
+
+  const visibleCommittees = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return committees;
+    return committees.filter((c) => {
+      const values = [c.name, c.periodId?.name];
+      return values.some((v) => String(v || '').toLowerCase().includes(keyword));
+    });
+  }, [committees, search]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleCommittees.length / pageSize));
+  const pagedCommittees = visibleCommittees.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('page', String(currentPage));
+    params.set('limit', String(pageSize));
+    if (search.trim()) params.set('search', search.trim());
+    const nextUrl = `${pathname}?${params.toString()}`;
+    if (typeof window === 'undefined') return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl !== nextUrl) router.replace(nextUrl, { scroll: false });
+  }, [currentPage, pageSize, pathname, router, search]);
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setSearch(searchInput);
+    setCurrentPage(1);
+  };
+
+  const handleResetSearch = () => {
+    setSearchInput('');
+    setSearch('');
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (nextSize) => {
+    setPageSize(nextSize);
+    setCurrentPage(1);
+  };
 
   return (
     <div>
+      {loading ? (
+        <div className={css.s1}><Spinner size="lg" /></div>
+      ) : (
+        <>
       <div className={css.s2}>
         <div>
           <h1 className={`text-display ${css.s3}`}>
@@ -246,8 +320,21 @@ export default function CommitteesPage() {
         </div>
       </div>
 
+      <form onSubmit={handleSearchSubmit} className={css.searchRow}>
+        <Input
+          placeholder="Tìm theo tên hội đồng, đợt..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          icon={<MagnifyingGlass size={16} />}
+        />
+        <Button type="submit" variant="secondary" size="sm">Tìm</Button>
+        {search && (
+          <Button type="button" variant="ghost" size="sm" onClick={handleResetSearch}>Xóa</Button>
+        )}
+      </form>
+
       <div className={css.s7}>
-        {committees.map((committee) => (
+        {pagedCommittees.map((committee) => (
           <Card key={committee._id} className={css.s8}>
             <div className={css.s9}>
               <div>
@@ -343,12 +430,21 @@ export default function CommitteesPage() {
           </Card>
         ))}
 
-        {committees.length === 0 && (
+        {visibleCommittees.length === 0 && (
           <div className={css.s21}>
-            Chưa có hội đồng nào được tạo
+            {search ? `Không tìm thấy kết quả cho "${search}".` : 'Chưa có hội đồng nào được tạo'}
           </div>
         )}
       </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={handlePageSizeChange}
+        totalItems={visibleCommittees.length}
+      />
 
       {/* Modal Tạo Hội đồng */}
       {showModal && (
@@ -454,6 +550,8 @@ export default function CommitteesPage() {
         onCancel={() => setCommitteeToDelete(null)}
         onConfirm={() => handleDeleteCommittee(committeeToDelete)}
       />
+        </>
+      )}
     </div>
   );
 }

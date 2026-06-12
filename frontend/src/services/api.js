@@ -1,5 +1,5 @@
 /**
- * api.ts — Episteme API Fetch Wrapper
+ * api.ts — Karl API Fetch Wrapper
  *
  * Auto-attaches Authorization header, handles 401 logout,
  * normalises errors into { success: false, message, errors? }.
