@@ -17,8 +17,54 @@
   font-size: 13px;
 }
 
+.meta strong {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
 .metaCompact {
   font-size: 12px;
+}
+
+.loadingState {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.limitControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.limitSelect {
+  height: 36px;
+  min-width: 70px;
+  padding: 0 28px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background-color: var(--bg-raised);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.limitSelect:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.limitSelect:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .navButton {
@@ -47,6 +93,11 @@
 .pageButton:hover {
   border-color: var(--text-secondary);
   background-color: var(--bg-raised);
+}
+
+.pageButton:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .pageButtonActive,

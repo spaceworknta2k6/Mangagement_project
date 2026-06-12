@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
@@ -78,7 +79,49 @@ const auditTabOptions = auditTabs.map((tab) => ({
   label: auditTabLabels[tab.id] || tab.label,
 }));
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
+const DEFAULT_FILTERS = {
+  search: '',
+  entityType: '',
+  actorId: '',
+  action: '',
+  fromDate: '',
+  toDate: '',
+};
+
+function getSafePositiveInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function getSafePageSize(value) {
+  const parsed = Number(value);
+  return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : PAGE_SIZE;
+}
+
+function getInitialAuditQuery() {
+  if (typeof window === 'undefined') {
+    return {
+      page: 1,
+      limit: PAGE_SIZE,
+      filters: DEFAULT_FILTERS,
+    };
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const filters = { ...DEFAULT_FILTERS };
+  Object.keys(filters).forEach((key) => {
+    filters[key] = params.get(key) || '';
+  });
+
+  return {
+    page: getSafePositiveInt(params.get('page'), 1),
+    limit: getSafePageSize(params.get('limit')),
+    filters,
+  };
+}
 
 function getId(value) {
   if (!value) return '';
@@ -311,34 +354,24 @@ function AuditEventRow({ event, onSelect }) {
 export default function AuditPage() {
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialQuery = useMemo(() => getInitialAuditQuery(), []);
   const [events, setEvents] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(initialQuery.page);
+  const [pageSize, setPageSize] = useState(initialQuery.limit);
   const [pagination, setPagination] = useState({
     total: 0,
     totalPages: 1,
-    limit: PAGE_SIZE,
+    limit: initialQuery.limit,
   });
   const [activeAuditTab, setActiveAuditTab] = useState('general');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [filters, setFilters] = useState({
-    search: '',
-    entityType: '',
-    actorId: '',
-    action: '',
-    fromDate: '',
-    toDate: '',
-  });
-  const [appliedFilters, setAppliedFilters] = useState({
-    search: '',
-    entityType: '',
-    actorId: '',
-    action: '',
-    fromDate: '',
-    toDate: '',
-  });
+  const [filters, setFilters] = useState(initialQuery.filters);
+  const [appliedFilters, setAppliedFilters] = useState(initialQuery.filters);
   const [historyForm, setHistoryForm] = useState({
     entityType: '',
     entityId: '',
@@ -349,6 +382,24 @@ export default function AuditPage() {
     () => Object.values(appliedFilters).filter(Boolean).length,
     [appliedFilters]
   );
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set('page', String(currentPage));
+    params.set('limit', String(pageSize));
+    Object.entries(appliedFilters).forEach(([key, value]) => {
+      const trimmed = value.trim();
+      if (trimmed) params.set(key, trimmed);
+    });
+
+    const nextUrl = `${pathname}?${params.toString()}`;
+    if (typeof window === 'undefined') return;
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (currentUrl !== nextUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [appliedFilters, currentPage, pageSize, pathname, router]);
+
   const fetchEvents = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -358,21 +409,21 @@ export default function AuditPage() {
         if (value.trim()) params.set(key, value.trim());
       });
       params.set('page', String(currentPage));
-      params.set('limit', String(PAGE_SIZE));
+      params.set('limit', String(pageSize));
       const suffix = params.toString() ? `?${params.toString()}` : '';
       const res = await api.get(`/audit/events${suffix}`, token);
       setEvents(res.data || []);
       setPagination({
         total: res.pagination?.total || 0,
         totalPages: res.pagination?.totalPages || 1,
-        limit: res.pagination?.limit || PAGE_SIZE,
+        limit: res.pagination?.limit || pageSize,
       });
     } catch (err) {
       toast.error(err.message || 'Không thể tải nhật ký hệ thống.');
     } finally {
       setLoading(false);
     }
-  }, [appliedFilters, currentPage, toast, token]);
+  }, [appliedFilters, currentPage, pageSize, toast, token]);
 
   useEffect(() => {
     fetchEvents();
@@ -389,9 +440,14 @@ export default function AuditPage() {
   };
 
   const handleResetFilters = () => {
-    const empty = { entityType: '', actorId: '', action: '' };
+    const empty = { ...DEFAULT_FILTERS };
     setFilters(empty);
     setAppliedFilters(empty);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (nextPageSize) => {
+    setPageSize(nextPageSize);
     setCurrentPage(1);
   };
 
@@ -509,7 +565,8 @@ export default function AuditPage() {
           <div className={css.s35} >
             <Card>
               <p className={css.s36}>Sự kiện đang hiển thị</p>
-              <p className={css.s37}>{pagination.total}</p>
+              <p className={css.s37}>{events.length}</p>
+              <p className={css.metricHint}>{'T\u1ed5ng'} {pagination.total} {'b\u1ea3n ghi'}</p>
             </Card>
             <Card>
               <p className={css.s38}>Bộ lọc đang bật</p>
@@ -519,7 +576,7 @@ export default function AuditPage() {
             </Card>
           </div>
 
-          {loading ? (
+          {loading && events.length === 0 ? (
             <div className={css.s39}>
               <Spinner size="lg" />
             </div>
@@ -537,14 +594,27 @@ export default function AuditPage() {
             </Card>
           ) : (
             <Card title="Dòng sự kiện" subtitle="Sắp xếp từ mới nhất đến cũ nhất" noPadding className={css.s44}>
-              {events.map((event) => (
-                <AuditEventRow key={event._id} event={event} onSelect={setSelectedEvent} />
-              ))}
+              <div className={css.auditListWrap} aria-busy={loading}>
+                <div className={loading ? css.auditListDimmed : ''}>
+                  {events.map((event) => (
+                    <AuditEventRow key={event._id} event={event} onSelect={setSelectedEvent} />
+                  ))}
+                </div>
+                {loading && (
+                  <div className={css.auditListLoading}>
+                    <Spinner />
+                    <span>{'\u0110ang t\u1ea3i b\u1ea3n ghi...'}</span>
+                  </div>
+                )}
+              </div>
               <Pagination
                 currentPage={currentPage}
                 totalPages={pagination.totalPages}
                 totalItems={pagination.total}
                 pageSize={pagination.limit}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                onPageSizeChange={handlePageSizeChange}
+                isLoading={loading}
                 itemLabel={'b\u1ea3n ghi'}
                 onPageChange={setCurrentPage}
               />

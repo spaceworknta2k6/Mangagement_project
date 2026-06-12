@@ -2,6 +2,7 @@
 
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import Button from '@/components/ui/Button';
+import Spinner from '@/components/ui/Spinner';
 import css from './Pagination.module.css';
 
 function getVisiblePages(currentPage, totalPages, maxVisiblePages) {
@@ -19,11 +20,15 @@ export default function Pagination({
   pageSize,
   currentItemCount,
   itemLabel = 'b\u1ea3n ghi',
+  pageSizeOptions,
+  onPageSizeChange,
+  isLoading = false,
   maxVisiblePages = 5,
   compact = false,
   className = '',
 }) {
-  if (totalPages <= 1) return null;
+  const showPageSizeSelector = Array.isArray(pageSizeOptions) && pageSizeOptions.length > 0 && onPageSizeChange;
+  if (totalPages <= 1 && !showPageSizeSelector && !totalItems) return null;
 
   const visiblePages = getVisiblePages(currentPage, totalPages, maxVisiblePages);
   const startItem = totalItems && pageSize ? Math.min(totalItems, (currentPage - 1) * pageSize + 1) : null;
@@ -36,7 +41,7 @@ export default function Pagination({
       <span className={metaClass}>
         {totalItems && pageSize ? (
           <>
-            {'Hi\u1ec3n th\u1ecb '}<strong>{startItem}</strong>{' \u0111\u1ebfn '}<strong>{endItem}</strong>{' trong t\u1ed5ng s\u1ed1 '}
+            {'\u0110ang xem '}<strong>{startItem}-{endItem}</strong>{' / '}
             <strong>{totalItems}</strong> {itemLabel}
           </>
         ) : (
@@ -46,12 +51,37 @@ export default function Pagination({
         )}
       </span>
 
+      {isLoading && (
+        <span className={css.loadingState}>
+          <Spinner size="sm" />
+          {'\u0110ang t\u1ea3i'}
+        </span>
+      )}
+
       <div className={css.s1}>
+        {showPageSizeSelector && (
+          <label className={css.limitControl}>
+            <span>{'Hi\u1ec3n th\u1ecb'}</span>
+            <select
+              value={pageSize || ''}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              disabled={isLoading}
+              className={css.limitSelect}
+            >
+              {pageSizeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         <Button
           type="button"
           variant="secondary"
           size="sm"
-          disabled={currentPage === 1}
+          disabled={currentPage === 1 || isLoading || totalPages <= 1}
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           icon={compact ? null : <CaretLeft size={16} />}
           className={compact ? '' : css.navButton}
@@ -76,6 +106,7 @@ export default function Pagination({
                 <button
                   type="button"
                   onClick={() => onPageChange(page)}
+                  disabled={isLoading}
                   className={[css.pageButton, isActive ? css.pageButtonActive : ''].filter(Boolean).join(' ')}
                 >
                   {page}
@@ -89,7 +120,7 @@ export default function Pagination({
           type="button"
           variant="secondary"
           size="sm"
-          disabled={currentPage === totalPages}
+          disabled={currentPage === totalPages || isLoading || totalPages <= 1}
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           icon={compact ? null : <CaretRight size={16} />}
           className={compact ? '' : css.navButton}

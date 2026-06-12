@@ -78,6 +78,36 @@
   color: var(--accent);
 }
 
+.metricHint {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.auditListWrap {
+  position: relative;
+  min-height: 96px;
+}
+
+.auditListDimmed {
+  opacity: 0.48;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+
+.auditListLoading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background-color: color-mix(in srgb, var(--bg-surface) 72%, transparent);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .s52:hover {
   background-color: var(--bg-raised);
   box-shadow: inset 3px 0 0 var(--accent);
