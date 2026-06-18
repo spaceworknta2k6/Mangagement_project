@@ -5,6 +5,7 @@ const multer = require('multer');
 const filesController = require('./files.controller');
 const filesValidator = require('./files.validator');
 const { protect, requireRole } = require('../../middlewares/auth.middleware');
+const { uploadLimiter } = require('../../config/rate-limit');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -24,7 +25,7 @@ const optionalProtect = async (req, res, next) => {
 router.post('/:id/scan-result', protect, requireRole(['SYSTEM_ADMIN', 'FACULTY_STAFF']), filesValidator.validateFileId, filesController.updateScanStatus);
 
 // Session secured routes
-router.post('/upload', protect, upload.single('file'), filesController.uploadFile);
+router.post('/upload', protect, uploadLimiter, upload.single('file'), filesController.uploadFile);
 router.get('/:id', protect, filesValidator.validateFileId, filesController.getFileById);
 router.get('/:id/download-url', protect, filesValidator.validateFileId, filesController.generateSignedUrl);
 router.delete('/:id', protect, filesValidator.validateFileId, filesController.deleteFile);

@@ -7,6 +7,7 @@ const authController = require('./auth.controller');
 const authValidator = require('./auth.validator');
 const { protect } = require('../../middlewares/auth.middleware');
 const { getJwtSecret } = require('../../config/jwt');
+const { authLimiter } = require('../../config/rate-limit');
 
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
@@ -14,7 +15,7 @@ const avatarUpload = multer({
 });
 
 // Public Endpoints
-router.post('/login', authValidator.validateLogin, authController.login);
+router.post('/login', authLimiter, authValidator.validateLogin, authController.login);
 router.post('/logout', authController.logout);
 router.get('/google', authController.startGoogleLogin);
 router.get('/google/callback', authController.handleGoogleCallback);

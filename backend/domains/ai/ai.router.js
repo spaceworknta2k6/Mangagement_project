@@ -4,6 +4,7 @@ const router = express.Router();
 const aiController = require('./ai.controller');
 const aiValidator = require('./ai.validator');
 const { protect, requireRole } = require('../../middlewares/auth.middleware');
+const { aiLimiter } = require('../../config/rate-limit');
 
 const hasAnyRole = (user, allowedRoles) => {
   const roles = user.roles || (user.role ? [user.role] : []);
@@ -53,13 +54,13 @@ router.get('/jobs/:id', aiValidator.validateJobId, aiController.getJobById);
 router.post('/jobs/:id/retry', requireRole(['SYSTEM_ADMIN', 'FACULTY_STAFF', 'DEPARTMENT_STAFF', 'LECTURER']), aiValidator.validateJobId, aiController.retryAiJob);
 router.post('/jobs/:id/manual-override', requireRole(['SYSTEM_ADMIN', 'FACULTY_STAFF', 'DEPARTMENT_STAFF', 'LECTURER']), aiValidator.validateJobId, aiValidator.validateManualOverride, aiController.manualOverrideJob);
 
-router.post('/topics/:id/check-duplicate', requireRole(['SYSTEM_ADMIN', 'FACULTY_STAFF', 'DEPARTMENT_STAFF']), aiValidator.validateTopicId, aiController.checkDuplicateTopic);
-router.post('/students/:id/topic-suggestions', requireRole(['STUDENT', 'SYSTEM_ADMIN', 'FACULTY_STAFF']), aiValidator.validateStudentId, aiController.suggestTopics);
-router.post('/students/:id/topic-chat', requireRole(['STUDENT', 'SYSTEM_ADMIN', 'FACULTY_STAFF']), aiValidator.validateStudentId, aiController.chatTopicSuggestion);
-router.post('/submissions/:id/report-feedback', requireRole(['STUDENT', 'LECTURER', 'SYSTEM_ADMIN', 'FACULTY_STAFF']), aiValidator.validateSubmissionId, aiController.analyzeReportFeedback);
-router.post('/milestones/:milestoneId/files/:fileId/analyze', requireRole(['STUDENT', 'LECTURER', 'SYSTEM_ADMIN', 'FACULTY_STAFF']), aiController.analyzeMilestoneReport);
+router.post('/topics/:id/check-duplicate', aiLimiter, requireRole(['SYSTEM_ADMIN', 'FACULTY_STAFF', 'DEPARTMENT_STAFF']), aiValidator.validateTopicId, aiController.checkDuplicateTopic);
+router.post('/students/:id/topic-suggestions', aiLimiter, requireRole(['STUDENT', 'SYSTEM_ADMIN', 'FACULTY_STAFF']), aiValidator.validateStudentId, aiController.suggestTopics);
+router.post('/students/:id/topic-chat', aiLimiter, requireRole(['STUDENT', 'SYSTEM_ADMIN', 'FACULTY_STAFF']), aiValidator.validateStudentId, aiController.chatTopicSuggestion);
+router.post('/submissions/:id/report-feedback', aiLimiter, requireRole(['STUDENT', 'LECTURER', 'SYSTEM_ADMIN', 'FACULTY_STAFF']), aiValidator.validateSubmissionId, aiController.analyzeReportFeedback);
+router.post('/milestones/:milestoneId/files/:fileId/analyze', aiLimiter, requireRole(['STUDENT', 'LECTURER', 'SYSTEM_ADMIN', 'FACULTY_STAFF']), aiController.analyzeMilestoneReport);
 
 // Committee only for defense questions
-router.post('/projects/:id/defense-questions', checkCommitteeOrStaff, aiValidator.validateProjectId, aiController.suggestDefenseQuestions);
+router.post('/projects/:id/defense-questions', aiLimiter, checkCommitteeOrStaff, aiValidator.validateProjectId, aiController.suggestDefenseQuestions);
 
 module.exports = router;
