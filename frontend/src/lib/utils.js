@@ -179,3 +179,20 @@ export function truncate(str, maxLen = 60) {
   if (!str || str.length <= maxLen) return str;
   return str.slice(0, maxLen) + '…';
 }
+
+/**
+ * Global API error handler for frontend components.
+ * Displays error using Toast if available, or logs it.
+ * @param {Error|object} err
+ * @param {object} toast - Toast context instance (from useToast)
+ */
+export function handleApiError(err, toast) {
+  const errMsg = err?.message || 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.';
+  if (toast && typeof toast.error === 'function') {
+    toast.error(errMsg);
+  } else {
+    console.error('API Error:', err);
+  }
+  return errMsg;
+}
+

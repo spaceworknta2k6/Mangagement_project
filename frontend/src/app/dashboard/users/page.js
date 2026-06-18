@@ -12,7 +12,8 @@ import Spinner from '@/components/ui/Spinner';
 import FilterCard from '@/components/ui/FilterCard';
 import Pagination from '@/components/ui/Pagination';
 import { useToast } from '@/components/ui/Toast';
-import { formatDate, getRoleLabel, getTechnicalLabel } from '@/lib/utils';
+import { formatDate, getRoleLabel, getTechnicalLabel, handleApiError } from '@/lib/utils';
+import EmptyState from '@/components/ui/EmptyState';
 import { 
   Users, 
   ArrowsClockwise, 
@@ -123,7 +124,7 @@ export default function UsersPage() {
         setPagination(res.pagination);
       }
     } catch (err) {
-      toast.error(err.message || 'Không thể tải danh sách tài khoản');
+      handleApiError(err, toast);
     } finally {
       setLoading(false);
     }
@@ -227,7 +228,7 @@ export default function UsersPage() {
         setShowEditModal(false);
       }
     } catch (err) {
-      toast.error(err.message || 'Lỗi khi cập nhật thông tin tài khoản');
+      handleApiError(err, toast);
     } finally {
       setSubmitting(false);
     }
@@ -243,7 +244,7 @@ export default function UsersPage() {
       setShowDeleteModal(false);
       fetchUsers();
     } catch (err) {
-      toast.error(err.message || 'Không thể xóa tài khoản');
+      handleApiError(err, toast);
     } finally {
       setSubmitting(false);
     }
@@ -351,11 +352,11 @@ export default function UsersPage() {
           <Spinner size="lg" />
         </div>
       ) : users.length === 0 ? (
-        <Card>
-          <div className={css.s16}>
-            Không tìm thấy tài khoản nào khớp với bộ lọc tìm kiếm.
-          </div>
-        </Card>
+        <EmptyState
+          title="Không tìm thấy tài khoản"
+          description="Không tìm thấy tài khoản nào khớp với bộ lọc tìm kiếm."
+          icon={Users}
+        />
       ) : (
         <Card className={css.s17}>
           <div className={css.s18}>

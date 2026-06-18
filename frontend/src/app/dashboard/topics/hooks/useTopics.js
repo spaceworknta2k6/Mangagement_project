@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import useAuthStore from '@/store/auth.store';
+import usePeriodStore from '@/store/period.store';
 import api from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
-import { hasAnyRole } from '@/lib/utils';
+import { hasAnyRole, handleApiError } from '@/lib/utils';
 
 export function useTopics(initialActiveTab = 'all') {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
 
-  const [periods, setPeriods] = useState([]);
+  const { periods, fetchPeriods } = usePeriodStore();
   const [groups, setGroups] = useState([]);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,14 +52,12 @@ export function useTopics(initialActiveTab = 'all') {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [resPeriods, resTopics] = await Promise.all([
-        api.get('/periods', token).catch(() => api.get('/auth/periods', token).catch(() => ({ data: [] }))),
+      const [pList, resTopics] = await Promise.all([
+        fetchPeriods(token),
         api.get('/topics', token)
       ]);
       
-      const pList = resPeriods.data || [];
-      setPeriods(pList);
-      if (pList.length > 0) {
+      if (pList && pList.length > 0) {
         setForm((prev) => ({ ...prev, periodId: pList[0]._id }));
       }
       setTopics(resTopics.data || []);
@@ -69,11 +68,11 @@ export function useTopics(initialActiveTab = 'all') {
         setGroups([]);
       }
     } catch (err) {
-      toast.error(err.message || 'Không thể tải dữ liệu đề tài');
+      handleApiError(err, toast);
     } finally {
       setLoading(false);
     }
-  }, [isStudent, toast, token]);
+  }, [isStudent, toast, token, fetchPeriods]);
 
   useEffect(() => {
     if (token) {
@@ -119,7 +118,7 @@ export function useTopics(initialActiveTab = 'all') {
         toast.error(err.errors[0].message);
         return;
       }
-      toast.error(err.message || 'Lỗi khi gửi đề xuất đề tài');
+      handleApiError(err, toast);
     } finally {
       setSubmitting(false);
     }
@@ -143,7 +142,7 @@ export function useTopics(initialActiveTab = 'all') {
       toast.success('Đã phê duyệt đề tài thành công!');
       loadData();
     } catch (err) {
-      toast.error(err.message || 'Lỗi khi phê duyệt đề tài');
+      handleApiError(err, toast);
     }
   };
 
@@ -153,7 +152,7 @@ export function useTopics(initialActiveTab = 'all') {
       toast.success('Đã từ chối đề tài.');
       loadData();
     } catch (err) {
-      toast.error(err.message || 'Lỗi khi từ chối đề tài');
+      handleApiError(err, toast);
     }
   };
 
@@ -163,7 +162,7 @@ export function useTopics(initialActiveTab = 'all') {
       toast.success('Đã gửi yêu cầu chỉnh sửa đề tài.');
       loadData();
     } catch (err) {
-      toast.error(err.message || 'Lỗi khi yêu cầu chỉnh sửa');
+      handleApiError(err, toast);
     }
   };
 
@@ -177,7 +176,7 @@ export function useTopics(initialActiveTab = 'all') {
       loadData();
       return true;
     } catch (err) {
-      toast.error(err.message || 'Không thể hủy đề tài');
+      handleApiError(err, toast);
       return false;
     }
   };

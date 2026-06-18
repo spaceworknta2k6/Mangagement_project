@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
+import usePeriodStore from '@/store/period.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -13,7 +14,8 @@ import Pagination from '@/components/ui/Pagination';
 import FilterCard from '@/components/ui/FilterCard';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { formatDate } from '@/lib/utils';
+import { formatDate, handleApiError } from '@/lib/utils';
+import EmptyState from '@/components/ui/EmptyState';
 import {
   Users,
   ArrowsClockwise,
@@ -64,8 +66,7 @@ export default function RostersPage() {
   const [searchInput, setSearchInput] = useState(initialQuery.search);
   const [search, setSearch] = useState(initialQuery.search);
 
-  const [periods, setPeriods] = useState([]);
-  const [selectedPeriodId, setSelectedPeriodId] = useState('');
+  const { periods, selectedPeriodId, fetchPeriods, setSelectedPeriodId } = usePeriodStore();
   const [roster, setRoster] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -90,24 +91,6 @@ export default function RostersPage() {
     email: '',
   });
 
-  const loadPeriods = useCallback(async () => {
-    try {
-      const res = await api.get('/periods', token);
-      const activePeriods = res.data || [];
-      setPeriods(activePeriods);
-      if (activePeriods.length > 0) {
-        if (!selectedPeriodId) {
-          setSelectedPeriodId(activePeriods[0]._id);
-        }
-      } else {
-        setLoading(false);
-      }
-    } catch (err) {
-      toast.error('Không thể tải danh sách đợt đồ án');
-      setLoading(false);
-    }
-  }, [token, selectedPeriodId, toast]);
-
   const fetchRoster = useCallback(async () => {
     if (!selectedPeriodId) return;
     setLoading(true);
@@ -123,9 +106,9 @@ export default function RostersPage() {
 
   useEffect(() => {
     if (token) {
-      loadPeriods();
+      fetchPeriods(token);
     }
-  }, [loadPeriods, token]);
+  }, [fetchPeriods, token]);
 
   useEffect(() => {
     if (token && selectedPeriodId) {

@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import useAuthStore from '@/store/auth.store';
-import api from '@/services/api';
+import useNotificationStore from '@/store/notification.store';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -11,7 +11,7 @@ import Spinner from '@/components/ui/Spinner';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Tabs from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
-import { formatDateTime, getNotificationTypeLabel } from '@/lib/utils';
+import { formatDateTime, getNotificationTypeLabel, handleApiError } from '@/lib/utils';
 import {
   ArrowsClockwise,
   Bell,
@@ -124,18 +124,22 @@ function NotificationRow({ notification, markingId, deletingId, onMarkRead, onRe
 export default function NotificationsPage() {
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    notifications,
+    unreadCount,
+    isLoading: loading,
+    fetchNotifications,
+    markRead,
+    markAllRead,
+    deleteNotification,
+  } = useNotificationStore();
+
   const [markingId, setMarkingId] = useState('');
   const [markingAll, setMarkingAll] = useState(false);
   const [deletingId, setDeletingId] = useState('');
   const [notificationToDelete, setNotificationToDelete] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
 
-  const unreadCount = useMemo(
-    () => notifications.filter((notification) => !notification.readAt).length,
-    [notifications]
-  );
   const readCount = notifications.length - unreadCount;
   const filteredNotifications = useMemo(() => {
     if (activeTab === 'unread') {
@@ -146,58 +150,26 @@ export default function NotificationsPage() {
     }
     return notifications;
   }, [activeTab, notifications]);
+
   const tabs = [
     { id: 'all', label: `Tất cả (${notifications.length})` },
     { id: 'unread', label: `Chưa đọc (${unreadCount})` },
     { id: 'read', label: `Đã đọc (${readCount})` },
   ];
 
-  const fetchNotifications = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const res = await api.get('/notifications', token);
-      setNotifications(res.data || []);
-    } catch (err) {
-      toast.error(err.message || 'Không thể tải danh sách thông báo.');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (token) {
+      fetchNotifications(token);
     }
-  }, [toast, token]);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
-
-  // Lắng nghe thông báo real-time khi trang đang mở
-  useEffect(() => {
-    const handleNewNotification = (e) => {
-      const newNotification = e.detail;
-      setNotifications((prev) => {
-        if (prev.some((n) => n._id === newNotification._id)) return prev;
-        return [newNotification, ...prev];
-      });
-    };
-
-    window.addEventListener('notification:new', handleNewNotification);
-    return () => {
-      window.removeEventListener('notification:new', handleNewNotification);
-    };
-  }, []);
+  }, [fetchNotifications, token]);
 
   const handleMarkRead = async (id) => {
     setMarkingId(id);
     try {
-      const res = await api.post(`/notifications/${id}/read`, {}, token);
-      setNotifications((prev) =>
-        prev.map((notification) => (notification._id === id ? res.data : notification))
-      );
+      await markRead(id, token);
       toast.success('Đã đánh dấu thông báo là đã đọc.');
-      
-      // Bắn sự kiện DOM để giảm số lượng badge ở Sidebar của layout
-      window.dispatchEvent(new CustomEvent('notification:read', { detail: { id } }));
     } catch (err) {
-      toast.error(err.message || 'Không thể đánh dấu thông báo.');
+      handleApiError(err, toast);
     } finally {
       setMarkingId('');
     }
@@ -206,19 +178,10 @@ export default function NotificationsPage() {
   const handleMarkAllRead = async () => {
     setMarkingAll(true);
     try {
-      await api.post('/notifications/read-all', {}, token);
-      setNotifications((prev) =>
-        prev.map((notification) => ({
-          ...notification,
-          readAt: notification.readAt || new Date().toISOString(),
-        }))
-      );
+      await markAllRead(token);
       toast.success('Đã đánh dấu đọc toàn bộ thông báo.');
-      
-      // Bắn sự kiện DOM để reset số lượng badge ở Sidebar của layout
-      window.dispatchEvent(new CustomEvent('notification:read-all'));
     } catch (err) {
-      toast.error(err.message || 'Không thể đánh dấu đọc toàn bộ thông báo.');
+      handleApiError(err, toast);
     } finally {
       setMarkingAll(false);
     }
@@ -229,14 +192,11 @@ export default function NotificationsPage() {
 
     setDeletingId(notificationToDelete._id);
     try {
-      await api.delete(`/notifications/${notificationToDelete._id}`, token);
-      setNotifications((prev) =>
-        prev.filter((notification) => notification._id !== notificationToDelete._id)
-      );
+      await deleteNotification(notificationToDelete._id, token);
       setNotificationToDelete(null);
       toast.success('Đã xóa thông báo.');
     } catch (err) {
-      toast.error(err.message || 'Không thể xóa thông báo.');
+      handleApiError(err, toast);
     } finally {
       setDeletingId('');
     }

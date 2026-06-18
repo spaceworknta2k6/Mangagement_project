@@ -28,6 +28,7 @@ import {
 } from '@phosphor-icons/react';
 import useAuthStore from '@/store/auth.store';
 import useThemeStore from '@/store/theme.store';
+import useNotificationStore from '@/store/notification.store';
 import { authService } from '@/services/auth.service';
 import Spinner from '@/components/ui/Spinner';
 import Button from '@/components/ui/Button';
@@ -40,8 +41,9 @@ import css from './layout.module.css';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 const SOCKET_URL = API_BASE_URL.replace('/api/v1', '');
 
-function RealtimeNotificationHandler({ onNewNotification }) {
+function RealtimeNotificationHandler() {
   const { token, user } = useAuthStore();
+  const { addNotification } = useNotificationStore();
   const toast = useToast();
 
   useEffect(() => {
@@ -73,14 +75,14 @@ function RealtimeNotificationHandler({ onNewNotification }) {
       // Dispatch custom DOM event for active sub-pages
       window.dispatchEvent(new CustomEvent('notification:new', { detail: notification }));
       
-      // Notify parent layout to increment unread badge count
-      onNewNotification?.(notification);
+      // Add to Zustand store
+      addNotification(notification);
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [token, user, toast, onNewNotification]);
+  }, [token, user, toast, addNotification]);
 
   return null;
 }
@@ -294,40 +296,12 @@ export default function DashboardLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [networkError, setNetworkError] = useState(false);
-  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+  const { fetchNotifications, unreadCount: unreadNotificationsCount } = useNotificationStore();
 
-  // Fetch initial notifications list to compute unread count
   useEffect(() => {
     if (!token || !user) return;
-    api.get('/notifications', token)
-      .then((res) => {
-        const list = res.data || [];
-        const unread = list.filter((n) => !n.readAt).length;
-        setUnreadNotificationsCount(unread);
-      })
-      .catch((err) => {
-        console.error('Failed to fetch initial notifications:', err);
-      });
-  }, [token, user]);
-
-  // Listen to custom DOM events for read / read-all actions from sub-pages
-  useEffect(() => {
-    const handleNotificationRead = () => {
-      setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
-    };
-
-    const handleNotificationReadAll = () => {
-      setUnreadNotificationsCount(0);
-    };
-
-    window.addEventListener('notification:read', handleNotificationRead);
-    window.addEventListener('notification:read-all', handleNotificationReadAll);
-
-    return () => {
-      window.removeEventListener('notification:read', handleNotificationRead);
-      window.removeEventListener('notification:read-all', handleNotificationReadAll);
-    };
-  }, []);
+    fetchNotifications(token);
+  }, [token, user, fetchNotifications]);
 
   // Apply saved theme on mount
   useEffect(() => {
@@ -446,9 +420,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <ToastProvider>
-      <RealtimeNotificationHandler
-        onNewNotification={() => setUnreadNotificationsCount((prev) => prev + 1)}
-      />
+      <RealtimeNotificationHandler />
       <Sidebar
         collapsed={collapsed}
         mobileOpen={mobileMenuOpen}

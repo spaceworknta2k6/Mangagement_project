@@ -1,32 +1,115 @@
-/**
- * api.ts — Karl API Fetch Wrapper
- *
- * Auto-attaches Authorization header, handles 401 logout,
- * normalises errors into { success: false, message, errors? }.
- */
+import useAuthStore from '@/store/auth.store';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+function subscribeTokenRefresh(cb) {
+  refreshSubscribers.push(cb);
+}
+
+function onRefreshed(token) {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
 /**
- * Core fetch function.
+ * Core fetch function with automatic JWT token refresh.
  * @param {string} path  - e.g. '/auth/login'
  * @param {RequestInit & { token?: string }} options
  */
 async function request(path, { token, ...options } = {}) {
+  const state = useAuthStore.getState();
+  const currentToken = token || state.token;
+
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
     ...(options.headers || {}),
   };
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  let res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers,
   });
 
-  const data = await res.json().catch(() => ({}));
+  let data = await res.json().catch(() => ({}));
 
-  // 401 → caller should trigger logout (handled in hooks/components)
+  // Auto-refresh token on 401 Unauthorized
+  if (res.status === 401 && path !== '/auth/login' && path !== '/auth/refresh') {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      try {
+        const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          const newToken = refreshData.data?.accessToken;
+          if (newToken) {
+            state.setAuth(newToken, state.user);
+            onRefreshed(newToken);
+            isRefreshing = false;
+
+            // Retry original request with new token
+            const retryHeaders = {
+              ...headers,
+              Authorization: `Bearer ${newToken}`,
+            };
+            res = await fetch(`${BASE_URL}${path}`, {
+              ...options,
+              headers: retryHeaders,
+            });
+            data = await res.json().catch(() => ({}));
+          } else {
+            throw new Error('Invalid refresh response');
+          }
+        } else {
+          throw new Error('Refresh token expired');
+        }
+      } catch (refreshErr) {
+        isRefreshing = false;
+        refreshSubscribers = [];
+        state.logout();
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login';
+        }
+        const error = new Error('Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.');
+        error.status = 401;
+        throw error;
+      }
+    } else {
+      // Queue requests until token is refreshed
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh(async (newToken) => {
+          try {
+            const retryHeaders = {
+              ...headers,
+              Authorization: `Bearer ${newToken}`,
+            };
+            const retryRes = await fetch(`${BASE_URL}${path}`, {
+              ...options,
+              headers: retryHeaders,
+            });
+            const retryData = await retryRes.json().catch(() => ({}));
+            if (!retryRes.ok) {
+              const err = new Error(retryData.message || 'Lỗi khi gửi lại yêu cầu.');
+              err.status = retryRes.status;
+              reject(err);
+            } else {
+              resolve(retryData);
+            }
+          } catch (err) {
+            reject(err);
+          }
+        });
+      });
+    }
+  }
+
   if (!res.ok) {
     const error = new Error(data.message || 'Đã xảy ra lỗi không xác định.');
     error.status = res.status;

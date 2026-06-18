@@ -17,6 +17,8 @@ import Spinner from '@/components/ui/Spinner';
 import Tabs from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import api from '@/services/api';
+import { handleApiError } from '@/lib/utils';
+import EmptyState from '@/components/ui/EmptyState';
 import { BookOpen, Plus, Lightbulb, MagnifyingGlass, FileText } from '@phosphor-icons/react';
 import { exportToCSV } from '@/lib/export';
 import css from './page.module.css';
@@ -271,7 +273,7 @@ export default function TopicsPage() {
       setSelectedSupervisorId('');
       loadData();
     } catch (err) {
-      toast.error(err.message || 'Không thể phân công giảng viên hướng dẫn.');
+      handleApiError(err, toast);
     } finally {
       setAssigningSupervisor(false);
     }
@@ -345,11 +347,11 @@ export default function TopicsPage() {
           <Spinner size="lg" />
         </div>
       ) : visibleTopics.length === 0 ? (
-        <Card>
-          <div className={css.s7}>
-            {search ? `Không tìm thấy kết quả cho "${search}".` : 'Chưa có đề tài nào thuộc danh mục này.'}
-          </div>
-        </Card>
+        <EmptyState
+          title={search ? 'Không tìm thấy kết quả' : 'Chưa có đề tài'}
+          description={search ? `Không tìm thấy kết quả cho từ khóa "${search}".` : 'Chưa có đề tài nào thuộc danh mục này.'}
+          icon={BookOpen}
+        />
       ) : (
         <div className={css.s8}>
           {pagedTopics.map((t) => (

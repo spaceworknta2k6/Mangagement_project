@@ -75,6 +75,24 @@ const runIntegrationTests = async () => {
       }
       console.log('✅ Test 3 Passed: Invalid login rejected with correct status code.');
 
+      console.log('\n--- Test 4: POST /api/v1/auth/refresh (Làm mới token qua cookie) ---');
+      const refreshResponse = await fetch(`http://localhost:${TEST_PORT}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Cookie': `karl_refresh_token=${encodeURIComponent(loginResult.data.refreshToken)}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const refreshResult = await refreshResponse.json();
+      console.log('HTTP Status:', refreshResponse.status);
+      console.log('Refresh JSON Result:', JSON.stringify(refreshResult, null, 2));
+
+      if (refreshResponse.status !== 200 || !refreshResult.success || !refreshResult.data.accessToken) {
+        throw new Error('❌ Test 4 Failed: Token refresh request failed.');
+      }
+      console.log('✅ Test 4 Passed: Token refreshed successfully, new access token returned.');
+
       console.log('\n🎉 ALL INTEGRATION TESTS PASSED SUCCESSFULLY! 🎉');
     } catch (error) {
       console.error('\n❌ Integration Test Suite Failed:', error.message);

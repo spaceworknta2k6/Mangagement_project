@@ -21,21 +21,68 @@ router.get('/google', authController.startGoogleLogin);
 router.get('/google/callback', authController.handleGoogleCallback);
 router.get('/google/session', authController.consumeGoogleSession);
 
-router.post('/refresh', protect, (req, res, next) => {
+router.post('/refresh', async (req, res, next) => {
   try {
+    let refreshToken;
+    const cookies = req.headers.cookie || '';
+    const tokenPair = cookies
+      .split(';')
+      .map((item) => item.trim())
+      .find((item) => item.startsWith('karl_refresh_token='));
+    
+    if (tokenPair) {
+      refreshToken = decodeURIComponent(tokenPair.slice('karl_refresh_token='.length));
+    }
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'Làm mới token thất bại: Không tìm thấy Refresh Token.',
+      });
+    }
+
+    // Verify Refresh Token
+    const decoded = jwt.verify(refreshToken, getJwtSecret());
+    if (decoded.type !== 'refresh') {
+      return res.status(401).json({
+        success: false,
+        message: 'Làm mới token thất bại: Refresh Token không hợp lệ.',
+      });
+    }
+
+    // Find User and check constraints
+    const User = require('../../models/User');
+    const user = await User.findById(decoded.id);
+    if (!user || user.isDeleted || user.status === 'locked' || user.status === 'inactive') {
+      return res.status(401).json({
+        success: false,
+        message: 'Làm mới token thất bại: Tài khoản không tồn tại hoặc đã bị khóa.',
+      });
+    }
+
+    // Generate new Access Token
     const accessToken = jwt.sign(
-      { id: req.user._id, roles: req.user.roles },
+      { id: user._id, roles: user.roles },
       getJwtSecret(),
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: '15m' }
+    );
+
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    res.setHeader(
+      'Set-Cookie',
+      `karl_token=${encodeURIComponent(accessToken)}; HttpOnly; Max-Age=${15 * 60}; SameSite=Lax; Path=/${secure}`
     );
 
     return res.status(200).json({
       success: true,
-      message: 'Lam moi token thanh cong!',
+      message: 'Làm mới token thành công!',
       data: { accessToken },
     });
   } catch (error) {
-    next(error);
+    return res.status(401).json({
+      success: false,
+      message: 'Làm mới token thất bại: Refresh Token đã hết hạn hoặc không hợp lệ.',
+    });
   }
 });
 

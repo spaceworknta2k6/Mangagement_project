@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
+import usePeriodStore from '@/store/period.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -13,7 +14,8 @@ import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { getStatus, hasAnyRole } from '@/lib/utils';
+import { getStatus, hasAnyRole, handleApiError } from '@/lib/utils';
+import EmptyState from '@/components/ui/EmptyState';
 import { Users, Plus, Check, UserPlus, Warning, PencilSimple, Trash, MagnifyingGlass } from '@phosphor-icons/react';
 import css from './page.module.css';
 
@@ -54,8 +56,7 @@ export default function GroupsPage() {
   const [searchInput, setSearchInput] = useState(initialQuery.search);
   const [search, setSearch] = useState(initialQuery.search);
 
-  const [periods, setPeriods] = useState([]);
-  const [selectedPeriodId, setSelectedPeriodId] = useState('');
+  const { periods, selectedPeriodId, fetchPeriods, setSelectedPeriodId } = usePeriodStore();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [groupToDelete, setGroupToDelete] = useState(null);
@@ -79,24 +80,6 @@ export default function GroupsPage() {
 
   const isStaff = hasAnyRole(user, ['FACULTY_STAFF', 'SYSTEM_ADMIN']);
 
-  // Load periods
-  const loadPeriods = useCallback(async () => {
-    try {
-      // In a real-world scenario, we fetch all active periods
-      // Staff can call /periods, students might fetch indirectly or we can attempt to get the list
-      const res = await api.get('/periods', token).catch(() => api.get('/auth/periods', token).catch(() => ({ data: [] })));
-      const activePeriods = res.data || [];
-      setPeriods(activePeriods);
-      if (activePeriods.length > 0) {
-        setSelectedPeriodId(activePeriods[0]._id);
-      } else {
-        setLoading(false);
-      }
-    } catch {
-      setLoading(false);
-    }
-  }, [token]);
-
   // Load all groups (Staff only)
   const fetchAllGroups = useCallback(async (periodId) => {
     if (!periodId) return;
@@ -105,7 +88,7 @@ export default function GroupsPage() {
       const res = await api.get(`/groups?periodId=${periodId}`, token);
       setGroups(res.data || []);
     } catch (err) {
-      toast.error(err.message || 'Không thể tải danh sách nhóm');
+      handleApiError(err, toast);
     } finally {
       setLoading(false);
     }
@@ -150,16 +133,17 @@ export default function GroupsPage() {
       setMyGroup(foundGroup);
       setMyInvitations(invitations);
     } catch (err) {
-      toast.error(err.message || 'Không thể tải thông tin nhóm cá nhân');
+      handleApiError(err, toast);
     } finally {
       setLoading(false);
     }
   }, [toast, token, user?.studentId]);
 
   useEffect(() => {
-    if (!token || !user) return;
-    loadPeriods();
-  }, [loadPeriods, token, user]);
+    if (token) {
+      fetchPeriods(token);
+    }
+  }, [fetchPeriods, token]);
 
   useEffect(() => {
     if (!token || !user) return;
@@ -194,7 +178,7 @@ export default function GroupsPage() {
       setNewGroupName('');
       fetchStudentGroupData();
     } catch (err) {
-      toast.error(err.message || 'Lỗi khi lập nhóm mới');
+      handleApiError(err, toast);
     } finally {
       setCreating(false);
     }
@@ -436,11 +420,11 @@ export default function GroupsPage() {
               </div>
             </Card>
           ) : visibleGroups.length === 0 ? (
-            <Card>
-              <div className={css.s8}>
-                {search ? `Không tìm thấy kết quả cho "${search}".` : 'Chưa có nhóm nào được đăng ký trong đợt này.'}
-              </div>
-            </Card>
+            <EmptyState
+              title={search ? 'Không tìm thấy kết quả' : 'Chưa có nhóm nào'}
+              description={search ? `Không tìm thấy kết quả cho từ khóa "${search}".` : 'Chưa có nhóm nào được đăng ký trong đợt này.'}
+              icon={Users}
+            />
           ) : (
             <div className={css.s9}>
               {pagedGroups.map((g) => {

@@ -40,11 +40,18 @@ const buildAuthResult = async (user) => {
   const accessToken = jwt.sign(
     tokenPayload,
     getJwtSecret(),
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    { expiresIn: '15m' }
+  );
+
+  const refreshToken = jwt.sign(
+    { id: user._id, type: 'refresh' },
+    getJwtSecret(),
+    { expiresIn: '7d' }
   );
 
   return {
     accessToken,
+    refreshToken,
     user: {
       _id: user._id,
       id: user._id,
