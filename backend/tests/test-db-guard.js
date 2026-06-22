@@ -1,5 +1,5 @@
 const assertSafeTestDatabase = () => {
-  if (process.env.ALLOW_DB_MUTATING_TESTS === 'true') {
+  if (process.env.ALLOW_MUTATING_NON_TEST_DB === 'true') {
     return;
   }
 
@@ -12,15 +12,15 @@ const assertSafeTestDatabase = () => {
     databaseName = '';
   }
 
-  const looksLikeTestDb = /(^|[-_])test($|[-_])|testing/i.test(databaseName);
+  const looksLikeTestDb = /(^|[-_])(test|testing|dev|local)($|[-_])/i.test(databaseName);
   if (looksLikeTestDb) {
     return;
   }
 
-  console.warn(
+  throw new Error(
     [
-      'Warning: running mutating integration tests on a non-test database.',
-      'The suite must preserve core user/admin accounts and only clean test/business workflow data.',
+      'Refusing to run mutating integration tests on a non-test database.',
+      'Use a database name containing test/dev/local, or set ALLOW_MUTATING_NON_TEST_DB=true intentionally.',
     ].join('\n')
   );
 };

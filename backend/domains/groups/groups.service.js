@@ -2,6 +2,7 @@ const ProjectGroup = require('../../models/ProjectGroup');
 const ProjectPeriod = require('../../models/ProjectPeriod');
 const ProjectRoster = require('../../models/ProjectRoster');
 const Student = require('../../models/Student');
+const mongoose = require('mongoose');
 const WorkflowEvent = require('../../models/WorkflowEvent');
 const Project = require('../../models/Project');
 const ProjectTopic = require('../../models/ProjectTopic');
@@ -93,7 +94,20 @@ const createGroup = async (periodId, name, studentId) => {
   return group;
 };
 
-const inviteMember = async (groupId, invitedStudentId, leaderStudentId) => {
+const resolveInvitedStudent = async (studentIdentifier) => {
+  const value = String(studentIdentifier || '').trim();
+  if (!value) {
+    return null;
+  }
+
+  if (mongoose.Types.ObjectId.isValid(value)) {
+    return Student.findOne({ _id: value, isDeleted: { $ne: true } });
+  }
+
+  return Student.findOne({ studentCode: value, isDeleted: { $ne: true } });
+};
+
+const inviteMember = async (groupId, studentIdentifier, leaderStudentId) => {
   const group = await ProjectGroup.findOne({ _id: groupId, isDeleted: { $ne: true } });
   if (!group) {
     throw { status: 404, message: 'Nhóm đồ án không tồn tại.' };
@@ -112,6 +126,12 @@ const inviteMember = async (groupId, invitedStudentId, leaderStudentId) => {
   if (!period) {
     throw { status: 404, message: 'Đợt đồ án liên kết không tồn tại.' };
   }
+
+  const invitedStudent = await resolveInvitedStudent(studentIdentifier);
+  if (!invitedStudent) {
+    throw { status: 404, message: 'Không tìm thấy sinh viên theo mã sinh viên đã nhập.' };
+  }
+  const invitedStudentId = invitedStudent._id;
 
   // Check if invited student is in the roster active
   const rosterEntry = await ProjectRoster.findOne({ periodId: group.periodId, studentId: invitedStudentId, status: 'active' });
@@ -173,7 +193,7 @@ const inviteMember = async (groupId, invitedStudentId, leaderStudentId) => {
     toStatus: 'draft',
     actorId: leaderStudentId,
     action: 'INVITE_MEMBER',
-    reason: `Mời sinh viên ID ${invitedStudentId} vào nhóm`,
+    reason: `Mời sinh viên ${invitedStudent.studentCode} vào nhóm`,
   });
 
   return group;

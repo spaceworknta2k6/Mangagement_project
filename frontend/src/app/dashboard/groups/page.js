@@ -74,7 +74,7 @@ export default function GroupsPage() {
 
   // Form states
   const [newGroupName, setNewGroupName] = useState('');
-  const [inviteStudentId, setInviteStudentId] = useState('');
+  const [inviteStudentCode, setInviteStudentCode] = useState('');
   const [creating, setCreating] = useState(false);
   const [inviting, setInviting] = useState(false);
 
@@ -186,8 +186,8 @@ export default function GroupsPage() {
 
   const handleInvite = async (e) => {
     e.preventDefault();
-    if (!inviteStudentId.trim()) {
-      toast.error('Vui lòng nhập ID sinh viên.');
+    if (!inviteStudentCode.trim()) {
+      toast.error('Vui lòng nhập mã sinh viên cần mời.');
       return;
     }
     if (!myGroup) return;
@@ -195,10 +195,10 @@ export default function GroupsPage() {
     setInviting(true);
     try {
       await api.post(`/groups/${myGroup._id}/invite`, {
-        studentId: inviteStudentId.trim(),
+        studentCode: inviteStudentCode.trim(),
       }, token);
       toast.success('Đã gửi lời mời tham gia nhóm!');
-      setInviteStudentId('');
+      setInviteStudentCode('');
       fetchStudentGroupData();
     } catch (err) {
       toast.error(err.message || 'Không thể mời thành viên');
@@ -237,6 +237,8 @@ export default function GroupsPage() {
     if (isStaff) fetchAllGroups(selectedPeriodId);
     else fetchStudentGroupData();
   };
+
+  const canInviteMembers = myGroup?.status === 'draft' && myGroup.leaderStudentId?._id === user?.studentId;
 
   const visibleGroups = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -556,22 +558,25 @@ export default function GroupsPage() {
               </div>
 
               {/* Invite member section (Leader only) */}
-              {myGroup.status === 'draft' && myGroup.leaderStudentId?._id === user?.studentId && (
+              {canInviteMembers && (
                 <div className={css.s28}>
                   <h4 className={css.s29}>
                     Mời thành viên mới
                   </h4>
                   <form onSubmit={handleInvite} className={css.s30} noValidate>
                     <Input
-                      name="inviteStudentId"
-                      value={inviteStudentId}
-                      onChange={(e) => setInviteStudentId(e.target.value)}
-                      placeholder="Nhập ID Sinh viên..."
-                      className={css.s37} />
+                      label="Mã sinh viên"
+                      name="inviteStudentCode"
+                      value={inviteStudentCode}
+                      onChange={(e) => setInviteStudentCode(e.target.value)}
+                      placeholder="Ví dụ: 22021435"
+                      className={css.s37}
+                    />
                     <Button variant="primary" type="submit" loading={inviting} className={css.s31}>
                       <UserPlus size={16} /> Gửi lời mời
                     </Button>
                   </form>
+                  <p className={css.s45}>Nhập MSSV của bạn cùng lớp học phần. Hệ thống sẽ tự kiểm tra sinh viên đó có trong danh sách học phần và chưa thuộc nhóm khác.</p>
                 </div>
               )}
             </Card>

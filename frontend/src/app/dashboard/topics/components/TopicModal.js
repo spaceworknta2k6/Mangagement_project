@@ -87,6 +87,17 @@ export default function TopicModal({
             </>
           )}
 
+          {!isLecturerOrStaff && (
+            <Input
+              label="Email giảng viên hướng dẫn đề xuất"
+              name="proposedSupervisorEmail"
+              type="email"
+              value={form.proposedSupervisorEmail}
+              onChange={(e) => setForm((p) => ({ ...p, proposedSupervisorEmail: e.target.value }))}
+              placeholder="Ví dụ: giangvien@phenikaa-uni.edu.vn"
+            />
+          )}
+
           {isLecturerOrStaff && (
             <>
               <div className={css.s32} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

@@ -378,9 +378,7 @@ export default function ExtensionRequestsPage() {
 
   const validateReview = () => {
     if (!reviewNote.trim()) {
-      return reviewModal?.mode === 'faculty'
-        ? 'Vui lòng nhập ghi chú quyết định của giáo vụ.'
-        : 'Vui lòng nhập nhận xét khuyến nghị của GVHD.';
+      return 'Vui lòng nhập ghi chú quyết định của GVHD.';
     }
     return '';
   };
@@ -398,12 +396,10 @@ export default function ExtensionRequestsPage() {
 
     setReviewSubmitting(true);
     try {
-      const endpoint = reviewModal.mode === 'faculty'
-        ? `/extensions/${request._id}/faculty-approve`
-        : `/extensions/${request._id}/supervisor-approve`;
+      const endpoint = `/extensions/${request._id}/supervisor-approve`;
 
       await api.post(endpoint, { status: reviewStatus, note: reviewNote }, token);
-      toast.success(reviewModal.mode === 'faculty' ? 'Đã ghi nhận quyết định của giáo vụ.' : 'Đã gửi ý kiến khuyến nghị của GVHD.');
+      toast.success('Đã ghi nhận quyết định của GVHD.');
       setReviewModal(null);
       loadData();
     } catch (err) {
@@ -418,12 +414,6 @@ export default function ExtensionRequestsPage() {
     request.status === 'pending' &&
     (request.supervisorApproval?.status || 'pending') === 'pending' &&
     String(request.projectId?.supervisorId?._id || request.projectId?.supervisorId) === String(user?.lecturerId)
-  );
-
-  const canFacultyDecide = (request) => (
-    isFaculty &&
-    request.status === 'pending' &&
-    ['approved', 'rejected'].includes(request.supervisorApproval?.status || '')
   );
 
   const canCancelRequest = (request) => request.status === 'pending' && (isFaculty || isStudent);
@@ -463,7 +453,7 @@ export default function ExtensionRequestsPage() {
             Gia hạn deadline
           </h1>
           <p className={css.s7}>
-            Sinh viên gửi yêu cầu, GVHD khuyến nghị và giáo vụ ra quyết định cuối cùng
+            Sinh viên gửi yêu cầu và GVHD quyết định gia hạn mốc tiến độ
           </p>
         </div>
         <Button variant="outline" onClick={loadData} icon={<ArrowsClockwise />} title="Làm mới" />
@@ -615,12 +605,6 @@ export default function ExtensionRequestsPage() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-label">Giáo vụ</div>
-                      <div className={css.s21}>
-                        <ApprovalBadge status={request.facultyDecision?.status} />
-                      </div>
-                    </div>
-                    <div>
                       <div className="text-label">Ngày gửi</div>
                       <div className={css.s22}>
                         {formatDateTime(request.createdAt)}
@@ -632,33 +616,19 @@ export default function ExtensionRequestsPage() {
                     <strong className={css.s24}>Lý do:</strong> {request.reason}
                   </div>
  
-                  {(request.supervisorApproval?.note || request.facultyDecision?.note) && (
+                  {request.supervisorApproval?.note && (
                     <div className={css.s25}>
-                      {request.supervisorApproval?.note && (
-                        <div className={css.s26}>
-                          <strong className={css.s27}>Nhận xét GVHD:</strong> {request.supervisorApproval.note}
-                        </div>
-                      )}
-                      {request.facultyDecision?.note && (
-                        <div className={css.s28}>
-                          <strong className={css.s29}>Quyết định giáo vụ:</strong> {request.facultyDecision.note}
-                        </div>
-                      )}
+                      <div className={css.s26}>
+                        <strong className={css.s27}>Quyết định GVHD:</strong> {request.supervisorApproval.note}
+                      </div>
                     </div>
                   )}
  
-                  {(canSupervisorReview(request) || canFacultyDecide(request)) && (
+                  {canSupervisorReview(request) && (
                     <div className={css.s30}>
-                      {canSupervisorReview(request) && (
-                        <Button size="sm" variant="primary" icon={<FileText />} onClick={() => openReviewModal(request, 'supervisor')}>
-                          Nhận xét GVHD
-                        </Button>
-                      )}
-                      {canFacultyDecide(request) && (
-                        <Button size="sm" variant="primary" icon={<Check />} onClick={() => openReviewModal(request, 'faculty')}>
-                          Quyết định
-                        </Button>
-                      )}
+                      <Button size="sm" variant="primary" icon={<FileText />} onClick={() => openReviewModal(request, 'supervisor')}>
+                        Quyết định gia hạn
+                      </Button>
                     </div>
                   )}
                   {canCancelRequest(request) && (
@@ -696,7 +666,7 @@ export default function ExtensionRequestsPage() {
           <div className={css.s32} >
             <div className={css.s33}>
               <h2 className={css.s34}>
-                {reviewModal.mode === 'faculty' ? 'Quyết định của giáo vụ' : 'Khuyến nghị của GVHD'}
+                Quyết định của GVHD
               </h2>
               <p className={css.s35}>
                 {getProjectTitle(reviewModal.request.projectId)}
@@ -711,10 +681,10 @@ export default function ExtensionRequestsPage() {
 
               <TextAreaField
                 id="extension-review-note"
-                label={reviewModal.mode === 'faculty' ? 'Ghi chú quyết định' : 'Nhận xét khuyến nghị'}
+                label="Ghi chú quyết định"
                 value={reviewNote}
                 onChange={(e) => setReviewNote(e.target.value)}
-                placeholder={reviewModal.mode === 'faculty' ? 'Ghi rõ căn cứ phê duyệt hoặc từ chối...' : 'Nêu ý kiến chuyên môn cho giáo vụ...'}
+                placeholder="Ghi rõ căn cứ đồng ý hoặc từ chối gia hạn..."
               />
 
               <div className={css.s37}>

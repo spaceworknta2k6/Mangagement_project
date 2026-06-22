@@ -2,8 +2,28 @@ const mongoose = require('mongoose');
 const ProjectGroup = require('../../models/ProjectGroup');
 const ProjectRoster = require('../../models/ProjectRoster');
 const Lecturer = require('../../models/Lecturer');
+const User = require('../../models/User');
 
 const OWNER_TYPES = ['student', 'group'];
+
+const resolveLecturerByEmail = async (email) => {
+  const value = String(email || '').trim().toLowerCase();
+  if (!value) return null;
+
+  const user = await User.findOne({
+    email: value,
+    roles: 'LECTURER',
+    status: 'active',
+    isDeleted: { $ne: true },
+  });
+  if (!user) return null;
+
+  return Lecturer.findOne({
+    userId: user._id,
+    status: 'active',
+    isDeleted: { $ne: true },
+  });
+};
 
 const validateTopicPropose = async (req, res, next) => {
   try {
@@ -44,6 +64,7 @@ const validateTopicPropose = async (req, res, next) => {
       groupId,
       technologies,
       proposedSupervisorId,
+      proposedSupervisorEmail,
     } = req.body;
 
     const errors = [];
@@ -77,12 +98,26 @@ const validateTopicPropose = async (req, res, next) => {
         }
       }
 
-      if (!proposedSupervisorId || !mongoose.Types.ObjectId.isValid(proposedSupervisorId)) {
-        errors.push({ field: 'proposedSupervisorId', code: 'SUPERVISOR_ID_INVALID', message: 'Ma giang vien de xuat huong dan khong hop le.' });
+      if (!proposedSupervisorId && proposedSupervisorEmail) {
+        const lecturer = await resolveLecturerByEmail(proposedSupervisorEmail);
+        if (lecturer) {
+          req.body.proposedSupervisorId = lecturer._id.toString();
+        }
+      }
+
+      if (!req.body.proposedSupervisorId || !mongoose.Types.ObjectId.isValid(req.body.proposedSupervisorId)) {
+        errors.push({ field: 'proposedSupervisorEmail', code: 'SUPERVISOR_EMAIL_INVALID', message: 'Email giang vien huong dan khong hop le hoac khong ton tai.' });
       }
     } else {
-      if (proposedSupervisorId && !mongoose.Types.ObjectId.isValid(proposedSupervisorId)) {
-        errors.push({ field: 'proposedSupervisorId', code: 'SUPERVISOR_ID_INVALID', message: 'Ma giang vien de xuat huong dan khong hop le.' });
+      if (!proposedSupervisorId && proposedSupervisorEmail) {
+        const lecturer = await resolveLecturerByEmail(proposedSupervisorEmail);
+        if (lecturer) {
+          req.body.proposedSupervisorId = lecturer._id.toString();
+        }
+      }
+
+      if (req.body.proposedSupervisorId && !mongoose.Types.ObjectId.isValid(req.body.proposedSupervisorId)) {
+        errors.push({ field: 'proposedSupervisorEmail', code: 'SUPERVISOR_EMAIL_INVALID', message: 'Email giang vien huong dan khong hop le hoac khong ton tai.' });
       }
     }
 

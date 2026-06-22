@@ -70,6 +70,14 @@ const ProjectTopicSchema = new mongoose.Schema({
   allowGroup: {
     type: Boolean,
   },
+  minGroupSize: {
+    type: Number,
+    required: false,
+  },
+  maxGroupSize: {
+    type: Number,
+    required: false,
+  },
   publishedByStaffId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

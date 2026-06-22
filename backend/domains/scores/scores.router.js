@@ -10,6 +10,7 @@ router.get('/score-sheets/:id/public-verify', scoresController.getPublicScoreShe
 
 router.use(protect);
 
+router.get('/projects-summary', scoresController.getProjectsSummary);
 router.get('/score-sheets', scoresController.getScoreSheets);
 router.post('/score-sheets', requireRole(['LECTURER']), scoresValidator.validateScoreSheetSubmit, scoresController.submitScoreSheet);
 router.get('/score-sheets/:id', scoresController.getScoreSheetById);

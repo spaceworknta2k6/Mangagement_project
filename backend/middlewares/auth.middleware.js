@@ -8,20 +8,20 @@ const { getJwtSecret } = require('../config/jwt');
 const protect = async (req, res, next) => {
   let token;
 
-  // 1. Retrieve token from Cookies first (HttpOnly)
+  // 1. Prefer Authorization header when the frontend explicitly sends a token.
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  // 2. Fallback: retrieve token from Cookies (HttpOnly)
   const cookies = req.headers.cookie || '';
   const tokenPair = cookies
     .split(';')
     .map((item) => item.trim())
     .find((item) => item.startsWith('karl_token='));
   
-  if (tokenPair) {
+  if (!token && tokenPair) {
     token = decodeURIComponent(tokenPair.slice('karl_token='.length));
-  }
-
-  // 2. Fallback: Retrieve token from Authorization header (Bearer <token>)
-  if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
   }
 
   if (!token) {

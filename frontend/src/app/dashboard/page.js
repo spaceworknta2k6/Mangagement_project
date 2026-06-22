@@ -258,7 +258,7 @@ function ProjectProgressBar({ projects }) {
     { label: 'Mới phân công', count: stats.assigned, color: 'var(--accent)' },
     { label: 'Đang thực hiện', count: stats.in_progress, color: 'var(--warning)' },
     { label: 'Nộp báo cáo', count: stats.pre_defense_submitted, color: '#a855f7' },
-    { label: 'Đủ ĐK bảo vệ', count: stats.defense_eligible, color: '#10b981' },
+    { label: 'Sẵn sàng chấm', count: stats.defense_eligible, color: '#10b981' },
     { label: 'Đã hoàn thành', count: stats.finalized, color: 'var(--success)' },
     { label: 'Đã hủy', count: stats.cancelled, color: 'var(--error)' },
   ].filter((item) => item.count > 0);
@@ -411,7 +411,7 @@ export default function DashboardPage() {
           items.push({
             id: `reviewer-${project._id}`,
             icon: Users,
-            title: 'Phân công giảng viên phản biện',
+            title: 'Phân công giảng viên chấm 2',
             description: getProjectTitle(project),
             href: '/dashboard/projects',
             badge: 'Thiếu phân công',

@@ -474,11 +474,23 @@
 }
 
 .s66 {
-  background: none;
+  width: 36px;
+  height: 36px;
+  background: transparent;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 26px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.s66:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-raised);
 }
 
 .s67 {

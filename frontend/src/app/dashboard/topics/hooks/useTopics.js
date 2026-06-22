@@ -40,6 +40,8 @@ export function useTopics(initialActiveTab = 'all') {
     groupId: '',
     title: '',
     summary: '',
+    proposedSupervisorId: '',
+    proposedSupervisorEmail: '',
     periodId: '',
     // fields for lecturer topic creation
     allowIndividual: true,
@@ -101,7 +103,13 @@ export function useTopics(initialActiveTab = 'all') {
         const payload = {
           title: form.title.trim(),
           summary: form.summary.trim(),
+          objectives: form.summary.trim(),
+          scope: form.summary.trim(),
+          expectedResult: form.summary.trim(),
+          plan: form.summary.trim(),
           periodId: form.periodId,
+          proposedSupervisorId: form.proposedSupervisorId || undefined,
+          proposedSupervisorEmail: form.proposedSupervisorEmail?.trim() || undefined,
           allowIndividual: form.allowIndividual === true || form.allowIndividual === 'true',
           allowGroup: form.allowGroup === true || form.allowGroup === 'true',
           groupMinSize: parseInt(form.groupMinSize || 2, 10),
@@ -117,6 +125,11 @@ export function useTopics(initialActiveTab = 'all') {
           toast.success('Khởi tạo đề tài giảng viên thành công!');
         }
       } else {
+        if (!form.proposedSupervisorEmail?.trim()) {
+          toast.error('Vui lòng nhập email giảng viên hướng dẫn đề xuất.');
+          setSubmitting(false);
+          return;
+        }
         if (form.ownerType === 'group' && !form.groupId) {
           toast.error('Vui lòng chọn nhóm khi đăng ký đề tài theo nhóm.');
           setSubmitting(false);
@@ -125,7 +138,12 @@ export function useTopics(initialActiveTab = 'all') {
         const payload = {
           title: form.title.trim(),
           summary: form.summary.trim(),
+          objectives: form.summary.trim(),
+          scope: form.summary.trim(),
+          expectedResult: form.summary.trim(),
+          plan: form.summary.trim(),
           periodId: form.periodId,
+          proposedSupervisorEmail: form.proposedSupervisorEmail.trim(),
           ownerType: form.ownerType,
           ...(form.ownerType === 'group' ? { groupId: form.groupId } : {}),
         };
@@ -146,6 +164,8 @@ export function useTopics(initialActiveTab = 'all') {
         groupId: '',
         title: '',
         summary: '',
+        proposedSupervisorId: '',
+        proposedSupervisorEmail: '',
         allowIndividual: true,
         allowGroup: true,
         groupMinSize: '2',
@@ -172,6 +192,8 @@ export function useTopics(initialActiveTab = 'all') {
       groupId: t.groupId?._id || t.groupId || '',
       title: t.title,
       summary: t.summary || '',
+      proposedSupervisorId: t.proposedSupervisorId?._id || t.proposedSupervisorId || '',
+      proposedSupervisorEmail: t.proposedSupervisorId?.userId?.email || '',
       periodId: t.periodId?._id || t.periodId || '',
       allowIndividual: t.allowIndividual !== false,
       allowGroup: t.allowGroup !== false,
@@ -279,6 +301,8 @@ export function useTopics(initialActiveTab = 'all') {
       groupId: '',
       title: s.title,
       summary: originalTopic?.summary || s.reason || '',
+      proposedSupervisorId: originalTopic?.proposedSupervisorId?._id || originalTopic?.proposedSupervisorId || '',
+      proposedSupervisorEmail: originalTopic?.proposedSupervisorId?.userId?.email || '',
       periodId: periods[0]?._id || '',
     });
     setChatOpen(false);

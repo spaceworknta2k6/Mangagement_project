@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const ProjectTopic = require('../../models/ProjectTopic');
 const ProjectGroup = require('../../models/ProjectGroup');
 const ProjectPeriod = require('../../models/ProjectPeriod');
@@ -37,6 +38,25 @@ const getTopicStudentUserIds = async (topic) => {
 const ACTIVE_TOPIC_STATUSES = ['submitted', 'ai_checked', 'needs_revision', 'approved', 'assigned', 'locked', 'changed', 'completed'];
 const ACTIVE_PROJECT_STATUSES = { $nin: ['cancelled', 'archived', 'failed'] };
 
+const getTopicAllowedOwnerTypes = (topic) => (
+  Array.isArray(topic.allowedOwnerTypes) && topic.allowedOwnerTypes.length > 0
+    ? topic.allowedOwnerTypes
+    : ['student', 'group']
+);
+
+const getGroupLimits = (period, topic) => {
+  const minLimit = Math.max(2, Number(topic?.minGroupSize || period?.groupMinSize || period?.minGroupSize || 2));
+  const maxLimit = Number(topic?.maxGroupSize || period?.groupMaxSize || period?.maxGroupSize || 5);
+  return { minLimit, maxLimit };
+};
+
+const getAcceptedMemberIds = (group) => (
+  (group.members || [])
+    .filter((member) => member.status === 'accepted')
+    .map((member) => member.studentId)
+    .filter(Boolean)
+);
+
 const logWorkflowEvent = async ({
   entityType = 'ProjectTopic',
   entityId,
@@ -65,7 +85,7 @@ const assertStudentTopicOwnerAvailable = async (periodId, studentId) => {
     throw { status: 403, message: 'Ban chua co trong danh sach tham gia dot nay.' };
   }
 
-  const [existingTopic, existingProject] = await Promise.all([
+  const [existingTopic, existingProject, existingGroupProject] = await Promise.all([
     ProjectTopic.findOne({
       periodId,
       ownerType: 'student',
@@ -80,14 +100,61 @@ const assertStudentTopicOwnerAvailable = async (periodId, studentId) => {
       isDeleted: { $ne: true },
       status: ACTIVE_PROJECT_STATUSES,
     }),
+    Project.aggregate([
+      {
+        $match: {
+          periodId,
+          ownerType: 'group',
+          isDeleted: { $ne: true },
+          status: ACTIVE_PROJECT_STATUSES,
+        },
+      },
+      {
+        $lookup: {
+          from: 'projectgroups',
+          localField: 'groupId',
+          foreignField: '_id',
+          as: 'group',
+        },
+      },
+      { $unwind: '$group' },
+      {
+        $match: {
+          'group.status': { $in: ['confirmed', 'locked'] },
+          'group.members': {
+            $elemMatch: {
+              studentId,
+              status: 'accepted',
+            },
+          },
+        },
+      },
+      { $limit: 1 },
+    ]),
   ]);
 
   if (existingTopic || existingProject) {
     throw { status: 400, message: 'Ban da co de tai hoac du an ca nhan dang hoat dong trong dot do an nay.' };
   }
+
+  if (existingGroupProject.length > 0) {
+    throw { status: 400, message: 'Ban da thuoc nhom co du an dang hoat dong trong dot do an nay.' };
+  }
 };
 
-const resolveGroupTopicOwner = async (periodId, groupId, studentId) => {
+const assertAcceptedMembersInRoster = async (periodId, memberIds) => {
+  const activeRosterCount = await ProjectRoster.countDocuments({
+    periodId,
+    studentId: { $in: memberIds },
+    status: 'active',
+  });
+
+  if (activeRosterCount !== memberIds.length) {
+    throw { status: 403, message: 'Tat ca thanh vien nhom phai co trong danh sach hoc phan dang hoat dong.' };
+  }
+};
+
+const resolveGroupTopicOwner = async (periodId, groupId, studentId, period, topic) => {
   const group = await ProjectGroup.findOne({ _id: groupId, periodId, isDeleted: { $ne: true } });
   if (!group) {
     throw { status: 404, message: 'Nhom do an khong ton tai.' };
@@ -99,6 +166,21 @@ const resolveGroupTopicOwner = async (periodId, groupId, studentId) => {
 
   if (group.status === 'cancelled' || group.status === 'locked') {
     throw { status: 400, message: 'Trang thai nhom khong hop le de dang ky de tai.' };
+  }
+
+  if (group.status !== 'confirmed') {
+    throw { status: 400, message: 'Nhom phai duoc xac nhan truoc khi dang ky de tai.' };
+  }
+
+  const acceptedMemberIds = getAcceptedMemberIds(group);
+  const { minLimit, maxLimit } = getGroupLimits(period, topic);
+
+  if (acceptedMemberIds.length < minLimit) {
+    throw { status: 400, message: `Nhom phai co it nhat ${minLimit} thanh vien da xac nhan.` };
+  }
+
+  if (acceptedMemberIds.length > maxLimit) {
+    throw { status: 400, message: `Nhom vuot qua gioi han ${maxLimit} thanh vien cua hoc phan.` };
   }
 
   const callerMember = group.members.find(
@@ -121,6 +203,8 @@ const resolveGroupTopicOwner = async (periodId, groupId, studentId) => {
   if (existingActiveTopic) {
     throw { status: 400, message: 'Nhom cua ban da co mot de tai dang hoat dong trong dot do an nay.' };
   }
+
+  await assertAcceptedMembersInRoster(periodId, acceptedMemberIds);
 
   return group;
 };
@@ -145,6 +229,51 @@ const buildTopicPayload = ({ topicData, period, studentId, ownerType, ownerId, g
   status: 'submitted',
 });
 
+const spawnProjectForAssignedTopic = async (topic, supervisorId, actorUserId, actorRoles = ['FACULTY_STAFF']) => {
+  const owner = resolveProjectOwner(topic);
+
+  const groupId = owner?.ownerType === 'group' ? (owner.groupId || owner.ownerId) : null;
+  const group = groupId ? await ProjectGroup.findOne({ _id: groupId, isDeleted: { $ne: true } }) : null;
+  if (group) {
+    group.status = 'locked';
+    await group.save();
+  }
+
+  const existingProject = await Project.findOne({
+    topicId: topic._id,
+    isDeleted: { $ne: true },
+    status: ACTIVE_PROJECT_STATUSES,
+  });
+
+  if (existingProject) {
+    return existingProject;
+  }
+
+  const project = await Project.create({
+    periodId: topic.periodId,
+    ownerType: owner?.ownerType,
+    ownerId: owner?.ownerId,
+    studentId: owner?.ownerType === 'student' ? (owner.studentId || owner.ownerId) : undefined,
+    groupId: owner?.ownerType === 'group' ? (owner.groupId || owner.ownerId) : undefined,
+    topicId: topic._id,
+    supervisorId,
+    status: 'assigned',
+  });
+
+  await logWorkflowEvent({
+    entityType: 'Project',
+    entityId: project._id,
+    fromStatus: '',
+    toStatus: 'assigned',
+    actorId: actorUserId,
+    actorRoles,
+    action: 'SPAWN_PROJECT',
+    reason: 'Tự động khởi tạo Workspace khi xác nhận GVHD',
+  });
+
+  return project;
+};
+
 const proposeTopic = async (topicData, studentId) => {
   const incomingPeriodId = topicData.periodId;
   const incomingOwnerType = topicData.ownerType === 'group' ? 'group' : 'student';
@@ -158,9 +287,15 @@ const proposeTopic = async (topicData, studentId) => {
   let selectedOwnerId = studentId;
 
   if (incomingOwnerType === 'student') {
+    if (periodRecord.allowIndividual === false) {
+      throw { status: 400, message: 'Hoc phan khong cho phep de xuat de tai ca nhan.' };
+    }
     await assertStudentTopicOwnerAvailable(incomingPeriodId, studentId);
   } else {
-    const selectedGroup = await resolveGroupTopicOwner(incomingPeriodId, topicData.groupId, studentId);
+    if (periodRecord.allowGroup === false) {
+      throw { status: 400, message: 'Hoc phan khong cho phep de xuat de tai theo nhom.' };
+    }
+    const selectedGroup = await resolveGroupTopicOwner(incomingPeriodId, topicData.groupId, studentId, periodRecord);
     selectedGroupId = selectedGroup._id;
     selectedOwnerId = selectedGroup._id;
   }
@@ -284,11 +419,20 @@ const reviewTopic = async (topicId, action, user, note = '') => {
   }
 
   let toStatus = '';
+  let shouldAutoAssignSupervisor = false;
   if (action === 'approve') {
-    toStatus = 'approved';
+    shouldAutoAssignSupervisor = Boolean(
+      user.lecturerId &&
+      topic.proposedSupervisorId &&
+      topic.proposedSupervisorId.toString() === user.lecturerId.toString()
+    );
+    toStatus = shouldAutoAssignSupervisor ? 'assigned' : 'approved';
     topic.approvedBy = user._id;
     topic.approvedAt = new Date();
     topic.approvedByLecturerId = user.lecturerId || undefined;
+    if (shouldAutoAssignSupervisor) {
+      topic.supervisorId = user.lecturerId;
+    }
   } else if (action === 'request-revision') {
     toStatus = 'needs_revision';
   } else if (action === 'reject') {
@@ -300,6 +444,10 @@ const reviewTopic = async (topicId, action, user, note = '') => {
   topic.status = toStatus;
   await topic.save();
 
+  if (shouldAutoAssignSupervisor) {
+    await spawnProjectForAssignedTopic(topic, user.lecturerId, user._id, ['LECTURER']);
+  }
+
   await logWorkflowEvent({
     entityId: topic._id,
     fromStatus,
@@ -307,13 +455,15 @@ const reviewTopic = async (topicId, action, user, note = '') => {
     actorId: user._id,
     actorRoles: isStaff ? ['FACULTY_STAFF'] : ['LECTURER'],
     action: `REVIEW_TOPIC_${action.toUpperCase()}`,
-    reason: note || `Xét duyệt đề tài với kết quả [${toStatus}]`,
+    reason: note || (shouldAutoAssignSupervisor
+      ? 'Giảng viên đề xuất đã duyệt và nhận hướng dẫn đề tài'
+      : `Xét duyệt đề tài với kết quả [${toStatus}]`),
   });
 
   // Gửi thông báo cho sinh viên thực hiện đề tài
   try {
     const studentUserIds = await getTopicStudentUserIds(topic);
-    const actionLabel = action === 'approve' ? 'phê duyệt' : action === 'request-revision' ? 'yêu cầu chỉnh sửa' : 'từ chối';
+    const actionLabel = shouldAutoAssignSupervisor ? 'phê duyệt và nhận hướng dẫn' : action === 'approve' ? 'phê duyệt' : action === 'request-revision' ? 'yêu cầu chỉnh sửa' : 'từ chối';
     const notifyType = action === 'approve' ? 'TOPIC_APPROVED' : action === 'request-revision' ? 'TOPIC_REVISION_REQUESTED' : 'TOPIC_REJECTED';
     
     const reviewerName = user.fullName || 'Giảng viên';
@@ -357,27 +507,7 @@ const assignSupervisor = async (topicId, supervisorId, actorUserId) => {
   topic.status = 'assigned';
   await topic.save();
 
-  const owner = resolveProjectOwner(topic);
-
-  // 2. Lock the ProjectGroup for group-owned topics only
-  const groupId = owner?.ownerType === 'group' ? (owner.groupId || owner.ownerId) : null;
-  const group = groupId ? await ProjectGroup.findOne({ _id: groupId, isDeleted: { $ne: true } }) : null;
-  if (group) {
-    group.status = 'locked';
-    await group.save();
-  }
-
-  // 3. Spawn official Project workspace linking period, group, topic, and supervisor
-  const project = await Project.create({
-    periodId: topic.periodId,
-    ownerType: owner?.ownerType,
-    ownerId: owner?.ownerId,
-    studentId: owner?.ownerType === 'student' ? (owner.studentId || owner.ownerId) : undefined,
-    groupId: owner?.ownerType === 'group' ? (owner.groupId || owner.ownerId) : undefined,
-    topicId: topic._id,
-    supervisorId: supervisorId,
-    status: 'assigned',
-  });
+  const project = await spawnProjectForAssignedTopic(topic, supervisorId, actorUserId, ['FACULTY_STAFF']);
 
   // 4. Log workflow events
   await logWorkflowEvent({
@@ -388,17 +518,6 @@ const assignSupervisor = async (topicId, supervisorId, actorUserId) => {
     actorRoles: ['FACULTY_STAFF'],
     action: 'ASSIGN_SUPERVISOR',
     reason: `Phân công giảng viên hướng dẫn ID ${supervisorId} và khởi tạo Workspace đồ án.`,
-  });
-
-  await logWorkflowEvent({
-    entityType: 'Project',
-    entityId: project._id,
-    fromStatus: '',
-    toStatus: 'assigned',
-    actorId: actorUserId,
-    actorRoles: ['FACULTY_STAFF'],
-    action: 'SPAWN_PROJECT',
-    reason: 'Tự động khởi tạo Workspace khi phân công GVHD',
   });
 
   // Gửi thông báo cho sinh viên và Giảng viên hướng dẫn
@@ -654,6 +773,8 @@ const createLecturerTopic = async (topicData, lecturerId, userId) => {
     keywords: topicData.keywords || [],
     capacityMaxStudents: topicData.capacityMaxStudents !== undefined ? parseInt(topicData.capacityMaxStudents, 10) : 1,
     capacityMaxGroups: topicData.capacityMaxGroups !== undefined ? parseInt(topicData.capacityMaxGroups, 10) : 1,
+    minGroupSize: topicData.minGroupSize !== undefined ? parseInt(topicData.minGroupSize, 10) : undefined,
+    maxGroupSize: topicData.maxGroupSize !== undefined ? parseInt(topicData.maxGroupSize, 10) : undefined,
     allowedOwnerTypes: topicData.allowedOwnerTypes || ['student', 'group'],
     allowIndividual: topicData.allowIndividual !== undefined ? topicData.allowIndividual : true,
     allowGroup: topicData.allowGroup !== undefined ? topicData.allowGroup : true,
@@ -696,17 +817,23 @@ const registerExistingTopic = async (topicId, registerData, studentId, actorUser
   let targetOwnerId = studentId;
 
   if (ownerType === 'student') {
+    if (!getTopicAllowedOwnerTypes(topic).includes('student')) {
+      throw { status: 400, message: 'De tai nay khong cho phep dang ky ca nhan.' };
+    }
     const allowInd = topic.allowIndividual !== undefined ? topic.allowIndividual : period.allowIndividual;
     if (allowInd === false) {
       throw { status: 400, message: 'Đề tài hoặc học phần không cho phép đăng ký cá nhân.' };
     }
     await assertStudentTopicOwnerAvailable(topic.periodId, studentId);
   } else {
+    if (!getTopicAllowedOwnerTypes(topic).includes('group')) {
+      throw { status: 400, message: 'De tai nay khong cho phep dang ky theo nhom.' };
+    }
     const allowGrp = topic.allowGroup !== undefined ? topic.allowGroup : period.allowGroup;
     if (allowGrp === false) {
       throw { status: 400, message: 'Đề tài hoặc học phần không cho phép đăng ký theo nhóm.' };
     }
-    const group = await resolveGroupTopicOwner(topic.periodId, registerData.groupId, studentId);
+    const group = await resolveGroupTopicOwner(topic.periodId, registerData.groupId, studentId, period, topic);
     targetGroupId = group._id;
     targetOwnerId = group._id;
   }

@@ -204,6 +204,77 @@ const getScoreSheets = async (query = {}, user = {}) => {
   return visibleSheets;
 };
 
+const getProjectsSummary = async (query = {}, user = {}) => {
+  const projectQuery = {};
+  if (query.periodId) {
+    projectQuery.periodId = query.periodId;
+  }
+
+  const projects = await Project.find(projectQuery)
+    .populate({
+      path: 'groupId',
+      select: 'name members status',
+    })
+    .populate({
+      path: 'studentId',
+      populate: { path: 'userId', select: 'fullName email' },
+    })
+    .populate({
+      path: 'topicId',
+      select: 'title summary objectives scope technologies',
+    })
+    .populate({
+      path: 'supervisorId',
+      populate: { path: 'userId', select: 'fullName email' },
+    })
+    .populate({
+      path: 'reviewerId',
+      populate: { path: 'userId', select: 'fullName email' },
+    })
+    .sort({ createdAt: -1 });
+
+  const visibleProjects = [];
+  for (const project of projects) {
+    if (isStaff(user) || await canAccessProject(project, user)) {
+      visibleProjects.push(project);
+    }
+  }
+
+  if (visibleProjects.length === 0) {
+    return [];
+  }
+
+  const projectIds = visibleProjects.map((project) => project._id);
+  const [sheets, grades] = await Promise.all([
+    ScoreSheet.find({ projectId: { $in: projectIds } }).populate('graderId'),
+    FinalGrade.find({ projectId: { $in: projectIds } }),
+  ]);
+
+  const sheetsByProjectId = new Map();
+  for (const sheet of sheets) {
+    const key = sheet.projectId.toString();
+    const bucket = sheetsByProjectId.get(key) || [];
+    bucket.push(sheet);
+    sheetsByProjectId.set(key, bucket);
+  }
+
+  const gradesByProjectId = new Map();
+  for (const grade of grades) {
+    gradesByProjectId.set(grade.projectId.toString(), grade);
+  }
+
+  return visibleProjects.map((project) => {
+    const finalGrade = gradesByProjectId.get(project._id.toString()) || null;
+    const canSeeFinalGrade = !user.studentId || finalGrade?.publishedAt;
+
+    return {
+      ...project.toObject(),
+      sheets: sheetsByProjectId.get(project._id.toString()) || [],
+      finalGrade: canSeeFinalGrade ? finalGrade : null,
+    };
+  });
+};
+
 const getScoreSheetById = async (id, user = {}) => {
   const sheet = await ScoreSheet.findById(id).populate('graderId').populate('projectId');
   if (!sheet) {
@@ -672,6 +743,7 @@ const publishFinalGradesByPeriod = async (periodId, userId) => {
 module.exports = {
   submitScoreSheet,
   getScoreSheets,
+  getProjectsSummary,
   getScoreSheetById,
   updateScoreSheet,
   lockScoreSheet,

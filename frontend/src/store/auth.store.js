@@ -1,30 +1,43 @@
 'use client';
 
 import { create } from 'zustand';
-import Cookies from 'js-cookie';
 
-const COOKIE_KEY = 'karl_token';
+const STORAGE_KEY = 'karl_access_token';
+
+const clearLegacyReadableCookie = () => {
+  if (typeof document === 'undefined') return;
+  document.cookie = 'karl_token=; Max-Age=0; Path=/; SameSite=Strict';
+};
 
 const useAuthStore = create((set) => ({
   token: null,
   user: null,       // { _id, email, role, studentId?, lecturerId? }
   isLoading: true,
 
-  // Called on app boot to restore session from cookie
+  // Called on app boot to restore the frontend access token.
   hydrate: () => {
-    const token = Cookies.get(COOKIE_KEY) || null;
+    const token = typeof window !== 'undefined'
+      ? window.localStorage.getItem(STORAGE_KEY)
+      : null;
+    clearLegacyReadableCookie();
     set({ token, isLoading: false });
   },
 
   setAuth: (token, user) => {
-    Cookies.set(COOKIE_KEY, token, { expires: 7, sameSite: 'strict' });
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(STORAGE_KEY, token);
+      clearLegacyReadableCookie();
+    }
     set({ token, user });
   },
 
   setUser: (user) => set({ user }),
 
   logout: () => {
-    Cookies.remove(COOKIE_KEY);
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(STORAGE_KEY);
+      clearLegacyReadableCookie();
+    }
     set({ token: null, user: null });
   },
 }));

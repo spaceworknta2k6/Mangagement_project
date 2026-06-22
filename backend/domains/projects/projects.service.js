@@ -157,7 +157,7 @@ const assignReviewer = async (projectId, reviewerId, actorUserId) => {
 
   const reviewer = await Lecturer.findById(reviewerId);
   if (!reviewer) {
-    throw { status: 404, message: 'Giảng viên phản biện được chỉ định không tồn tại.' };
+    throw { status: 404, message: 'Giảng viên chấm 2 được chỉ định không tồn tại.' };
   }
 
   project.reviewerId = reviewerId;
@@ -169,7 +169,7 @@ const assignReviewer = async (projectId, reviewerId, actorUserId) => {
     toStatus: project.status,
     actorId: actorUserId,
     action: 'ASSIGN_REVIEWER',
-    reason: `Phân công giảng viên phản biện ID ${reviewerId}`,
+    reason: `Phân công giảng viên chấm 2 ID ${reviewerId}`,
   });
 
   return project;
@@ -183,7 +183,7 @@ const markDefenseEligible = async (projectId, actorUserId) => {
 
   const allowedStatuses = ['in_progress', 'pre_defense_submitted', 'supervisor_reviewed', 'reviewer_reviewed'];
   if (!allowedStatuses.includes(project.status)) {
-    throw { status: 400, message: `Không thể duyệt điều kiện bảo vệ cho dự án đang ở trạng thái [${project.status}].` };
+    throw { status: 400, message: `Không thể đánh dấu sẵn sàng chấm cho dự án đang ở trạng thái [${project.status}].` };
   }
 
   const fromStatus = project.status;
@@ -196,7 +196,7 @@ const markDefenseEligible = async (projectId, actorUserId) => {
     toStatus: 'defense_eligible',
     actorId: actorUserId,
     action: 'MARK_DEFENSE_ELIGIBLE',
-    reason: 'Duyệt đủ điều kiện bảo vệ đồ án tốt nghiệp',
+    reason: 'Đánh dấu dự án sẵn sàng chấm',
   });
 
   return project;

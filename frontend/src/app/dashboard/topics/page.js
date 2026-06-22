@@ -147,20 +147,19 @@ export default function TopicsPage() {
     await handleRegisterTopic(topicId, ownerType, groupId);
   };
 
-  const visibleTopics = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
-    if (!keyword) return filteredTopics;
-    return filteredTopics.filter((topic) => {
-      const values = [
-        topic.title,
-        topic.summary,
-        topic.groupId?.name,
-        topic.periodId?.name,
-        topic.proposedSupervisorId?.userId?.fullName,
-      ];
-      return values.some((value) => String(value || '').toLowerCase().includes(keyword));
-    });
-  }, [filteredTopics, search]);
+  const keyword = search.trim().toLowerCase();
+  const visibleTopics = keyword
+    ? filteredTopics.filter((topic) => {
+        const values = [
+          topic.title,
+          topic.summary,
+          topic.groupId?.name,
+          topic.periodId?.name,
+          topic.proposedSupervisorId?.userId?.fullName,
+        ];
+        return values.some((value) => String(value || '').toLowerCase().includes(keyword));
+      })
+    : filteredTopics;
 
   const totalPages = Math.max(1, Math.ceil(visibleTopics.length / pageSize));
   const pagedTopics = visibleTopics.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -383,6 +382,7 @@ export default function TopicsPage() {
               topic={t}
               user={user}
               isStaff={isStaff}
+              isLecturer={isLecturer}
               isStudent={isStudent}
               handleRequestRevision={handleRequestRevision}
               handleReject={handleReject}
@@ -429,6 +429,8 @@ export default function TopicsPage() {
               groupId: '',
               title: '',
               summary: '',
+              proposedSupervisorId: '',
+              proposedSupervisorEmail: '',
               allowIndividual: true,
               allowGroup: true,
               groupMinSize: '2',

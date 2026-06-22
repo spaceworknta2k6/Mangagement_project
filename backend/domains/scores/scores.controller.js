@@ -30,6 +30,21 @@ const getScoreSheets = async (req, res, next) => {
   }
 };
 
+const getProjectsSummary = async (req, res, next) => {
+  try {
+    const filter = {};
+    if (req.query.periodId) filter.periodId = req.query.periodId;
+
+    const projects = await scoresService.getProjectsSummary(filter, req.user);
+    res.status(200).json({
+      success: true,
+      data: projects,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getScoreSheetById = async (req, res, next) => {
   try {
     const sheet = await scoresService.getScoreSheetById(req.params.id, req.user);
@@ -179,6 +194,7 @@ const publishFinalGradesByPeriod = async (req, res, next) => {
 module.exports = {
   submitScoreSheet,
   getScoreSheets,
+  getProjectsSummary,
   getScoreSheetById,
   updateScoreSheet,
   lockScoreSheet,

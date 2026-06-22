@@ -31,7 +31,7 @@ const DEFAULT_SCORE_RUBRIC = {
     REVIEWER: [
       { criteriaCode: 'C1', criteriaName: 'Mức độ đáp ứng mục tiêu và yêu cầu đề tài', maxScore: 10, weight: 0.4 },
       { criteriaCode: 'C2', criteriaName: 'Chất lượng kỹ thuật và nội dung báo cáo', maxScore: 10, weight: 0.4 },
-      { criteriaCode: 'C3', criteriaName: 'Khả năng phân tích, phản biện và trả lời câu hỏi', maxScore: 10, weight: 0.2 },
+      { criteriaCode: 'C3', criteriaName: 'Khả năng phân tích và giải trình nội dung', maxScore: 10, weight: 0.2 },
     ],
   },
 };
@@ -113,23 +113,8 @@ export default function ScoresPage() {
     if (!selectedPeriodId) return;
     try {
       setLoading(true);
-      const res = await api.get(`/projects?periodId=${selectedPeriodId}`, token);
-      const list = res.data || [];
-      
-      const detailed = await Promise.all(
-        list.map(async (project) => {
-          const [sheetsRes, gradeRes] = await Promise.all([
-            api.get(`/scores/score-sheets?projectId=${project._id}`, token).catch(() => ({ data: [] })),
-            api.get(`/scores/final-grades/project/${project._id}`, token).catch(() => ({ data: null })),
-          ]);
-          return {
-            ...project,
-            sheets: sheetsRes.data || [],
-            finalGrade: gradeRes.data || null,
-          };
-        })
-      );
-      setProjects(detailed);
+      const res = await api.get(`/scores/projects-summary?periodId=${selectedPeriodId}`, token);
+      setProjects(res.data || []);
     } catch (err) {
       toast.error('Lỗi khi tải danh sách đồ án cần chấm');
     } finally {

@@ -59,7 +59,7 @@ const STATUS_MAP = {
   enrollment: { label: 'Đăng ký', variant: 'info' },
   registration_open: { label: 'Đăng ký', variant: 'info' },
   in_progress: { label: 'Đang diễn ra', variant: 'success' },
-  defense: { label: 'Bảo vệ', variant: 'warning' },
+  defense: { label: 'Báo cáo/trình bày', variant: 'warning' },
   completed: { label: 'Hoàn thành', variant: 'success' },
   archived: { label: 'Lưu trữ', variant: 'neutral' },
   // Group statuses
@@ -78,12 +78,12 @@ const STATUS_MAP = {
   changed: { label: 'Đã thay đổi', variant: 'info' },
   cancelled: { label: 'Đã hủy', variant: 'error' },
   // Project statuses
-  pre_defense_submitted: { label: 'Đã nộp trước bảo vệ', variant: 'info' },
+  pre_defense_submitted: { label: 'Đã nộp báo cáo', variant: 'info' },
   supervisor_reviewed: { label: 'GVHD đã nhận xét', variant: 'success' },
-  reviewer_reviewed: { label: 'GVPB đã nhận xét', variant: 'success' },
-  defense_eligible: { label: 'Đủ điều kiện bảo vệ', variant: 'success' },
-  defended: { label: 'Đã bảo vệ', variant: 'success' },
-  post_defense_revision: { label: 'Chỉnh sửa sau bảo vệ', variant: 'warning' },
+  reviewer_reviewed: { label: 'GV chấm 2 đã nhận xét', variant: 'success' },
+  defense_eligible: { label: 'Sẵn sàng chấm', variant: 'success' },
+  defended: { label: 'Đã trình bày', variant: 'success' },
+  post_defense_revision: { label: 'Chỉnh sửa sau báo cáo', variant: 'warning' },
   finalized: { label: 'Đã hoàn tất', variant: 'success' },
   failed: { label: 'Không đạt', variant: 'error' },
   // Submission statuses
@@ -134,8 +134,8 @@ const TECHNICAL_LABELS = {
   ASSIGN_SUPERVISOR: 'Phân công giảng viên hướng dẫn',
   SPAWN_PROJECT: 'Tạo dự án từ đề tài',
   START_PROJECT: 'Bắt đầu dự án',
-  ASSIGN_REVIEWER: 'Phân công giảng viên phản biện',
-  MARK_DEFENSE_ELIGIBLE: 'Đánh dấu đủ điều kiện bảo vệ',
+  ASSIGN_REVIEWER: 'Phân công giảng viên chấm 2',
+  MARK_DEFENSE_ELIGIBLE: 'Đánh dấu sẵn sàng chấm',
   FINALIZE_PROJECT: 'Hoàn tất dự án',
   CANCEL_PROJECT: 'Hủy dự án',
 
@@ -195,4 +195,3 @@ export function handleApiError(err, toast) {
   }
   return errMsg;
 }
-

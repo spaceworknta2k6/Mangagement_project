@@ -18,7 +18,7 @@ const loadEnv = () => {
       return null;
     }
 
-    console.warn('Warning: backend/.env.test not found; falling back to backend/.env.');
+    throw new Error('backend/.env.test is required for NODE_ENV=test. Refusing to fall back to backend/.env.');
   }
 
   dotenv.config({ path: fallbackPath });

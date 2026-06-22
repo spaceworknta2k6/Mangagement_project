@@ -31,6 +31,7 @@ async function request(path, { token, ...options } = {}) {
 
   let res = await fetch(`${BASE_URL}${path}`, {
     ...options,
+    credentials: 'include',
     headers,
   });
 
@@ -43,6 +44,7 @@ async function request(path, { token, ...options } = {}) {
       try {
         const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         });
 
@@ -61,6 +63,7 @@ async function request(path, { token, ...options } = {}) {
             };
             res = await fetch(`${BASE_URL}${path}`, {
               ...options,
+              credentials: 'include',
               headers: retryHeaders,
             });
             data = await res.json().catch(() => ({}));
@@ -92,6 +95,7 @@ async function request(path, { token, ...options } = {}) {
             };
             const retryRes = await fetch(`${BASE_URL}${path}`, {
               ...options,
+              credentials: 'include',
               headers: retryHeaders,
             });
             const retryData = await retryRes.json().catch(() => ({}));

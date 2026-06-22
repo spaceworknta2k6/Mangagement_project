@@ -5,7 +5,6 @@ const Milestone = require('../../models/Milestone');
 const SubmissionPackage = require('../../models/SubmissionPackage');
 const DefenseSession = require('../../models/DefenseSession');
 const Student = require('../../models/Student');
-const User = require('../../models/User');
 const WorkflowEvent = require('../../models/WorkflowEvent');
 const { assertOwnerAccess, resolveProjectOwner } = require('../../utils/project-owner');
 const notificationsService = require('../notifications/notifications.service');
@@ -138,18 +137,25 @@ const supervisorRecommend = async (requestId, status, note, actorUserId, actorLe
     throw { status: 403, message: 'Chỉ giảng viên hướng dẫn của dự án mới được phép đánh giá khuyến nghị gia hạn.' };
   }
 
+  const fromStatus = request.status;
   request.supervisorApproval = {
     status,
     by: actorUserId,
     at: new Date(),
     note: note.trim(),
   };
+  request.status = status;
 
   await request.save();
+
+  if (status === 'approved') {
+    await applyApprovedExtension(request);
+  }
+
   await logWorkflowEvent({
     entityId: request._id,
-    fromStatus: 'pending',
-    toStatus: 'pending',
+    fromStatus,
+    toStatus: request.status,
     actorId: actorUserId,
     actorRoles: ['LECTURER', 'SUPERVISOR'],
     action: status === 'approved' ? 'SUPERVISOR_APPROVE_EXTENSION' : 'SUPERVISOR_REJECT_EXTENSION',
@@ -166,33 +172,14 @@ const supervisorRecommend = async (requestId, status, note, actorUserId, actorLe
       await notificationsService.createNotification({
         recipientId: studentUserId,
         type: status === 'approved' ? 'EXTENSION_SUPERVISOR_APPROVED' : 'EXTENSION_SUPERVISOR_REJECTED',
-        title: `GVHD ${actionLabel} khuyến nghị gia hạn`,
-        body: `Giảng viên hướng dẫn đã ${actionLabel} ý kiến về đơn xin gia hạn của bạn.${note ? ` Ghi chú: "${note.trim()}"` : ''}`,
+        title: `GVHD đã ${actionLabel} yêu cầu gia hạn`,
+        body: `Giảng viên hướng dẫn đã ${actionLabel} yêu cầu gia hạn của bạn.${note ? ` Ghi chú: "${note.trim()}"` : ''}`,
         entityType: 'ExtensionRequest',
         entityId: request._id,
         actionUrl: `/dashboard/extensions`,
       });
     }
 
-    // 2. Nếu GVHD đồng ý, gửi thông báo cho Giáo vụ khoa/Admin để duyệt tiếp
-    if (status === 'approved') {
-      const staffUsers = await User.find({
-        roles: { $in: ['FACULTY_STAFF', 'DEPARTMENT_STAFF', 'SYSTEM_ADMIN'] },
-        isDeleted: false,
-        status: 'active'
-      });
-      for (const staff of staffUsers) {
-        await notificationsService.createNotification({
-          recipientId: staff._id,
-          type: 'EXTENSION_PENDING_FACULTY',
-          title: 'Đơn gia hạn chờ Khoa duyệt',
-          body: `Yêu cầu gia hạn mới đã được GVHD thông qua và đang chờ duyệt cấp Khoa.`,
-          entityType: 'ExtensionRequest',
-          entityId: request._id,
-          actionUrl: `/dashboard/extensions`,
-        });
-      }
-    }
   } catch (notifyErr) {
     console.error('Lỗi khi gửi thông báo GVHD duyệt đơn gia hạn:', notifyErr.message);
   }

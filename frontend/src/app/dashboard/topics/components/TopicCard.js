@@ -11,6 +11,7 @@ export default function TopicCard({
   topic,
   user,
   isStaff,
+  isLecturer,
   isStudent,
   handleRequestRevision,
   handleReject,
@@ -31,6 +32,14 @@ export default function TopicCard({
   const aiJob = aiResults[topic._id];
   const canCancelTopic = isStaff && !['cancelled', 'completed'].includes(topic.status);
   const isAwaitingSupervisorAssignment = topic.status === 'approved';
+  const lecturerId = user?.lecturerId?.toString();
+  const proposedSupervisorId = (topic.proposedSupervisorId?._id || topic.proposedSupervisorId)?.toString();
+  const proposedByLecturerId = (topic.proposedByLecturerId?._id || topic.proposedByLecturerId)?.toString();
+  const canReviewTopic = (isStaff || (
+    isLecturer &&
+    lecturerId &&
+    (proposedSupervisorId === lecturerId || proposedByLecturerId === lecturerId)
+  )) && ['pending_review', 'submitted', 'ai_checked'].includes(topic.status);
 
   const proposerText = topic.createdByRole === 'lecturer'
     ? `Giảng viên: ${topic.proposedByLecturerId?.userId?.fullName || 'Giảng viên'}`
@@ -47,7 +56,7 @@ export default function TopicCard({
             <Badge variant="warning">Chờ phân công GVHD</Badge>
           )}
 
-          {isStaff && (topic.status === 'pending_review' || topic.status === 'submitted' || topic.status === 'ai_checked') && (
+          {canReviewTopic && (
             <>
               <Button variant="secondary" size="sm" onClick={() => handleRequestRevision(topic._id)}>
                 <Pencil size={14} /> Yêu cầu sửa

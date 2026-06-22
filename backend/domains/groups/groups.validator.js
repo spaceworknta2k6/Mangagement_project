@@ -24,11 +24,15 @@ const validateGroupCreate = (req, res, next) => {
 };
 
 const validateInviteMember = (req, res, next) => {
-  const { studentId } = req.body;
+  const { studentId, studentCode } = req.body;
   const errors = [];
 
-  if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) {
-    errors.push({ field: 'studentId', code: 'STUDENT_ID_INVALID', message: 'Mã sinh viên (studentId) không hợp lệ.' });
+  if (studentId && !mongoose.Types.ObjectId.isValid(studentId)) {
+    errors.push({ field: 'studentId', code: 'STUDENT_ID_INVALID', message: 'Mã định danh sinh viên không hợp lệ.' });
+  }
+
+  if (!studentId && (!studentCode || typeof studentCode !== 'string' || studentCode.trim() === '')) {
+    errors.push({ field: 'studentCode', code: 'STUDENT_CODE_REQUIRED', message: 'Vui lòng nhập mã sinh viên cần mời.' });
   }
 
   if (errors.length > 0) {

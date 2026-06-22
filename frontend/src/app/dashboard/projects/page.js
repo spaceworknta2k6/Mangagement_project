@@ -15,7 +15,7 @@ import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { getTechnicalLabel, hasAnyRole } from '@/lib/utils';
 import { getMemberDisplay, getOwnerDisplay, getOwnerTypeLabel, isStudentProjectOwner } from '@/lib/projectOwner';
-import { FolderSimple, UserCheck, ShieldCheck, CheckSquare, ArrowsClockwise, ChatsCircle, MagnifyingGlass, FileText } from '@phosphor-icons/react';
+import { FolderSimple, UserCheck, CheckSquare, ArrowsClockwise, ChatsCircle, MagnifyingGlass, FileText } from '@phosphor-icons/react';
 import { exportToCSV } from '@/lib/export';
 import css from './page.module.css';
 
@@ -204,16 +204,6 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleMarkDefenseEligible = async (id) => {
-    try {
-      await api.post(`/projects/${id}/mark-defense-eligible`, {}, token);
-      toast.success('Phê duyệt dự án đủ điều kiện bảo vệ thành công!');
-      loadData();
-    } catch (err) {
-      toast.error(err.message || 'Lỗi khi duyệt điều kiện bảo vệ');
-    }
-  };
-
   const handleRequestDirectChat = async (lecturerUserId) => {
     if (!lecturerUserId) {
       toast.error('Chưa có thông tin tài khoản giảng viên để nhắn tin.');
@@ -274,7 +264,7 @@ export default function ProjectsPage() {
       'Cá nhân/Nhóm',
       'Thành viên/Người thực hiện',
       'Giảng Viên Hướng Dẫn',
-      'Giảng Viên Phản Biện',
+      'Giảng Viên Chấm 2',
       'Trạng Thái',
     ];
 
@@ -385,8 +375,6 @@ export default function ProjectsPage() {
       ) : (
         <div className={css.s7}>
           {pagedProjects.map((p) => {
-            const allowedDefense = ['in_progress', 'pre_defense_submitted', 'supervisor_reviewed', 'reviewer_reviewed'].includes(p.status);
-
             return (
               <Card
                 key={p._id}
@@ -417,13 +405,7 @@ export default function ProjectsPage() {
                           <UserCheck size={14} /> Phân công GV chấm 2
                         </Button>
 
-                        {allowedDefense && (
-                          <Button variant="primary" size="sm" onClick={() => handleMarkDefenseEligible(p._id)}>
-                            <ShieldCheck size={14} /> Sẵn sàng chấm
-                          </Button>
-                        )}
-
-                        {p.status === 'defense_eligible' && (
+                        {['ready_for_grading', 'defense_eligible'].includes(p.status) && (
                           <Button variant="success" size="sm" onClick={() => handleFinalizeProject(p._id)}>
                             <CheckSquare size={14} /> Chốt hoàn tất
                           </Button>
