@@ -2,7 +2,6 @@
 
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { ACADEMIC_UNITS, TOPIC_DOMAINS } from '@/lib/academicUnits';
 import css from '../page.module.css';
 
 export default function TopicModal({
@@ -16,8 +15,6 @@ export default function TopicModal({
   submitting,
   isLecturerOrStaff = false,
 }) {
-  const selectedPeriod = periods.find((period) => period._id === form.periodId);
-
   return (
     <div className={css.s27}>
       <div className={css.s28}>
@@ -25,7 +22,7 @@ export default function TopicModal({
           <h3 className={css.s30}>
             {editingTopicId 
               ? (isLecturerOrStaff ? 'Chỉnh sửa đề tài' : 'Chỉnh sửa đề xuất đề tài') 
-              : (isLecturerOrStaff ? 'Khởi tạo đề tài đồ án mới' : 'Đề xuất đề tài đồ án mới')}
+              : (isLecturerOrStaff ? 'Tạo đề tài đồ án mới' : 'Đề xuất đề tài đồ án mới')}
           </h3>
         </div>
         <form onSubmit={handleSubmitTopic} className={css.s31}>
@@ -38,50 +35,14 @@ export default function TopicModal({
                 setForm((p) => ({
                   ...p,
                   periodId: e.target.value,
-                  academicUnit: nextPeriod?.academicUnit || p.academicUnit,
+                  academicUnit: nextPeriod?.academicUnit || '',
                 }));
               }}
               className={css.s70}
             >
               {periods.map((p) => (
                 <option key={p._id} value={p._id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={css.s32}>
-            <label className={css.s33}>Khoa/đơn vị chuyên môn chính</label>
-            <select
-              value={form.academicUnit || selectedPeriod?.academicUnit || ACADEMIC_UNITS[0].value}
-              onChange={(e) => {
-                const nextUnit = e.target.value;
-                setForm((p) => ({
-                  ...p,
-                  academicUnit: nextUnit,
-                }));
-              }}
-              className={css.s70}
-            >
-              {ACADEMIC_UNITS.map((unit) => (
-                <option key={unit.value} value={unit.value}>
-                  {unit.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={css.s32}>
-            <label className={css.s33}>Hướng chuyên môn</label>
-            <select
-              value={form.topicDomain || TOPIC_DOMAINS[0].value}
-              onChange={(e) => setForm((p) => ({ ...p, topicDomain: e.target.value }))}
-              className={css.s70}
-            >
-              {TOPIC_DOMAINS.map((domain) => (
-                <option key={domain.value} value={domain.value}>
-                  {domain.label}
+                  {p.courseName || p.name}
                 </option>
               ))}
             </select>
@@ -144,68 +105,6 @@ export default function TopicModal({
             />
           )}
 
-          {isLecturerOrStaff && (
-            <>
-              <div className={css.s32} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label className={css.s33}>Hình thức làm đồ án cho phép</label>
-                <div style={{ display: 'flex', gap: '24px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={form.allowIndividual === true || form.allowIndividual === 'true'}
-                      onChange={(e) => setForm(p => ({ ...p, allowIndividual: e.target.checked }))}
-                    />
-                    Cá nhân
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={form.allowGroup === true || form.allowGroup === 'true'}
-                      onChange={(e) => setForm(p => ({ ...p, allowGroup: e.target.checked }))}
-                    />
-                    Nhóm
-                  </label>
-                </div>
-              </div>
-
-              {(form.allowGroup === true || form.allowGroup === 'true') && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  <Input
-                    label="Thành viên tối thiểu/nhóm"
-                    type="number"
-                    min="2"
-                    value={form.groupMinSize}
-                    onChange={(e) => setForm(p => ({ ...p, groupMinSize: e.target.value }))}
-                  />
-                  <Input
-                    label="Thành viên tối đa/nhóm"
-                    type="number"
-                    min="2"
-                    value={form.groupMaxSize}
-                    onChange={(e) => setForm(p => ({ ...p, groupMaxSize: e.target.value }))}
-                  />
-                </div>
-              )}
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                <Input
-                  label="Số SV cá nhân tối đa nhận"
-                  type="number"
-                  min="0"
-                  value={form.capacityMaxStudents}
-                  onChange={(e) => setForm(p => ({ ...p, capacityMaxStudents: e.target.value }))}
-                />
-                <Input
-                  label="Số nhóm tối đa nhận"
-                  type="number"
-                  min="0"
-                  value={form.capacityMaxGroups}
-                  onChange={(e) => setForm(p => ({ ...p, capacityMaxGroups: e.target.value }))}
-                />
-              </div>
-            </>
-          )}
-
           <Input
             label="Tên đề tài đồ án"
             name="title"
@@ -230,7 +129,7 @@ export default function TopicModal({
               Hủy
             </Button>
             <Button variant="primary" type="submit" loading={submitting}>
-              {editingTopicId ? 'Cập nhật' : (isLecturerOrStaff ? 'Khởi tạo' : 'Đề xuất')}
+              {editingTopicId ? 'Cập nhật' : (isLecturerOrStaff ? 'Tạo đề tài' : 'Đề xuất')}
             </Button>
           </div>
         </form>

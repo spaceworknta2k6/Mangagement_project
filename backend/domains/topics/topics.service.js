@@ -782,8 +782,8 @@ const createLecturerTopic = async (topicData, lecturerId, userId) => {
     minGroupSize: topicData.minGroupSize !== undefined ? parseInt(topicData.minGroupSize, 10) : undefined,
     maxGroupSize: topicData.maxGroupSize !== undefined ? parseInt(topicData.maxGroupSize, 10) : undefined,
     allowedOwnerTypes: topicData.allowedOwnerTypes || ['student', 'group'],
-    allowIndividual: topicData.allowIndividual !== undefined ? topicData.allowIndividual : true,
-    allowGroup: topicData.allowGroup !== undefined ? topicData.allowGroup : true,
+    allowIndividual: topicData.allowIndividual !== undefined ? topicData.allowIndividual : period.allowIndividual,
+    allowGroup: topicData.allowGroup !== undefined ? topicData.allowGroup : period.allowGroup,
     departmentId: period.departmentId,
     status: 'approved',
   });

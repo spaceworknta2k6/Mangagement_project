@@ -133,6 +133,22 @@ export default function TopicsPage() {
     filteredTopics,
   } = useTopics(initialQuery.tab);
 
+  const getPeriodByTopic = (topic) => {
+    const periodId = topic?.periodId?._id || topic?.periodId;
+    return periods.find((period) => String(period._id) === String(periodId)) || topic?.periodId || null;
+  };
+
+  const getCoordinatorLecturerId = (period) => (
+    period?.coordinatorLecturerId?._id || period?.coordinatorLecturerId || ''
+  );
+
+  const getLecturerName = (lecturerId) => {
+    const lecturer = lecturers.find((item) => String(item._id) === String(lecturerId));
+    return lecturer
+      ? `${lecturer.userId?.fullName || lecturer.name || lecturer._id} (${lecturer.userId?.email || lecturer.lecturerCode || 'chưa có email'})`
+      : 'Giảng viên phụ trách của đợt học phần';
+  };
+
   const onRegisterTopic = async (topicId, ownerType) => {
     let groupId = undefined;
     if (ownerType === 'group') {
@@ -275,8 +291,10 @@ export default function TopicsPage() {
   };
 
   const openAssignSupervisorModal = (topic) => {
+    const period = getPeriodByTopic(topic);
+    const coordinatorLecturerId = getCoordinatorLecturerId(period);
     setAssignTopic(topic);
-    setSelectedSupervisorId(topic.supervisorId?._id || topic.proposedSupervisorId?._id || '');
+    setSelectedSupervisorId(coordinatorLecturerId || topic.supervisorId?._id || topic.proposedSupervisorId?._id || '');
   };
 
   const handleAssignSupervisor = async (e) => {
@@ -479,6 +497,11 @@ export default function TopicsPage() {
       )}
 
       {assignTopic && (
+        (() => {
+          const assignedPeriod = getPeriodByTopic(assignTopic);
+          const coordinatorLecturerId = getCoordinatorLecturerId(assignedPeriod);
+
+          return (
         <div className={css.s27}>
           <div className={css.s28}>
             <div className={css.s29}>
@@ -499,18 +522,24 @@ export default function TopicsPage() {
               </div>
               <div className={css.s32}>
                 <label className={css.s33}>Giảng viên hướng dẫn</label>
-                <select
-                  value={selectedSupervisorId}
-                  onChange={(e) => setSelectedSupervisorId(e.target.value)}
-                  className={css.s70}
-                >
-                  <option value="">Chọn giảng viên</option>
-                  {lecturers.map((lecturer) => (
-                    <option key={lecturer._id} value={lecturer._id}>
-                      {lecturer.userId?.fullName || lecturer._id} ({lecturer.userId?.email || 'chưa có email'})
-                    </option>
-                  ))}
-                </select>
+                {coordinatorLecturerId ? (
+                  <div className={css.readonlyField}>
+                    {getLecturerName(coordinatorLecturerId)}
+                  </div>
+                ) : (
+                  <select
+                    value={selectedSupervisorId}
+                    onChange={(e) => setSelectedSupervisorId(e.target.value)}
+                    className={css.s70}
+                  >
+                    <option value="">Chọn giảng viên</option>
+                    {lecturers.map((lecturer) => (
+                      <option key={lecturer._id} value={lecturer._id}>
+                        {lecturer.userId?.fullName || lecturer._id} ({lecturer.userId?.email || 'chưa có email'})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className={css.s36}>
                 <Button variant="secondary" onClick={() => setAssignTopic(null)}>
@@ -523,6 +552,8 @@ export default function TopicsPage() {
             </form>
           </div>
         </div>
+          );
+        })()
       )}
       <ConfirmDialog
         open={Boolean(topicToCancel)}

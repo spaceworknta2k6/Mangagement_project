@@ -6,10 +6,28 @@ import api from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
 import { ACADEMIC_UNITS } from '@/lib/academicUnits';
 
+function getCurrentAcademicTerm() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  if (month >= 8) {
+    return { schoolYear: `${year}-${year + 1}`, semester: '1' };
+  }
+
+  if (month >= 6) {
+    return { schoolYear: `${year - 1}-${year}`, semester: '3' };
+  }
+
+  return { schoolYear: `${year - 1}-${year}`, semester: '2' };
+}
+
+const CURRENT_ACADEMIC_TERM = getCurrentAcademicTerm();
+
 const DEFAULT_FORM_STATE = {
-  name: 'Học phần Đồ án Cơ sở ngành Kỳ 20252',
-  schoolYear: '2025-2026',
-  semester: '2',
+  name: 'Đồ án cơ sở ngành',
+  schoolYear: CURRENT_ACADEMIC_TERM.schoolYear,
+  semester: CURRENT_ACADEMIC_TERM.semester,
   type: 'foundation_project',
   courseCode: 'IT3000',
   courseName: 'Đồ án cơ sở ngành',
@@ -40,6 +58,101 @@ const DEFAULT_FORM_STATE = {
   archiveDeadline: '',
 };
 
+const DEMO_PERIODS = [
+  {
+    _id: 'demo-period-software-design-2025-2',
+    isDemo: true,
+    name: 'Thiết kế phần mềm',
+    schoolYear: '2025-2026',
+    semester: '2',
+    status: 'registration_open',
+    type: 'foundation_project',
+    courseCode: 'IT3180',
+    courseName: 'Thiết kế phần mềm',
+    projectType: 'foundation',
+    academicUnit: ACADEMIC_UNITS[0].value,
+    allowIndividual: true,
+    allowGroup: true,
+    groupMinSize: 2,
+    groupMaxSize: 5,
+    scoringFormula: { supervisor: 0.5, reviewer: 0.5, committee: 0 },
+    registrationStart: '2026-01-10T01:00:00.000Z',
+    registrationEnd: '2026-01-20T11:00:00.000Z',
+    topicChangeDeadline: '2026-01-25T11:00:00.000Z',
+    projectStart: '2026-02-01T01:00:00.000Z',
+    projectEnd: '2026-05-20T11:00:00.000Z',
+  },
+  {
+    _id: 'demo-period-advanced-web-2024-1',
+    isDemo: true,
+    name: 'Thiết kế web nâng cao',
+    schoolYear: '2024-2025',
+    semester: '1',
+    status: 'archived',
+    type: 'foundation_project',
+    courseCode: 'IT4409',
+    courseName: 'Thiết kế web nâng cao',
+    projectType: 'foundation',
+    academicUnit: ACADEMIC_UNITS[0].value,
+    allowIndividual: false,
+    allowGroup: true,
+    groupMinSize: 3,
+    groupMaxSize: 5,
+    scoringFormula: { supervisor: 0.4, reviewer: 0.6, committee: 0 },
+    registrationStart: '2024-08-15T01:00:00.000Z',
+    registrationEnd: '2024-08-25T11:00:00.000Z',
+    topicChangeDeadline: '2024-09-01T11:00:00.000Z',
+    projectStart: '2024-09-05T01:00:00.000Z',
+    projectEnd: '2024-12-20T11:00:00.000Z',
+  },
+  {
+    _id: 'demo-period-mobile-apps-2023-2',
+    isDemo: true,
+    name: 'Phát triển ứng dụng di động',
+    schoolYear: '2023-2024',
+    semester: '2',
+    status: 'archived',
+    type: 'foundation_project',
+    courseCode: 'IT4788',
+    courseName: 'Phát triển ứng dụng di động',
+    projectType: 'foundation',
+    academicUnit: ACADEMIC_UNITS[0].value,
+    allowIndividual: true,
+    allowGroup: true,
+    groupMinSize: 2,
+    groupMaxSize: 4,
+    scoringFormula: { supervisor: 0.5, reviewer: 0.5, committee: 0 },
+    registrationStart: '2024-01-10T01:00:00.000Z',
+    registrationEnd: '2024-01-20T11:00:00.000Z',
+    topicChangeDeadline: '2024-01-28T11:00:00.000Z',
+    projectStart: '2024-02-05T01:00:00.000Z',
+    projectEnd: '2024-05-25T11:00:00.000Z',
+  },
+  {
+    _id: 'demo-period-database-project-2022-3',
+    isDemo: true,
+    name: 'Cơ sở dữ liệu nâng cao',
+    schoolYear: '2022-2023',
+    semester: '3',
+    status: 'archived',
+    type: 'foundation_project',
+    courseCode: 'IT3290',
+    courseName: 'Cơ sở dữ liệu nâng cao',
+    projectType: 'foundation',
+    academicUnit: ACADEMIC_UNITS[0].value,
+    allowIndividual: false,
+    allowGroup: true,
+    groupMinSize: 2,
+    groupMaxSize: 5,
+    scoringFormula: { supervisor: 0.5, reviewer: 0.5, committee: 0 },
+    registrationStart: '2023-06-05T01:00:00.000Z',
+    registrationEnd: '2023-06-12T11:00:00.000Z',
+    topicChangeDeadline: '2023-06-18T11:00:00.000Z',
+    projectStart: '2023-06-20T01:00:00.000Z',
+    projectEnd: '2023-07-30T11:00:00.000Z',
+  },
+];
+
 export function usePeriods() {
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
@@ -64,7 +177,11 @@ export function usePeriods() {
 
   const openCreateModal = () => {
     setEditingPeriod(null);
-    setForm(DEFAULT_FORM_STATE);
+    setForm({
+      ...DEFAULT_FORM_STATE,
+      schoolYear: CURRENT_ACADEMIC_TERM.schoolYear,
+      semester: CURRENT_ACADEMIC_TERM.semester,
+    });
     setFormErrors({});
     setShowModal(true);
   };
@@ -72,7 +189,7 @@ export function usePeriods() {
   const openEditModal = (period) => {
     setEditingPeriod(period);
     setForm({
-      name: period.name || '',
+      name: period.courseName || period.name || '',
       schoolYear: period.schoolYear || '',
       semester: period.semester || '',
       type: period.type || 'foundation_project',
@@ -111,13 +228,14 @@ export function usePeriods() {
     setLoading(true);
     try {
       const res = await api.get('/periods', token);
-      setPeriods(res.data || []);
+      setPeriods([...(res.data || []), ...DEMO_PERIODS]);
       const rubricsRes = await api.get('/rubrics', token);
       setRubrics(rubricsRes.data || []);
       const lecturersRes = await api.get('/auth/lecturers', token);
       setLecturers(lecturersRes.data || []);
     } catch (err) {
-      toast.error(err.message || 'Không thể tải danh sách học phần đồ án');
+      setPeriods(DEMO_PERIODS);
+      toast.error(err.message || 'Không thể tải danh sách học phần');
     } finally {
       setLoading(false);
     }
@@ -143,7 +261,6 @@ export function usePeriods() {
     setFormErrors({});
 
     const requiredFields = [
-      { name: 'name', label: 'Tên học phần đồ án' },
       { name: 'schoolYear', label: 'Năm học' },
       { name: 'semester', label: 'Học kỳ' },
       { name: 'courseCode', label: 'Mã học phần' },
@@ -200,7 +317,7 @@ export function usePeriods() {
     }
 
     const payload = {
-      name: form.name,
+      name: form.courseName,
       schoolYear: form.schoolYear,
       semester: form.semester,
       type: form.type,
@@ -237,10 +354,10 @@ export function usePeriods() {
     try {
       if (editingPeriod) {
         await api.patch(`/periods/${editingPeriod._id}`, payload, token);
-        toast.success('Đã cập nhật học phần đồ án thành công!');
+        toast.success('Đã cập nhật học phần thành công!');
       } else {
         await api.post('/periods', payload, token);
-        toast.success('Đã khởi tạo học phần đồ án mới thành công!');
+        toast.success('Đã tạo đợt học phần thành công!');
       }
       setShowModal(false);
       setEditingPeriod(null);
@@ -254,7 +371,7 @@ export function usePeriods() {
         setFormErrors(errorsMap);
         toast.error('Vui lòng kiểm tra lại các mốc thời gian và thông tin học phần.');
       } else {
-        toast.error(err.message || 'Lỗi khi tạo mới học phần đồ án');
+        toast.error(err.message || 'Lỗi khi tạo đợt học phần');
       }
     } finally {
       setSubmitting(false);
@@ -273,7 +390,7 @@ export function usePeriods() {
       else if (action === 'archive') endpoint += '/archive';
 
       await api.post(endpoint, {}, token);
-      toast.success('Cập nhật trạng thái học phần đồ án thành công!');
+      toast.success('Cập nhật trạng thái học phần thành công!');
       fetchPeriods();
     } catch (err) {
       toast.error(err.message || 'Không thể cập nhật trạng thái');
@@ -284,11 +401,11 @@ export function usePeriods() {
     setDeleting(true);
     try {
       await api.delete(`/periods/${period._id}`, token);
-      toast.success('Đã xóa học phần đồ án thành công.');
+      toast.success('Đã xóa học phần thành công.');
       setPeriodToDelete(null);
       fetchPeriods();
     } catch (err) {
-      toast.error(err.message || 'Không thể xóa học phần đồ án');
+      toast.error(err.message || 'Không thể xóa học phần');
     } finally {
       setDeleting(false);
     }
@@ -309,6 +426,7 @@ export function usePeriods() {
     deleting,
     form,
     formErrors,
+    currentAcademicTerm: CURRENT_ACADEMIC_TERM,
     openCreateModal,
     openEditModal,
     fetchPeriods,

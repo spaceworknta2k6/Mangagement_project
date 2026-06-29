@@ -6,7 +6,7 @@ import usePeriodStore from '@/store/period.store';
 import api from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
 import { hasAnyRole, handleApiError } from '@/lib/utils';
-import { ACADEMIC_UNITS, TOPIC_DOMAINS } from '@/lib/academicUnits';
+import { ACADEMIC_UNITS } from '@/lib/academicUnits';
 
 export function useTopics(initialActiveTab = 'all') {
   const user = useAuthStore((s) => s.user);
@@ -42,17 +42,9 @@ export function useTopics(initialActiveTab = 'all') {
     title: '',
     summary: '',
     academicUnit: ACADEMIC_UNITS[0].value,
-    topicDomain: TOPIC_DOMAINS[0].value,
     proposedSupervisorId: '',
     proposedSupervisorEmail: '',
     periodId: '',
-    // fields for lecturer topic creation
-    allowIndividual: true,
-    allowGroup: true,
-    groupMinSize: '2',
-    groupMaxSize: '5',
-    capacityMaxStudents: '1',
-    capacityMaxGroups: '1',
   });
   const [submitting, setSubmitting] = useState(false);
   const [editingTopicId, setEditingTopicId] = useState(null);
@@ -73,7 +65,7 @@ export function useTopics(initialActiveTab = 'all') {
         setForm((prev) => ({
           ...prev,
           periodId: pList[0]._id,
-          academicUnit: prev.academicUnit || pList[0].academicUnit || ACADEMIC_UNITS[0].value,
+          academicUnit: pList[0].academicUnit || ACADEMIC_UNITS[0].value,
         }));
       }
       setTopics(resTopics.data || []);
@@ -107,7 +99,7 @@ export function useTopics(initialActiveTab = 'all') {
     try {
       let res;
       const selectedPeriod = periods.find((period) => period._id === form.periodId);
-      const academicUnit = form.academicUnit || selectedPeriod?.academicUnit || ACADEMIC_UNITS[0].value;
+      const academicUnit = selectedPeriod?.academicUnit || ACADEMIC_UNITS[0].value;
       if (isLecturer || isStaff) {
         const payload = {
           title: form.title.trim(),
@@ -117,16 +109,9 @@ export function useTopics(initialActiveTab = 'all') {
           expectedResult: form.summary.trim(),
           plan: form.summary.trim(),
           academicUnit,
-          topicDomain: form.topicDomain || TOPIC_DOMAINS[0].value,
           periodId: form.periodId,
           proposedSupervisorId: form.proposedSupervisorId || undefined,
           proposedSupervisorEmail: form.proposedSupervisorEmail?.trim() || undefined,
-          allowIndividual: form.allowIndividual === true || form.allowIndividual === 'true',
-          allowGroup: form.allowGroup === true || form.allowGroup === 'true',
-          groupMinSize: parseInt(form.groupMinSize || 2, 10),
-          groupMaxSize: parseInt(form.groupMaxSize || 5, 10),
-          capacityMaxStudents: parseInt(form.capacityMaxStudents || 1, 10),
-          capacityMaxGroups: parseInt(form.capacityMaxGroups || 1, 10),
         };
         if (editingTopicId) {
           res = await api.put(`/topics/${editingTopicId}`, payload, token);
@@ -154,7 +139,6 @@ export function useTopics(initialActiveTab = 'all') {
           expectedResult: form.summary.trim(),
           plan: form.summary.trim(),
           academicUnit,
-          topicDomain: form.topicDomain || TOPIC_DOMAINS[0].value,
           periodId: form.periodId,
           proposedSupervisorEmail: form.proposedSupervisorEmail.trim(),
           ownerType: form.ownerType,
@@ -178,15 +162,8 @@ export function useTopics(initialActiveTab = 'all') {
         title: '',
         summary: '',
         academicUnit: ACADEMIC_UNITS[0].value,
-        topicDomain: TOPIC_DOMAINS[0].value,
         proposedSupervisorId: '',
         proposedSupervisorEmail: '',
-        allowIndividual: true,
-        allowGroup: true,
-        groupMinSize: '2',
-        groupMaxSize: '5',
-        capacityMaxStudents: '1',
-        capacityMaxGroups: '1',
       }));
       loadData();
     } catch (err) {
@@ -208,16 +185,9 @@ export function useTopics(initialActiveTab = 'all') {
       title: t.title,
       summary: t.summary || '',
       academicUnit: t.academicUnit || t.periodId?.academicUnit || ACADEMIC_UNITS[0].value,
-      topicDomain: t.topicDomain || TOPIC_DOMAINS[0].value,
       proposedSupervisorId: t.proposedSupervisorId?._id || t.proposedSupervisorId || '',
       proposedSupervisorEmail: t.proposedSupervisorId?.userId?.email || '',
       periodId: t.periodId?._id || t.periodId || '',
-      allowIndividual: t.allowIndividual !== false,
-      allowGroup: t.allowGroup !== false,
-      groupMinSize: String(t.groupMinSize ?? 2),
-      groupMaxSize: String(t.groupMaxSize ?? 5),
-      capacityMaxStudents: String(t.capacityMaxStudents ?? 1),
-      capacityMaxGroups: String(t.capacityMaxGroups ?? 1),
     });
     setShowProposeModal(true);
   };
@@ -319,7 +289,6 @@ export function useTopics(initialActiveTab = 'all') {
       title: s.title,
       summary: originalTopic?.summary || s.reason || '',
       academicUnit: originalTopic?.academicUnit || originalTopic?.periodId?.academicUnit || ACADEMIC_UNITS[0].value,
-      topicDomain: originalTopic?.topicDomain || TOPIC_DOMAINS[0].value,
       proposedSupervisorId: originalTopic?.proposedSupervisorId?._id || originalTopic?.proposedSupervisorId || '',
       proposedSupervisorEmail: originalTopic?.proposedSupervisorId?.userId?.email || '',
       periodId: periods[0]?._id || '',

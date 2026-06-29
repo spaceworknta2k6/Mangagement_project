@@ -15,44 +15,51 @@ export default function PeriodCard({
   handleTransition,
 }) {
   const statusInfo = getStatus(period.status);
+  const isDemo = period.isDemo === true;
 
   return (
     <Card
-      title={period.name}
-      subtitle={`Mã HP: ${period.courseCode || 'N/A'} - ${period.courseName || 'N/A'} | Năm học: ${period.schoolYear} | Học kỳ: ${period.semester}`}
+      title={period.courseName || period.name}
+      subtitle={`Mã HP: ${period.courseCode || 'N/A'} | Năm học: ${period.schoolYear} | Học kỳ: ${period.semester}`}
       actions={
         <div className={css.s9}>
           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-          <Button variant="secondary" size="sm" onClick={() => openEditModal(period)}>
-            <PencilSimple size={14} />
-            Sửa
-          </Button>
-          <Button variant="danger" size="sm" onClick={() => setPeriodToDelete(period)}>
-            <Trash size={14} />
-            Xóa
-          </Button>
+          {isDemo ? (
+            <Badge variant="info">Demo</Badge>
+          ) : (
+            <>
+              <Button variant="secondary" size="sm" onClick={() => openEditModal(period)}>
+                <PencilSimple size={14} />
+                Sửa
+              </Button>
+              <Button variant="danger" size="sm" onClick={() => setPeriodToDelete(period)}>
+                <Trash size={14} />
+                Xóa
+              </Button>
+            </>
+          )}
           
-          {period.status === 'draft' && (
+          {!isDemo && period.status === 'draft' && (
             <Button variant="primary" size="sm" onClick={() => handleTransition(period._id, 'open-registration')}>
               Mở đăng ký đề tài
             </Button>
           )}
-          {period.status === 'registration_open' && (
+          {!isDemo && period.status === 'registration_open' && (
             <Button variant="primary" size="sm" onClick={() => handleTransition(period._id, 'start')}>
               Bắt đầu thực hiện
             </Button>
           )}
-          {period.status === 'in_progress' && (
+          {!isDemo && period.status === 'in_progress' && (
             <Button variant="primary" size="sm" onClick={() => handleTransition(period._id, 'start-grading')}>
               Bắt đầu chấm điểm
             </Button>
           )}
-          {period.status === 'grading' && (
+          {!isDemo && period.status === 'grading' && (
             <Button variant="primary" size="sm" onClick={() => handleTransition(period._id, 'publish-results')}>
               Công bố kết quả
             </Button>
           )}
-          {period.status === 'results_published' && (
+          {!isDemo && period.status === 'results_published' && (
             <>
               <Button variant="primary" size="sm" onClick={() => handleTransition(period._id, 'open-appeal')}>
                 Mở phúc khảo
@@ -62,12 +69,12 @@ export default function PeriodCard({
               </Button>
             </>
           )}
-          {period.status === 'appeal_open' && (
+          {!isDemo && period.status === 'appeal_open' && (
             <Button variant="primary" size="sm" onClick={() => handleTransition(period._id, 'lock-results')}>
               Khóa kết quả
             </Button>
           )}
-          {period.status === 'result_locked' && (
+          {!isDemo && period.status === 'result_locked' && (
             <Button variant="secondary" size="sm" onClick={() => handleTransition(period._id, 'archive')}>
               Lưu trữ học phần
             </Button>

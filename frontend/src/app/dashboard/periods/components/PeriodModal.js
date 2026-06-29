@@ -14,6 +14,7 @@ export default function PeriodModal({
   handleSubmit,
   onClose,
   submitting,
+  schoolYearOptions = [],
   rubrics = [],
   lecturers = [],
 }) {
@@ -25,7 +26,7 @@ export default function PeriodModal({
         {/* Modal Title Header */}
         <div className={css.s24}>
           <h3 className={css.s25}>
-            {editingPeriod ? 'Chỉnh sửa học phần đồ án' : 'Khởi tạo học phần đồ án mới'}
+            {editingPeriod ? 'Chỉnh sửa đợt học phần' : 'Tạo đợt học phần'}
           </h3>
           <button onClick={onClose} className={css.s38}>
             &times;
@@ -36,27 +37,12 @@ export default function PeriodModal({
         <form onSubmit={handleSubmit} className={css.s26}>
           <div className={css.s27}>
             <Input
-              label="Tên học phần đồ án"
-              name="name"
-              value={form.name}
+              label="Tên học phần"
+              name="courseName"
+              value={form.courseName}
               onChange={handleChange}
-              error={formErrors.name}
+              error={formErrors.courseName}
               className={css.s28}
-            />
-
-            <Input
-              label="Năm học"
-              name="schoolYear"
-              value={form.schoolYear}
-              onChange={handleChange}
-              error={formErrors.schoolYear}
-            />
-            <Input
-              label="Học kỳ"
-              name="semester"
-              value={form.semester}
-              onChange={handleChange}
-              error={formErrors.semester}
             />
 
             <Input
@@ -66,13 +52,46 @@ export default function PeriodModal({
               onChange={handleChange}
               error={formErrors.courseCode}
             />
-            <Input
-              label="Tên học phần"
-              name="courseName"
-              value={form.courseName}
-              onChange={handleChange}
-              error={formErrors.courseName}
-            />
+
+            <div className={css.s29}>
+              <label className={css.s30}>Năm học</label>
+              <select
+                name="schoolYear"
+                value={form.schoolYear}
+                onChange={handleChange}
+                className={css.s32}
+              >
+                {schoolYearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+              {formErrors.schoolYear && (
+                <span className="text-error" style={{ fontSize: '12px', marginTop: '4px' }}>
+                  {formErrors.schoolYear}
+                </span>
+              )}
+            </div>
+
+            <div className={css.s29}>
+              <label className={css.s30}>Học kỳ</label>
+              <select
+                name="semester"
+                value={form.semester}
+                onChange={handleChange}
+                className={css.s32}
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+              {formErrors.semester && (
+                <span className="text-error" style={{ fontSize: '12px', marginTop: '4px' }}>
+                  {formErrors.semester}
+                </span>
+              )}
+            </div>
 
             <div className={css.s29}>
               <label className={css.s30}>
@@ -304,7 +323,7 @@ export default function PeriodModal({
             </Button>
             <Button variant="primary" type="submit" loading={submitting}>
               <FilePlus size={18} />
-              {editingPeriod ? 'Cập nhật' : 'Khởi tạo'}
+              {editingPeriod ? 'Cập nhật' : 'Tạo đợt'}
             </Button>
           </div>
         </form>

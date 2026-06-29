@@ -77,6 +77,17 @@
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
 }
 
+.readonlyField {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--text-secondary);
+  background-color: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
 .s1 {
   display: flex;
   align-items: center;
@@ -274,6 +285,7 @@
 .s28 {
   width: 100%;
   max-width: 520px;
+  max-height: 90dvh;
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -308,6 +320,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow-y: auto;
 }
 
 .assignTopicSummary {
@@ -376,10 +389,15 @@
 }
 
 .s36 {
+  position: sticky;
+  bottom: -24px;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   margin-top: 10px;
+  padding-top: 16px;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border);
 }
 
 .s37 {

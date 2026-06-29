@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { usePeriods } from './hooks/usePeriods';
 import PeriodCard from './components/PeriodCard';
 import PeriodModal from './components/PeriodModal';
@@ -7,8 +8,13 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Spinner from '@/components/ui/Spinner';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { CalendarBlank, Plus, ArrowsClockwise } from '@phosphor-icons/react';
+import { CalendarBlank, Plus, ArrowsClockwise, MagnifyingGlass } from '@phosphor-icons/react';
 import css from './page.module.css';
+
+const BASE_SCHOOL_YEAR_OPTIONS = Array.from({ length: 5 }, (_, index) => {
+  const startYear = new Date().getFullYear() - index;
+  return `${startYear}-${startYear + 1}`;
+});
 
 export default function PeriodsPage() {
   const {
@@ -26,6 +32,7 @@ export default function PeriodsPage() {
     deleting,
     form,
     formErrors,
+    currentAcademicTerm,
     openCreateModal,
     openEditModal,
     fetchPeriods,
@@ -35,6 +42,31 @@ export default function PeriodsPage() {
     handleDeletePeriod,
   } = usePeriods();
 
+  const [selectedSchoolYear, setSelectedSchoolYear] = useState(currentAcademicTerm.schoolYear);
+  const [selectedSemester, setSelectedSemester] = useState(currentAcademicTerm.semester);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const schoolYearOptions = useMemo(() => {
+    const years = new Set([currentAcademicTerm.schoolYear, ...BASE_SCHOOL_YEAR_OPTIONS]);
+    periods.forEach((period) => {
+      if (period.schoolYear) years.add(period.schoolYear);
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [currentAcademicTerm.schoolYear, periods]);
+
+  const filteredPeriods = useMemo(() => (
+    periods.filter((period) => {
+      const normalizedSearch = searchTerm.trim().toLowerCase();
+      const courseName = (period.courseName || period.name || '').toLowerCase();
+
+      return (
+        period.schoolYear === selectedSchoolYear &&
+        String(period.semester) === selectedSemester &&
+        (!normalizedSearch || courseName.includes(normalizedSearch))
+      );
+    })
+  ), [periods, searchTerm, selectedSchoolYear, selectedSemester]);
+
   return (
     <div>
       {/* Header section */}
@@ -42,20 +74,74 @@ export default function PeriodsPage() {
         <div>
           <h1 className={`text-display ${css.s2}`}>
             <CalendarBlank size={28} className={css.s3} />
-            Quản lý Học phần Đồ án
+            Quản lý đợt học phần
           </h1>
           <p className={css.s4}>
-            Cấu hình thời gian, quy định nhóm/cá nhân và công thức tính điểm của học phần đồ án
+            Quản lý các đợt mở đăng ký, thời gian thực hiện, quy định nhóm/cá nhân và công thức tính điểm
           </p>
+        </div>
+      </div>
+
+      <div className={css.s42}>
+        <div className={css.s43}>
+          <div className={`${css.s39} ${css.s44}`}>
+            <label className={css.s40} htmlFor="period-search">Tên học phần</label>
+            <div className={css.s45}>
+              <MagnifyingGlass size={16} className={css.s46} />
+              <input
+                id="period-search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm theo tên học phần"
+                className={css.s47}
+              />
+            </div>
+          </div>
+          <div className={css.s39}>
+            <label className={css.s40} htmlFor="period-school-year">Năm học</label>
+            <select
+              id="period-school-year"
+              value={selectedSchoolYear}
+              onChange={(e) => setSelectedSchoolYear(e.target.value)}
+              className={css.s41}
+            >
+              {schoolYearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={css.s39}>
+            <label className={css.s40} htmlFor="period-semester">Học kỳ</label>
+            <select
+              id="period-semester"
+              value={selectedSemester}
+              onChange={(e) => setSelectedSemester(e.target.value)}
+              className={css.s41}
+            >
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
         </div>
         <div className={css.s5}>
           <Button variant="secondary" size="sm" onClick={fetchPeriods}>
             <ArrowsClockwise size={16} />
             Làm mới
           </Button>
-          <Button variant="primary" size="sm" onClick={openCreateModal}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setSelectedSchoolYear(currentAcademicTerm.schoolYear);
+              setSelectedSemester(currentAcademicTerm.semester);
+              openCreateModal();
+            }}
+          >
             <Plus size={16} />
-            Khởi tạo học phần mới
+            Tạo đợt học phần
           </Button>
         </div>
       </div>
@@ -68,12 +154,18 @@ export default function PeriodsPage() {
       ) : periods.length === 0 ? (
         <Card>
           <div className={css.s7}>
-            Chưa có học phần đồ án nào được định cấu hình trên hệ thống. Hãy nhấp &quot;Khởi tạo học phần mới&quot; để bắt đầu.
+            Chưa có đợt học phần nào được định cấu hình trên hệ thống. Hãy nhấp &quot;Tạo đợt học phần&quot; để bắt đầu.
+          </div>
+        </Card>
+      ) : filteredPeriods.length === 0 ? (
+        <Card>
+          <div className={css.s7}>
+            Không tìm thấy đợt học phần phù hợp với bộ lọc hiện tại.
           </div>
         </Card>
       ) : (
         <div className={css.s8}>
-          {periods.map((p) => (
+          {filteredPeriods.map((p) => (
             <PeriodCard
               key={p._id}
               period={p}
@@ -98,6 +190,7 @@ export default function PeriodsPage() {
             setEditingPeriod(null);
           }}
           submitting={submitting}
+          schoolYearOptions={schoolYearOptions}
           rubrics={rubrics}
           lecturers={lecturers}
         />
@@ -105,8 +198,8 @@ export default function PeriodsPage() {
 
       <ConfirmDialog
         open={Boolean(periodToDelete)}
-        title="Xóa học phần đồ án"
-        message={periodToDelete ? `Bạn có chắc chắn muốn xóa học phần đồ án "${periodToDelete.name}"?` : ''}
+        title="Xóa đợt học phần"
+        message={periodToDelete ? `Bạn có chắc chắn muốn xóa đợt học phần "${periodToDelete.courseName || periodToDelete.name}"?` : ''}
         confirmLabel="Xóa"
         loading={deleting}
         onCancel={() => setPeriodToDelete(null)}
