@@ -387,9 +387,9 @@ const aggregateFinalGrade = async (projectId, user) => {
   const supervisorRaw = supervisorSheet.rawTotal;
   const reviewerRaw = reviewerSheet.rawTotal;
   
-  // Fetch scoring formula from period (default to 60% supervisor, 40% reviewer/second marker)
-  let fSupervisor = 0.6;
-  let fReviewer = 0.4;
+  // Fetch scoring formula from period (default to 50% supervisor, 50% reviewer/second marker)
+  let fSupervisor = 0.5;
+  let fReviewer = 0.5;
 
   if (period.scoringFormula) {
     const hasSupervisor = period.scoringFormula.get('supervisor') !== undefined;
