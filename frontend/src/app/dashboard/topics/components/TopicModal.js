@@ -2,6 +2,7 @@
 
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
+import { ACADEMIC_UNITS, TOPIC_DOMAINS } from '@/lib/academicUnits';
 import css from '../page.module.css';
 
 export default function TopicModal({
@@ -15,6 +16,8 @@ export default function TopicModal({
   submitting,
   isLecturerOrStaff = false,
 }) {
+  const selectedPeriod = periods.find((period) => period._id === form.periodId);
+
   return (
     <div className={css.s27}>
       <div className={css.s28}>
@@ -30,12 +33,55 @@ export default function TopicModal({
             <label className={css.s33}>Chọn học phần đồ án</label>
             <select
               value={form.periodId}
-              onChange={(e) => setForm((p) => ({ ...p, periodId: e.target.value }))}
+              onChange={(e) => {
+                const nextPeriod = periods.find((period) => period._id === e.target.value);
+                setForm((p) => ({
+                  ...p,
+                  periodId: e.target.value,
+                  academicUnit: nextPeriod?.academicUnit || p.academicUnit,
+                }));
+              }}
               className={css.s70}
             >
               {periods.map((p) => (
                 <option key={p._id} value={p._id}>
                   {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={css.s32}>
+            <label className={css.s33}>Khoa/đơn vị chuyên môn chính</label>
+            <select
+              value={form.academicUnit || selectedPeriod?.academicUnit || ACADEMIC_UNITS[0].value}
+              onChange={(e) => {
+                const nextUnit = e.target.value;
+                setForm((p) => ({
+                  ...p,
+                  academicUnit: nextUnit,
+                }));
+              }}
+              className={css.s70}
+            >
+              {ACADEMIC_UNITS.map((unit) => (
+                <option key={unit.value} value={unit.value}>
+                  {unit.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={css.s32}>
+            <label className={css.s33}>Hướng chuyên môn</label>
+            <select
+              value={form.topicDomain || TOPIC_DOMAINS[0].value}
+              onChange={(e) => setForm((p) => ({ ...p, topicDomain: e.target.value }))}
+              className={css.s70}
+            >
+              {TOPIC_DOMAINS.map((domain) => (
+                <option key={domain.value} value={domain.value}>
+                  {domain.label}
                 </option>
               ))}
             </select>

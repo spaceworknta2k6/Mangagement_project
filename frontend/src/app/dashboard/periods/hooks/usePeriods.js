@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import useAuthStore from '@/store/auth.store';
 import api from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
+import { ACADEMIC_UNITS } from '@/lib/academicUnits';
 
 const DEFAULT_FORM_STATE = {
   name: 'Học phần Đồ án Cơ sở ngành Kỳ 20252',
@@ -13,6 +14,7 @@ const DEFAULT_FORM_STATE = {
   courseCode: 'IT3000',
   courseName: 'Đồ án cơ sở ngành',
   projectType: 'foundation',
+  academicUnit: ACADEMIC_UNITS[0].value,
   coordinatorLecturerId: '',
   allowIndividual: true,
   allowGroup: true,
@@ -77,6 +79,7 @@ export function usePeriods() {
       courseCode: period.courseCode || '',
       courseName: period.courseName || '',
       projectType: period.projectType || 'foundation',
+      academicUnit: period.academicUnit || ACADEMIC_UNITS[0].value,
       coordinatorLecturerId: period.coordinatorLecturerId?._id || period.coordinatorLecturerId || '',
       allowIndividual: period.allowIndividual !== false,
       allowGroup: period.allowGroup !== false,
@@ -145,6 +148,7 @@ export function usePeriods() {
       { name: 'semester', label: 'Học kỳ' },
       { name: 'courseCode', label: 'Mã học phần' },
       { name: 'courseName', label: 'Tên học phần' },
+      { name: 'academicUnit', label: 'Khoa/đơn vị chuyên môn phụ trách' },
       { name: 'rubricId', label: 'Tiêu chí chấm' },
       { name: 'supervisorWeight', label: 'Trọng số GVHD' },
       { name: 'reviewerWeight', label: 'Trọng số GV Chấm 2' },
@@ -203,6 +207,7 @@ export function usePeriods() {
       courseCode: form.courseCode,
       courseName: form.courseName,
       projectType: form.projectType || (form.type === 'interdisciplinary_project' ? 'interdisciplinary' : 'foundation'),
+      academicUnit: form.academicUnit,
       coordinatorLecturerId: form.coordinatorLecturerId || undefined,
       allowIndividual: isIndiv,
       allowGroup: isGroup,

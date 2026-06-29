@@ -18,6 +18,7 @@ import Tabs from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import api from '@/services/api';
 import { handleApiError } from '@/lib/utils';
+import { getAcademicUnitLabel, getTopicDomainLabel } from '@/lib/academicUnits';
 import EmptyState from '@/components/ui/EmptyState';
 import { BookOpen, Plus, Lightbulb, MagnifyingGlass, FileText } from '@phosphor-icons/react';
 import { exportToCSV } from '@/lib/export';
@@ -155,6 +156,8 @@ export default function TopicsPage() {
           topic.summary,
           topic.groupId?.name,
           topic.periodId?.name,
+          getAcademicUnitLabel(topic.academicUnit || topic.periodId?.academicUnit),
+          getTopicDomainLabel(topic.topicDomain),
           topic.proposedSupervisorId?.userId?.fullName,
         ];
         return values.some((value) => String(value || '').toLowerCase().includes(keyword));
@@ -224,6 +227,8 @@ export default function TopicsPage() {
       'Tên Đề Tài',
       'Tóm Tắt',
       'Đợt Đồ Án',
+      'Khoa Chuyên Môn',
+      'Hướng Chuyên Môn',
       'Nhóm Đăng Ký',
       'Học Kỳ',
       'Người Đề Xuất',
@@ -249,6 +254,8 @@ export default function TopicsPage() {
       topic.title,
       topic.summary || '',
       topic.periodId?.name || '',
+      getAcademicUnitLabel(topic.academicUnit || topic.periodId?.academicUnit),
+      getTopicDomainLabel(topic.topicDomain),
       topic.groupId?.name || 'Chưa đăng ký',
       topic.periodId?.semester ? `Kỳ ${topic.periodId.semester}` : '',
       topic.proposedByStudentId?.userId?.fullName || 'Giảng viên',

@@ -4,6 +4,7 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { formatDate, getStatus } from '@/lib/utils';
+import { getAcademicUnitLabel } from '@/lib/academicUnits';
 import { PencilSimple, Trash } from '@phosphor-icons/react';
 import css from '../page.module.css';
 
@@ -75,6 +76,10 @@ export default function PeriodCard({
       }
     >
       <div className={css.s10}>
+        <div>
+          <span className={css.s11}>Khoa phụ trách: </span>
+          <strong className={css.s12}>{getAcademicUnitLabel(period.academicUnit)}</strong>
+        </div>
         <div>
           <span className={css.s11}>Hình thức: </span>
           <strong className={css.s12}>

@@ -4,6 +4,7 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { getStatus } from '@/lib/utils';
+import { getAcademicUnitLabel, getTopicDomainLabel } from '@/lib/academicUnits';
 import { Pencil, X, Check, Cpu, Sparkle, Shield, Prohibit } from '@phosphor-icons/react';
 import css from '../page.module.css';
 
@@ -121,6 +122,10 @@ export default function TopicCard({
       <div className={css.s10}>
         <p className={css.s11}>Tóm tắt đề tài:</p>
         <p className={css.s12}>{topic.summary || 'Không có tóm tắt chi tiết.'}</p>
+        <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <Badge variant="info">{getAcademicUnitLabel(topic.academicUnit || topic.periodId?.academicUnit)}</Badge>
+          <Badge variant="neutral">{getTopicDomainLabel(topic.topicDomain)}</Badge>
+        </div>
 
         {topic.createdByRole === 'lecturer' && (
           <div style={{ marginTop: '12px', padding: '10px', backgroundColor: 'var(--bg-card-nested, #f8fafc)', borderRadius: '6px', fontSize: '13px', display: 'flex', flexWrap: 'wrap', gap: '16px', border: '1px solid var(--border)' }}>

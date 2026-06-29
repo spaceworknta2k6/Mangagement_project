@@ -3,6 +3,7 @@
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { FilePlus } from '@phosphor-icons/react';
+import { ACADEMIC_UNITS } from '@/lib/academicUnits';
 import css from '../page.module.css';
 
 export default function PeriodModal({
@@ -91,6 +92,29 @@ export default function PeriodModal({
                 <option value="foundation">Đồ án cơ sở</option>
                 <option value="interdisciplinary">Đồ án liên ngành</option>
               </select>
+            </div>
+
+            <div className={css.s29}>
+              <label className={css.s30}>
+                Khoa/đơn vị phụ trách <span className={css.s31}>*</span>
+              </label>
+              <select
+                name="academicUnit"
+                value={form.academicUnit || ACADEMIC_UNITS[0].value}
+                onChange={handleChange}
+                className={css.s32}
+              >
+                {ACADEMIC_UNITS.map((unit) => (
+                  <option key={unit.value} value={unit.value}>
+                    {unit.label}
+                  </option>
+                ))}
+              </select>
+              {formErrors.academicUnit && (
+                <span className="text-error" style={{ fontSize: '12px', marginTop: '4px' }}>
+                  {formErrors.academicUnit}
+                </span>
+              )}
             </div>
 
             <div className={css.s29}>

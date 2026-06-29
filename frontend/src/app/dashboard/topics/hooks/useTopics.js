@@ -6,6 +6,7 @@ import usePeriodStore from '@/store/period.store';
 import api from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
 import { hasAnyRole, handleApiError } from '@/lib/utils';
+import { ACADEMIC_UNITS, TOPIC_DOMAINS } from '@/lib/academicUnits';
 
 export function useTopics(initialActiveTab = 'all') {
   const user = useAuthStore((s) => s.user);
@@ -40,6 +41,8 @@ export function useTopics(initialActiveTab = 'all') {
     groupId: '',
     title: '',
     summary: '',
+    academicUnit: ACADEMIC_UNITS[0].value,
+    topicDomain: TOPIC_DOMAINS[0].value,
     proposedSupervisorId: '',
     proposedSupervisorEmail: '',
     periodId: '',
@@ -67,7 +70,11 @@ export function useTopics(initialActiveTab = 'all') {
       ]);
       
       if (pList && pList.length > 0) {
-        setForm((prev) => ({ ...prev, periodId: pList[0]._id }));
+        setForm((prev) => ({
+          ...prev,
+          periodId: pList[0]._id,
+          academicUnit: prev.academicUnit || pList[0].academicUnit || ACADEMIC_UNITS[0].value,
+        }));
       }
       setTopics(resTopics.data || []);
       if (isStudent) {
@@ -99,6 +106,8 @@ export function useTopics(initialActiveTab = 'all') {
     setSubmitting(true);
     try {
       let res;
+      const selectedPeriod = periods.find((period) => period._id === form.periodId);
+      const academicUnit = form.academicUnit || selectedPeriod?.academicUnit || ACADEMIC_UNITS[0].value;
       if (isLecturer || isStaff) {
         const payload = {
           title: form.title.trim(),
@@ -107,6 +116,8 @@ export function useTopics(initialActiveTab = 'all') {
           scope: form.summary.trim(),
           expectedResult: form.summary.trim(),
           plan: form.summary.trim(),
+          academicUnit,
+          topicDomain: form.topicDomain || TOPIC_DOMAINS[0].value,
           periodId: form.periodId,
           proposedSupervisorId: form.proposedSupervisorId || undefined,
           proposedSupervisorEmail: form.proposedSupervisorEmail?.trim() || undefined,
@@ -142,6 +153,8 @@ export function useTopics(initialActiveTab = 'all') {
           scope: form.summary.trim(),
           expectedResult: form.summary.trim(),
           plan: form.summary.trim(),
+          academicUnit,
+          topicDomain: form.topicDomain || TOPIC_DOMAINS[0].value,
           periodId: form.periodId,
           proposedSupervisorEmail: form.proposedSupervisorEmail.trim(),
           ownerType: form.ownerType,
@@ -164,6 +177,8 @@ export function useTopics(initialActiveTab = 'all') {
         groupId: '',
         title: '',
         summary: '',
+        academicUnit: ACADEMIC_UNITS[0].value,
+        topicDomain: TOPIC_DOMAINS[0].value,
         proposedSupervisorId: '',
         proposedSupervisorEmail: '',
         allowIndividual: true,
@@ -192,6 +207,8 @@ export function useTopics(initialActiveTab = 'all') {
       groupId: t.groupId?._id || t.groupId || '',
       title: t.title,
       summary: t.summary || '',
+      academicUnit: t.academicUnit || t.periodId?.academicUnit || ACADEMIC_UNITS[0].value,
+      topicDomain: t.topicDomain || TOPIC_DOMAINS[0].value,
       proposedSupervisorId: t.proposedSupervisorId?._id || t.proposedSupervisorId || '',
       proposedSupervisorEmail: t.proposedSupervisorId?.userId?.email || '',
       periodId: t.periodId?._id || t.periodId || '',
@@ -301,6 +318,8 @@ export function useTopics(initialActiveTab = 'all') {
       groupId: '',
       title: s.title,
       summary: originalTopic?.summary || s.reason || '',
+      academicUnit: originalTopic?.academicUnit || originalTopic?.periodId?.academicUnit || ACADEMIC_UNITS[0].value,
+      topicDomain: originalTopic?.topicDomain || TOPIC_DOMAINS[0].value,
       proposedSupervisorId: originalTopic?.proposedSupervisorId?._id || originalTopic?.proposedSupervisorId || '',
       proposedSupervisorEmail: originalTopic?.proposedSupervisorId?.userId?.email || '',
       periodId: periods[0]?._id || '',
