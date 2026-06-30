@@ -95,6 +95,10 @@ test('single student topic workflow', async ({ request }) => {
     proposedSupervisorId: supervisor._id,
     title: topicTitle,
     summary: 'Automated single student topic proposal.',
+    objectives: 'Verify that a single student can propose and manage an individual project topic.',
+    scope: 'Single-student project workflow covered by automated E2E checks.',
+    expectedResult: 'A project workspace is created from an approved individual topic.',
+    plan: 'Create period, roster student, propose topic, approve topic, assign supervisor, and create milestone.',
   });
   expect(topicRes.response.status()).toBe(201);
   expect(topicRes.body.data.ownerType).toBe('student');
