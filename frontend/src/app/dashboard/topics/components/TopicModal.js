@@ -75,7 +75,7 @@ export default function TopicModal({
                     onChange={(e) => setForm((p) => ({ ...p, groupId: e.target.value }))}
                     className={css.s70}
                   >
-                    <option value="">Chọn nhóm đã tham gia</option>
+                    <option value="">Chọn nhóm đã chốt danh sách</option>
                     {groups.map((group) => (
                       <option key={group._id} value={group._id}>
                         {group.name}
@@ -83,7 +83,7 @@ export default function TopicModal({
                     ))}
                   </select>
                   {groups.length === 0 && (
-                    <p className={css.s19}>Bạn chưa có nhóm đã chấp nhận trong học phần này.</p>
+                    <p className={css.s19}>Bạn chưa có nhóm đã chốt danh sách trong học phần này.</p>
                   )}
                 </div>
               )}

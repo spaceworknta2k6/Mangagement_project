@@ -11,6 +11,22 @@ import { ACADEMIC_UNITS } from '@/lib/academicUnits';
 const CLOSED_PROPOSAL_PERIOD_STATUSES = ['archived', 'cancelled', 'result_locked'];
 const canProposeInPeriod = (period) => !CLOSED_PROPOSAL_PERIOD_STATUSES.includes(period?.status);
 
+const fetchGroupsForPeriods = async (periods, token) => {
+  const groupResults = await Promise.all(
+    periods.map((period) =>
+      api.get(`/groups?periodId=${period._id}`, token)
+        .then((res) => res.data || [])
+        .catch(() => [])
+    )
+  );
+
+  const groupsById = new Map();
+  groupResults.flat().forEach((group) => {
+    if (group?._id) groupsById.set(group._id, group);
+  });
+  return Array.from(groupsById.values());
+};
+
 export function useTopics(initialActiveTab = 'all') {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -79,8 +95,8 @@ export function useTopics(initialActiveTab = 'all') {
       }
       setTopics(resTopics.data || []);
       if (isStudent) {
-        const resGroups = await api.get('/groups', token).catch(() => ({ data: [] }));
-        setGroups(resGroups.data || []);
+        const studentGroups = await fetchGroupsForPeriods(selectablePeriods, token);
+        setGroups(studentGroups);
       } else {
         setGroups([]);
       }
@@ -395,6 +411,7 @@ export function useTopics(initialActiveTab = 'all') {
 
   const availableGroups = groups.filter((group) => {
     if (form.periodId && (group.periodId?._id || group.periodId) !== form.periodId) return false;
+    if (group.status !== 'confirmed') return false;
     if (!user?.studentId) return false;
     return (group.members || []).some((member) => {
       const memberStudentId = member.studentId?._id || member.studentId;
