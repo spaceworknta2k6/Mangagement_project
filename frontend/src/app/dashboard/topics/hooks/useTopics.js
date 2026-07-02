@@ -8,6 +8,9 @@ import { useToast } from '@/components/ui/Toast';
 import { hasAnyRole, handleApiError } from '@/lib/utils';
 import { ACADEMIC_UNITS } from '@/lib/academicUnits';
 
+const CLOSED_PROPOSAL_PERIOD_STATUSES = ['archived', 'cancelled', 'result_locked'];
+const canProposeInPeriod = (period) => !CLOSED_PROPOSAL_PERIOD_STATUSES.includes(period?.status);
+
 export function useTopics(initialActiveTab = 'all') {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
@@ -61,11 +64,17 @@ export function useTopics(initialActiveTab = 'all') {
         api.get('/topics', token)
       ]);
       
-      if (pList && pList.length > 0) {
+      const selectablePeriods = isStudent ? pList.filter(canProposeInPeriod) : pList;
+      if (selectablePeriods && selectablePeriods.length > 0) {
         setForm((prev) => ({
           ...prev,
-          periodId: pList[0]._id,
-          academicUnit: pList[0].academicUnit || ACADEMIC_UNITS[0].value,
+          ...(() => {
+            const selectedPeriod = selectablePeriods.find((period) => period._id === prev.periodId) || selectablePeriods[0];
+            return {
+              periodId: selectedPeriod._id,
+              academicUnit: selectedPeriod.academicUnit || ACADEMIC_UNITS[0].value,
+            };
+          })(),
         }));
       }
       setTopics(resTopics.data || []);
@@ -392,11 +401,13 @@ export function useTopics(initialActiveTab = 'all') {
       return String(memberStudentId) === String(user.studentId) && member.status === 'accepted';
     });
   });
+  const proposalPeriods = isStudent ? periods.filter(canProposeInPeriod) : periods;
 
   return {
     user,
     token,
     periods,
+    proposalPeriods,
     groups: availableGroups,
     topics,
     loading,

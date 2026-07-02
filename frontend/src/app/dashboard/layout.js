@@ -126,7 +126,20 @@ function Sidebar({ collapsed, mobileOpen, onToggle, onNavigate, user, unreadNoti
     >
       {/* Logo area */}
       <div
-        onClick={() => router.push('/dashboard')}
+        onClick={() => {
+          window.location.reload();
+          onNavigate?.();
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            window.location.reload();
+            onNavigate?.();
+          }
+        }}
+        title="Tải lại trang"
         className={[css.logoArea, collapsed ? css.logoAreaCollapsed : ''].filter(Boolean).join(' ')}
       >
         <div className={css.s1} >

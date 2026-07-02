@@ -372,17 +372,16 @@ export default function RostersPage() {
         </div>
       </div>
 
-      {/* Filter Card */}
-      <FilterCard
-        searchInput={searchInput}
-        setSearchInput={setSearchInput}
-        onSearch={handleSearchSubmit}
-        onReset={handleResetSearch}
-        placeholder="Tìm theo mã sinh viên, họ tên, email, lớp..."
-        hasFilters={true}
-      >
-        <div>
-          <label className={css.selectLabel}>Đợt Đồ Án</label>
+      <Card className={css.periodSelectorCard}>
+        <div className={css.periodSelectorHeader}>
+          <div>
+            <label className={css.selectLabel}>Học phần/đợt đồ án đang quản lý</label>
+            <div className={css.periodHint}>
+              Danh sách bên dưới chỉ áp dụng cho học phần/đợt đang chọn.
+            </div>
+          </div>
+        </div>
+        <div className={css.periodSelectorControl}>
           <select
             value={selectedPeriodId}
             onChange={(e) => {
@@ -393,12 +392,21 @@ export default function RostersPage() {
           >
             {periods.map((p) => (
               <option key={p._id} value={p._id}>
-                {p.name} ({p.schoolYear})
+                {p.courseName || p.name} ({p.schoolYear})
               </option>
             ))}
           </select>
         </div>
-      </FilterCard>
+      </Card>
+
+      {/* Filter Card */}
+      <FilterCard
+        searchInput={searchInput}
+        setSearchInput={setSearchInput}
+        onSearch={handleSearchSubmit}
+        onReset={handleResetSearch}
+        placeholder="Tìm theo mã sinh viên, họ tên, email, lớp..."
+      />
 
       {/* Table section */}
       {loading ? (

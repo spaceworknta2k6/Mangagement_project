@@ -225,7 +225,7 @@ ProjectTopicSchema.index(
   { 
     unique: true, 
     partialFilterExpression: { 
-      groupId: { $exists: true },
+      groupId: { $type: 'objectId' },
       isDeleted: false, 
       status: { $in: ['submitted', 'ai_checked', 'needs_revision', 'approved', 'assigned', 'locked', 'changed', 'completed'] } 
     } 

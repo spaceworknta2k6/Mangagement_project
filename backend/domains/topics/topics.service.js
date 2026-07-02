@@ -82,7 +82,7 @@ const logWorkflowEvent = async ({
 const assertStudentTopicOwnerAvailable = async (periodId, studentId) => {
   const roster = await ProjectRoster.findOne({ periodId, studentId, status: 'active' });
   if (!roster) {
-    throw { status: 403, message: 'Ban chua co trong danh sach tham gia dot nay.' };
+    throw { status: 403, message: 'Bạn chưa có trong danh sách tham gia đợt này.' };
   }
 
   const [existingTopic, existingProject, existingGroupProject] = await Promise.all([
@@ -134,11 +134,11 @@ const assertStudentTopicOwnerAvailable = async (periodId, studentId) => {
   ]);
 
   if (existingTopic || existingProject) {
-    throw { status: 400, message: 'Ban da co de tai hoac du an ca nhan dang hoat dong trong dot do an nay.' };
+    throw { status: 400, message: 'Bạn đã có đề tài hoặc dự án cá nhân đang hoạt động trong đợt đồ án này.' };
   }
 
   if (existingGroupProject.length > 0) {
-    throw { status: 400, message: 'Ban da thuoc nhom co du an dang hoat dong trong dot do an nay.' };
+    throw { status: 400, message: 'Bạn đã thuộc nhóm có dự án đang hoạt động trong đợt đồ án này.' };
   }
 };
 
@@ -150,44 +150,44 @@ const assertAcceptedMembersInRoster = async (periodId, memberIds) => {
   });
 
   if (activeRosterCount !== memberIds.length) {
-    throw { status: 403, message: 'Tat ca thanh vien nhom phai co trong danh sach hoc phan dang hoat dong.' };
+    throw { status: 403, message: 'Tất cả thành viên nhóm phải có trong danh sách học phần đang hoạt động.' };
   }
 };
 
 const resolveGroupTopicOwner = async (periodId, groupId, studentId, period, topic) => {
   const group = await ProjectGroup.findOne({ _id: groupId, periodId, isDeleted: { $ne: true } });
   if (!group) {
-    throw { status: 404, message: 'Nhom do an khong ton tai.' };
+    throw { status: 404, message: 'Nhóm đồ án không tồn tại.' };
   }
 
   if (group.leaderStudentId.toString() !== studentId.toString()) {
-    throw { status: 403, message: 'Chi truong nhom moi co quyen de xuat de tai do an.' };
+    throw { status: 403, message: 'Chỉ trưởng nhóm mới có quyền đề xuất đề tài đồ án.' };
   }
 
   if (group.status === 'cancelled' || group.status === 'locked') {
-    throw { status: 400, message: 'Trang thai nhom khong hop le de dang ky de tai.' };
+    throw { status: 400, message: 'Trạng thái nhóm không hợp lệ để đăng ký đề tài.' };
   }
 
   if (group.status !== 'confirmed') {
-    throw { status: 400, message: 'Nhom phai duoc xac nhan truoc khi dang ky de tai.' };
+    throw { status: 400, message: 'Nhóm phải được xác nhận trước khi đăng ký đề tài.' };
   }
 
   const acceptedMemberIds = getAcceptedMemberIds(group);
   const { minLimit, maxLimit } = getGroupLimits(period, topic);
 
   if (acceptedMemberIds.length < minLimit) {
-    throw { status: 400, message: `Nhom phai co it nhat ${minLimit} thanh vien da xac nhan.` };
+    throw { status: 400, message: `Nhóm phải có ít nhất ${minLimit} thành viên đã xác nhận.` };
   }
 
   if (acceptedMemberIds.length > maxLimit) {
-    throw { status: 400, message: `Nhom vuot qua gioi han ${maxLimit} thanh vien cua hoc phan.` };
+    throw { status: 400, message: `Nhóm vượt quá giới hạn ${maxLimit} thành viên của học phần.` };
   }
 
   const callerMember = group.members.find(
     (member) => member.studentId.toString() === studentId.toString() && member.status === 'accepted'
   );
   if (!callerMember) {
-    throw { status: 403, message: 'Ban chua la thanh vien da chap nhan cua nhom nay.' };
+    throw { status: 403, message: 'Bạn chưa là thành viên đã chấp nhận của nhóm này.' };
   }
 
   const existingActiveTopic = await ProjectTopic.findOne({
@@ -201,7 +201,7 @@ const resolveGroupTopicOwner = async (periodId, groupId, studentId, period, topi
   });
 
   if (existingActiveTopic) {
-    throw { status: 400, message: 'Nhom cua ban da co mot de tai dang hoat dong trong dot do an nay.' };
+    throw { status: 400, message: 'Nhóm của bạn đã có một đề tài đang hoạt động trong đợt đồ án này.' };
   }
 
   await assertAcceptedMembersInRoster(periodId, acceptedMemberIds);
@@ -282,7 +282,10 @@ const proposeTopic = async (topicData, studentId) => {
 
   const periodRecord = await ProjectPeriod.findOne({ _id: incomingPeriodId, isDeleted: { $ne: true } });
   if (!periodRecord) {
-    throw { status: 404, message: 'Dot do an khong ton tai.' };
+    throw { status: 404, message: 'Đợt đồ án không tồn tại.' };
+  }
+  if (['archived', 'cancelled', 'result_locked'].includes(periodRecord.status)) {
+    throw { status: 400, message: 'Đợt đồ án này đã đóng, không thể đề xuất đề tài mới.' };
   }
 
   let selectedGroupId;
@@ -290,12 +293,12 @@ const proposeTopic = async (topicData, studentId) => {
 
   if (incomingOwnerType === 'student') {
     if (periodRecord.allowIndividual === false) {
-      throw { status: 400, message: 'Hoc phan khong cho phep de xuat de tai ca nhan.' };
+      throw { status: 400, message: 'Học phần không cho phép đề xuất đề tài cá nhân.' };
     }
     await assertStudentTopicOwnerAvailable(incomingPeriodId, studentId);
   } else {
     if (periodRecord.allowGroup === false) {
-      throw { status: 400, message: 'Hoc phan khong cho phep de xuat de tai theo nhom.' };
+      throw { status: 400, message: 'Học phần không cho phép đề xuất đề tài theo nhóm.' };
     }
     const selectedGroup = await resolveGroupTopicOwner(incomingPeriodId, topicData.groupId, studentId, periodRecord);
     selectedGroupId = selectedGroup._id;

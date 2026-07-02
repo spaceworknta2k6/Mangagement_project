@@ -85,10 +85,13 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error('Unhandled Server Exception:', err);
   
-  const statusCode = err.status || 500;
+  const isDuplicateKey = err && (err.code === 11000 || (err.name === 'MongoServerError' && err.message?.includes('E11000')));
+  const statusCode = err.status || (isDuplicateKey ? 409 : 500);
   res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal Server Error',
+    message: isDuplicateKey
+      ? 'Dữ liệu bị trùng. Vui lòng kiểm tra lại thông tin và thử lại.'
+      : (err.message || 'Internal Server Error'),
     // Only output full stack trace in non-production environments
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
   });

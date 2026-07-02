@@ -8,6 +8,8 @@ const idsEqual = (left, right) => {
 };
 
 const normalizeOwner = (owner = {}) => {
+  if (!owner) return null;
+
   const ownerType = owner.ownerType;
   const ownerId = owner.ownerId?._id || owner.ownerId;
   const groupId = owner.groupId?._id || owner.groupId;

@@ -73,7 +73,7 @@ const validateTopicPropose = async (req, res, next) => {
     const errors = [];
 
     if (!periodId || !mongoose.Types.ObjectId.isValid(periodId)) {
-      errors.push({ field: 'periodId', code: 'PERIOD_ID_INVALID', message: 'Ma dot do an (periodId) khong hop le.' });
+      errors.push({ field: 'periodId', code: 'PERIOD_ID_INVALID', message: 'Mã đợt đồ án (periodId) không hợp lệ.' });
     }
     if (academicUnit !== undefined && !ACADEMIC_UNITS.includes(academicUnit)) {
       errors.push({ field: 'academicUnit', code: 'ACADEMIC_UNIT_INVALID', message: 'Khoa/đơn vị chuyên môn của đề tài không hợp lệ.' });
@@ -84,14 +84,14 @@ const validateTopicPropose = async (req, res, next) => {
 
     if (isStudent) {
       if (!OWNER_TYPES.includes(ownerType)) {
-        errors.push({ field: 'ownerType', code: 'OWNER_TYPE_INVALID', message: 'Hinh thuc thuc hien phai la ca nhan hoac theo nhom.' });
+        errors.push({ field: 'ownerType', code: 'OWNER_TYPE_INVALID', message: 'Hình thức thực hiện phải là cá nhân hoặc theo nhóm.' });
       }
 
       if (ownerType === 'group') {
         if (!groupId) {
-          errors.push({ field: 'groupId', code: 'GROUP_REQUIRED', message: 'Ban can chon mot nhom da tham gia trong dot do an nay truoc khi de xuat de tai.' });
+          errors.push({ field: 'groupId', code: 'GROUP_REQUIRED', message: 'Bạn cần chọn một nhóm đã tham gia trong đợt đồ án này trước khi đề xuất đề tài.' });
         } else if (!mongoose.Types.ObjectId.isValid(groupId)) {
-          errors.push({ field: 'groupId', code: 'GROUP_ID_INVALID', message: 'Ma nhom do an (groupId) khong hop le.' });
+          errors.push({ field: 'groupId', code: 'GROUP_ID_INVALID', message: 'Mã nhóm đồ án (groupId) không hợp lệ.' });
         }
       }
 
@@ -103,7 +103,7 @@ const validateTopicPropose = async (req, res, next) => {
         });
 
         if (!roster) {
-          errors.push({ field: 'periodId', code: 'ROSTER_REQUIRED', message: 'Ban chua co trong danh sach tham gia dot nay.' });
+          errors.push({ field: 'periodId', code: 'ROSTER_REQUIRED', message: 'Bạn chưa có trong danh sách tham gia đợt này.' });
         }
       }
 
@@ -115,7 +115,7 @@ const validateTopicPropose = async (req, res, next) => {
       }
 
       if (!req.body.proposedSupervisorId || !mongoose.Types.ObjectId.isValid(req.body.proposedSupervisorId)) {
-        errors.push({ field: 'proposedSupervisorEmail', code: 'SUPERVISOR_EMAIL_INVALID', message: 'Email giang vien huong dan khong hop le hoac khong ton tai.' });
+        errors.push({ field: 'proposedSupervisorEmail', code: 'SUPERVISOR_EMAIL_INVALID', message: 'Email giảng viên hướng dẫn không hợp lệ hoặc không tồn tại.' });
       }
     } else {
       if (!proposedSupervisorId && proposedSupervisorEmail) {
@@ -126,34 +126,34 @@ const validateTopicPropose = async (req, res, next) => {
       }
 
       if (req.body.proposedSupervisorId && !mongoose.Types.ObjectId.isValid(req.body.proposedSupervisorId)) {
-        errors.push({ field: 'proposedSupervisorEmail', code: 'SUPERVISOR_EMAIL_INVALID', message: 'Email giang vien huong dan khong hop le hoac khong ton tai.' });
+        errors.push({ field: 'proposedSupervisorEmail', code: 'SUPERVISOR_EMAIL_INVALID', message: 'Email giảng viên hướng dẫn không hợp lệ hoặc không tồn tại.' });
       }
     }
 
     const requiredStrings = {
-      title: 'Ten de tai',
-      summary: 'Tom tat de tai',
-      objectives: 'Muc tieu de tai',
-      scope: 'Pham vi de tai',
-      expectedResult: 'San pham dau ra du kien',
-      plan: 'Ke hoach thuc hien',
+      title: 'Tên đề tài',
+      summary: 'Tóm tắt đề tài',
+      objectives: 'Mục tiêu đề tài',
+      scope: 'Phạm vi đề tài',
+      expectedResult: 'Sản phẩm đầu ra dự kiến',
+      plan: 'Kế hoạch thực hiện',
     };
 
     for (const [field, label] of Object.entries(requiredStrings)) {
       const val = req.body[field];
       if (!val || typeof val !== 'string' || val.trim() === '') {
-        errors.push({ field, code: `${field.toUpperCase()}_REQUIRED`, message: `${label} la bat buoc.` });
+        errors.push({ field, code: `${field.toUpperCase()}_REQUIRED`, message: `${label} là bắt buộc.` });
       }
     }
 
     if (technologies !== undefined && !Array.isArray(technologies)) {
-      errors.push({ field: 'technologies', code: 'TECHNOLOGIES_MUST_BE_ARRAY', message: 'Danh sach cong nghe su dung phai la mot mang.' });
+      errors.push({ field: 'technologies', code: 'TECHNOLOGIES_MUST_BE_ARRAY', message: 'Danh sách công nghệ sử dụng phải là một mảng.' });
     }
 
     if (errors.length > 0) {
       return res.status(422).json({
         success: false,
-        message: 'Du lieu de xuat de tai khong hop le.',
+        message: 'Dữ liệu đề xuất đề tài không hợp lệ.',
         errors,
       });
     }

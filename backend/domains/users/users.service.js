@@ -1,6 +1,47 @@
 const User = require('../../models/User');
 const Student = require('../../models/Student');
 const Lecturer = require('../../models/Lecturer');
+const { ACADEMIC_UNIT_DEPARTMENT_IDS, IT_FACULTY_ID } = require('../../constants/academic-units');
+
+const buildUniqueLecturerCode = async (user) => {
+  const student = await Student.findOne({ userId: user._id }).setOptions({ includeDeleted: true });
+  const baseCode = student?.studentCode || user.email.split('@')[0] || user._id.toString();
+  let lecturerCode = baseCode;
+  let suffix = 1;
+
+  while (await Lecturer.findOne({ lecturerCode, userId: { $ne: user._id } }).setOptions({ includeDeleted: true })) {
+    suffix += 1;
+    lecturerCode = `${baseCode}-GV${suffix}`;
+  }
+
+  return {
+    lecturerCode,
+    student,
+  };
+};
+
+const ensureLecturerProfile = async (user) => {
+  let lecturer = await Lecturer.findOne({ userId: user._id }).setOptions({ includeDeleted: true });
+  if (lecturer) {
+    lecturer.isDeleted = false;
+    lecturer.deletedAt = undefined;
+    lecturer.deletedBy = undefined;
+    lecturer.status = 'active';
+    await lecturer.save();
+    return lecturer;
+  }
+
+  const { lecturerCode, student } = await buildUniqueLecturerCode(user);
+  lecturer = await Lecturer.create({
+    userId: user._id,
+    lecturerCode,
+    facultyId: student?.facultyId || IT_FACULTY_ID,
+    departmentId: ACADEMIC_UNIT_DEPARTMENT_IDS.computer_science,
+    status: 'active',
+  });
+
+  return lecturer;
+};
 
 /**
  * Lấy danh sách toàn bộ tài khoản có phân trang, tìm kiếm và bộ lọc
@@ -67,6 +108,11 @@ const updateUserRole = async (userId, roles) => {
 
   user.roles = roles;
   await user.save();
+
+  if (roles.includes('LECTURER')) {
+    await ensureLecturerProfile(user);
+  }
+
   return user;
 };
 

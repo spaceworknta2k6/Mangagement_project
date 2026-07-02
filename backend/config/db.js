@@ -1,5 +1,49 @@
 const mongoose = require('mongoose');
 
+const reconcileProjectTopicIndexes = async () => {
+  const ProjectTopic = require('../models/ProjectTopic');
+  const collection = ProjectTopic.collection;
+  const indexName = 'periodId_1_groupId_1';
+  let indexes = [];
+  try {
+    indexes = await collection.indexes();
+  } catch (error) {
+    if (error.codeName !== 'NamespaceNotFound') {
+      throw error;
+    }
+  }
+  const groupIndex = indexes.find((index) => index.name === indexName);
+  const groupFilter = groupIndex?.partialFilterExpression?.groupId;
+  const hasCorrectFilter = groupFilter && groupFilter.$type === 'objectId';
+
+  if (groupIndex && !hasCorrectFilter) {
+    try {
+      await collection.dropIndex(indexName);
+      console.log(`MongoDB index ${indexName} dropped for projecttopics reconciliation.`);
+    } catch (error) {
+      if (error.codeName !== 'IndexNotFound') {
+        throw error;
+      }
+    }
+  }
+
+  if (!groupIndex || !hasCorrectFilter) {
+    await collection.createIndex(
+      { periodId: 1, groupId: 1 },
+      {
+        name: indexName,
+        unique: true,
+        partialFilterExpression: {
+          groupId: { $type: 'objectId' },
+          isDeleted: false,
+          status: { $in: ['submitted', 'ai_checked', 'needs_revision', 'approved', 'assigned', 'locked', 'changed', 'completed'] },
+        },
+      }
+    );
+    console.log(`MongoDB index ${indexName} reconciled for projecttopics.`);
+  }
+};
+
 const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
@@ -15,6 +59,7 @@ const connectDB = async () => {
     });
 
     console.log(`MongoDB Connected successfully to host: ${conn.connection.host}`);
+    await reconcileProjectTopicIndexes();
     return conn;
   } catch (error) {
     console.error(`MongoDB Connection Failed: ${error.message}`);

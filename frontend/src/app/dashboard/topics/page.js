@@ -86,6 +86,7 @@ export default function TopicsPage() {
     user,
     token,
     periods,
+    proposalPeriods,
     groups,
     loading,
     showProposeModal,
@@ -442,7 +443,7 @@ export default function TopicsPage() {
           editingTopicId={editingTopicId}
           form={form}
           setForm={setForm}
-          periods={periods}
+          periods={proposalPeriods}
           groups={groups}
           handleSubmitTopic={handleSubmitTopic}
           onClose={() => {
