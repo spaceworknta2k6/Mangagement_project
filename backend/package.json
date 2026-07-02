@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "seed:demo": "node seeders/seed_demo_data.js",
     "test": "node tests/run-all.js",
     "test:integration": "node tests/run-all.js",
     "test:env": "node tests/check-test-env.js"
