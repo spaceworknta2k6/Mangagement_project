@@ -66,7 +66,14 @@ export default function RostersPage() {
   const [searchInput, setSearchInput] = useState(initialQuery.search);
   const [search, setSearch] = useState(initialQuery.search);
 
-  const { periods, selectedPeriodId, fetchPeriods, setSelectedPeriodId } = usePeriodStore();
+  const {
+    periods,
+    selectedPeriodId,
+    fetchPeriods,
+    setSelectedPeriodId,
+    isLoading: periodsLoading,
+    hasFetched: periodsFetched,
+  } = usePeriodStore();
   const [roster, setRoster] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -92,7 +99,11 @@ export default function RostersPage() {
   });
 
   const fetchRoster = useCallback(async () => {
-    if (!selectedPeriodId) return;
+    if (!selectedPeriodId) {
+      setRoster([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.get(`/periods/${selectedPeriodId}/rosters`, token);
@@ -113,8 +124,11 @@ export default function RostersPage() {
   useEffect(() => {
     if (token && selectedPeriodId) {
       fetchRoster();
+    } else if (periodsFetched && !periodsLoading) {
+      setRoster([]);
+      setLoading(false);
     }
-  }, [fetchRoster, token, selectedPeriodId]);
+  }, [fetchRoster, token, selectedPeriodId, periodsFetched, periodsLoading]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -409,7 +423,7 @@ export default function RostersPage() {
       />
 
       {/* Table section */}
-      {loading ? (
+      {loading || periodsLoading ? (
         <div className={css.s6}>
           <Spinner size="lg" />
         </div>
