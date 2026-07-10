@@ -27,6 +27,7 @@ export default function TopicCard({
   onRegisterTopic,
   onPublishTopic,
   onUnpublishTopic,
+  onViewDetails,
 }) {
   const mappedStatus = (topic.status === 'submitted' || topic.status === 'ai_checked') ? 'pending_review' : topic.status;
   const statusInfo = getStatus(mappedStatus);
@@ -108,6 +109,12 @@ export default function TopicCard({
           {isStudent && topic.status === 'needs_revision' && topic.proposedByStudentId?._id?.toString() === user?.studentId?.toString() && (
             <Button variant="secondary" size="sm" onClick={() => handleEditClick(topic)}>
               <Pencil size={14} /> Chỉnh sửa
+            </Button>
+          )}
+
+          {onViewDetails && (
+            <Button variant="secondary" size="sm" onClick={() => onViewDetails(topic)}>
+              Xem chi tiết
             </Button>
           )}
 

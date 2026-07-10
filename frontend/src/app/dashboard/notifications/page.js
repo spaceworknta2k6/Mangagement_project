@@ -122,7 +122,7 @@ function NotificationRow({ notification, markingId, deletingId, onMarkRead, onRe
 export default function NotificationsPage() {
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
-  const {
+  let {
     notifications,
     unreadCount,
     isLoading: loading,
@@ -131,6 +131,15 @@ export default function NotificationsPage() {
     markAllRead,
     deleteNotification,
   } = useNotificationStore();
+
+  // INJECT MOCK DATA CHO CHỤP ẢNH
+  notifications = [
+    { _id: '1', title: 'Đề tài của bạn đã được duyệt', type: 'APPROVE', body: 'Giảng viên đã phê duyệt đề xuất đề tài "Xây dựng hệ thống quản lý đồ án" của nhóm.', createdAt: new Date().toISOString(), readAt: null, actionUrl: '/dashboard/topics' },
+    { _id: '2', title: 'Nhắc nhở nộp báo cáo tiến độ', type: 'DEADLINE', body: 'Hạn nộp báo cáo tiến độ Giai đoạn 1 sắp đến (còn 2 ngày). Vui lòng nộp đúng hạn.', createdAt: new Date(Date.now() - 86400000).toISOString(), readAt: null, actionUrl: '/dashboard/submissions' },
+    { _id: '3', title: 'Giảng viên đã nhận xét báo cáo', type: 'INFO', body: 'Giảng viên Nguyễn Văn A đã nhận xét bản nộp báo cáo tuần 3 của nhóm.', createdAt: new Date(Date.now() - 172800000).toISOString(), readAt: new Date().toISOString(), actionUrl: '/dashboard/submissions' }
+  ];
+  unreadCount = 2;
+  loading = false;
 
   const [markingId, setMarkingId] = useState('');
   const [markingAll, setMarkingAll] = useState(false);

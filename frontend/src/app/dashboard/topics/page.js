@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTopics } from './hooks/useTopics';
 import TopicCard from './components/TopicCard';
 import TopicModal from './components/TopicModal';
+import TopicDetailModal from './components/TopicDetailModal';
 import OverrideModal from './components/OverrideModal';
 import AiChatPanel from './components/AiChatPanel';
 import Button from '@/components/ui/Button';
@@ -78,6 +79,7 @@ export default function TopicsPage() {
   const [search, setSearch] = useState(initialQuery.search);
   const [topicToCancel, setTopicToCancel] = useState(null);
   const [cancellingTopic, setCancellingTopic] = useState(false);
+  const [viewingTopic, setViewingTopic] = useState(null);
   const [lecturers, setLecturers] = useState([]);
   const [assignTopic, setAssignTopic] = useState(null);
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
@@ -423,6 +425,7 @@ export default function TopicsPage() {
               onRegisterTopic={onRegisterTopic}
               onPublishTopic={handlePublishTopic}
               onUnpublishTopic={handleUnpublishTopic}
+              onViewDetails={setViewingTopic}
             />
           ))}
           <Pagination
@@ -478,6 +481,14 @@ export default function TopicsPage() {
           handleOverrideSubmit={handleOverrideSubmit}
           onClose={() => setShowOverrideModal(null)}
           overriding={overriding}
+        />
+      )}
+
+      {/* View Detail Modal */}
+      {viewingTopic && (
+        <TopicDetailModal
+          topic={viewingTopic}
+          onClose={() => setViewingTopic(null)}
         />
       )}
 
