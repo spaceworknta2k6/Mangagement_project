@@ -152,7 +152,8 @@ const runIntegrationTests = async () => {
       const tokenStudent1 = await loginActor('hoanganh@hust.edu.vn', 'password123');
       const tokenStudent2 = await loginActor('namnv@hust.edu.vn', 'password123');
       const tokenStaff = await loginActor('huonglt@hust.edu.vn', 'password123');
-      console.log('✅ Tokens successfully retrieved for Student 1, Student 2, and Staff.');
+      const tokenSupervisor = await loginActor('haikt@hust.edu.vn', 'password123');
+      console.log('✅ Tokens successfully retrieved for Student 1, Student 2, Staff, and Supervisor.');
 
       // 3. Create Group
       console.log('\n--- Test 2: POST /api/v1/groups (Student 1 creates Group) ---');
@@ -330,6 +331,69 @@ const runIntegrationTests = async () => {
         throw new Error('❌ Test 9 Failed: Spawned project workspace is not in status assigned.');
       }
       console.log('✅ Test 9 Passed: Spawning verification complete. Topic is assigned, Group is locked, and Project Workspace is active!');
+
+      // 11. Lecturer Group Visibility
+      console.log('\n--- Test 10: GET /api/v1/groups?periodId=... (Supervisor sees guided groups and members) ---');
+      const lecturerGroupsRes = await fetch(`http://localhost:${TEST_PORT}/api/v1/groups?periodId=${period._id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokenSupervisor}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const lecturerGroupsResult = await lecturerGroupsRes.json();
+      console.log('HTTP Status:', lecturerGroupsRes.status);
+      if (!lecturerGroupsResult.success) {
+        throw new Error(`❌ Test 10 Failed: Supervisor could not load guided groups. Message: ${lecturerGroupsResult.message}`);
+      }
+      if (lecturerGroupsResult.data.length !== 1 || lecturerGroupsResult.data[0]._id !== groupId.toString()) {
+        throw new Error('❌ Test 10 Failed: Supervisor did not receive exactly the guided group for this period.');
+      }
+      const visibleMembers = lecturerGroupsResult.data[0].members || [];
+      const visibleMemberNames = visibleMembers.map((m) => m.studentId?.userId?.fullName).filter(Boolean);
+      if (!visibleMemberNames.includes(student1User.fullName) || !visibleMemberNames.includes(student2User.fullName)) {
+        throw new Error('❌ Test 10 Failed: Guided group response does not include populated member names.');
+      }
+      console.log('✅ Test 10 Passed: Supervisor can view guided group and populated members.');
+
+      console.log('\n--- Test 11: GET /api/v1/groups?periodId=... (Unassigned lecturer cannot see another lecturer group) ---');
+      const otherLecturerEmail = 'other-lecturer-groups@hust.edu.vn';
+      let otherLecturerUser = await User.findOne({ email: otherLecturerEmail });
+      if (!otherLecturerUser) {
+        otherLecturerUser = await User.create({
+          fullName: 'Giảng Viên Khác',
+          email: otherLecturerEmail,
+          passwordHash,
+          roles: ['LECTURER'],
+          status: 'active',
+        });
+      }
+      let otherLecturerProfile = await Lecturer.findOne({ userId: otherLecturerUser._id });
+      if (!otherLecturerProfile) {
+        otherLecturerProfile = await Lecturer.create({
+          userId: otherLecturerUser._id,
+          lecturerCode: 'GV-GROUP-OTHER',
+          facultyId: supervisorLecturer.facultyId,
+          departmentId: supervisorLecturer.departmentId,
+        });
+      }
+      const tokenOtherLecturer = await loginActor(otherLecturerEmail, 'password123');
+      const otherLecturerGroupsRes = await fetch(`http://localhost:${TEST_PORT}/api/v1/groups?periodId=${period._id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${tokenOtherLecturer}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const otherLecturerGroupsResult = await otherLecturerGroupsRes.json();
+      console.log('HTTP Status:', otherLecturerGroupsRes.status);
+      if (!otherLecturerGroupsResult.success) {
+        throw new Error(`❌ Test 11 Failed: Unassigned lecturer group query failed. Message: ${otherLecturerGroupsResult.message}`);
+      }
+      if ((otherLecturerGroupsResult.data || []).some((g) => g._id === groupId.toString())) {
+        throw new Error('❌ Test 11 Failed: Unassigned lecturer can see a group they do not supervise.');
+      }
+      console.log('✅ Test 11 Passed: Unassigned lecturer cannot view groups outside their guidance scope.');
 
       console.log('\n🎉 ALL PHASE 4 GROUP FORMATION & TOPIC REGISTRATION TESTS PASSED SUCCESSFULLY! 🎉');
     } catch (error) {

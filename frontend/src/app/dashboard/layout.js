@@ -92,7 +92,7 @@ const NAV_ITEMS = [
   { href: '/dashboard/periods',    label: 'Học phần',    icon: CalendarBlank,    roles: ['FACULTY_STAFF', 'SYSTEM_ADMIN'] },
   { href: '/dashboard/rubrics',    label: 'Tiêu chí đánh giá', icon: FileText,        roles: ['FACULTY_STAFF', 'SYSTEM_ADMIN'] },
   { href: '/dashboard/rosters',    label: 'Danh sách sinh viên', icon: Users,            roles: ['FACULTY_STAFF', 'SYSTEM_ADMIN'] },
-  { href: '/dashboard/groups',     label: 'Nhóm',          icon: Users,            roles: ['STUDENT', 'FACULTY_STAFF', 'SYSTEM_ADMIN'] },
+  { href: '/dashboard/groups',     label: 'Nhóm',          icon: Users,            roles: ['STUDENT', 'LECTURER', 'FACULTY_STAFF', 'SYSTEM_ADMIN'] },
   { href: '/dashboard/topics',     label: 'Đề tài',        icon: BookOpen,         roles: null },
   { href: '/dashboard/topic-changes', label: 'Đổi đề tài', icon: BookOpen,         roles: ['STUDENT', 'LECTURER', 'FACULTY_STAFF', 'SYSTEM_ADMIN'] },
   { href: '/dashboard/projects',   label: 'Dự án',         icon: FolderSimple,     roles: null },

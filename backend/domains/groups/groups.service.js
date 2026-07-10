@@ -440,8 +440,31 @@ const cancelLinkedWorkAndDeleteGroup = async (groupId, user) => {
   };
 };
 
-const getGroupsByPeriod = async (periodId) => {
-  return await ProjectGroup.find({ periodId, isDeleted: { $ne: true } })
+const getGroupsByPeriod = async (periodId, user = {}) => {
+  const query = { isDeleted: { $ne: true } };
+  if (periodId) {
+    query.periodId = periodId;
+  }
+
+  const isLecturerOnly = user.lecturerId && !user.roles?.some(role => ['FACULTY_STAFF', 'SYSTEM_ADMIN'].includes(role));
+  if (isLecturerOnly) {
+    const projectQuery = {
+      supervisorId: user.lecturerId,
+      groupId: { $exists: true, $ne: null },
+    };
+    if (periodId) {
+      projectQuery.periodId = periodId;
+    }
+
+    const supervisedProjects = await Project.find(projectQuery).select('groupId');
+    const supervisedGroupIds = supervisedProjects.map((project) => project.groupId).filter(Boolean);
+    if (supervisedGroupIds.length === 0) {
+      return [];
+    }
+    query._id = { $in: supervisedGroupIds };
+  }
+
+  return await ProjectGroup.find(query)
     .populate({
       path: 'leaderStudentId',
       populate: { path: 'userId', select: 'fullName email status' },

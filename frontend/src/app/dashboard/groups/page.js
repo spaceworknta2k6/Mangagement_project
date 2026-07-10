@@ -21,6 +21,20 @@ import css from './page.module.css';
 
 const PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
+const BASE_SCHOOL_YEAR_OPTIONS = Array.from({ length: 5 }, (_, index) => {
+  const startYear = new Date().getFullYear() - index;
+  return `${startYear}-${startYear + 1}`;
+});
+
+function getCurrentAcademicTerm() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  if (month >= 8) return { schoolYear: `${year}-${year + 1}`, semester: '1' };
+  if (month <= 1) return { schoolYear: `${year - 1}-${year}`, semester: '1' };
+  if (month <= 5) return { schoolYear: `${year - 1}-${year}`, semester: '2' };
+  return { schoolYear: `${year - 1}-${year}`, semester: '3' };
+}
 
 function getSafePositiveInt(value, fallback) {
   const parsed = Number(value);
@@ -55,6 +69,9 @@ export default function GroupsPage() {
   const [pageSize, setPageSize] = useState(initialQuery.limit);
   const [searchInput, setSearchInput] = useState(initialQuery.search);
   const [search, setSearch] = useState(initialQuery.search);
+  const currentAcademicTerm = useMemo(() => getCurrentAcademicTerm(), []);
+  const [selectedSchoolYear, setSelectedSchoolYear] = useState(currentAcademicTerm.schoolYear);
+  const [selectedSemester, setSelectedSemester] = useState(currentAcademicTerm.semester);
 
   const { periods, selectedPeriodId, fetchPeriods, setSelectedPeriodId } = usePeriodStore();
   const [groups, setGroups] = useState([]);
@@ -79,10 +96,38 @@ export default function GroupsPage() {
   const [inviting, setInviting] = useState(false);
 
   const isStaff = hasAnyRole(user, ['FACULTY_STAFF', 'SYSTEM_ADMIN']);
+  const isLecturer = hasAnyRole(user, ['LECTURER']);
+  const canViewGroupDirectory = isStaff || isLecturer;
+  const schoolYearOptions = useMemo(() => {
+    const years = new Set([currentAcademicTerm.schoolYear, ...BASE_SCHOOL_YEAR_OPTIONS]);
+    periods.forEach((period) => {
+      if (period.schoolYear) years.add(period.schoolYear);
+    });
+    return Array.from(years).sort((a, b) => b.localeCompare(a));
+  }, [currentAcademicTerm.schoolYear, periods]);
+
+  const filteredPeriods = useMemo(() => (
+    periods.filter((period) => (
+      period.schoolYear === selectedSchoolYear &&
+      String(period.semester) === selectedSemester
+    ))
+  ), [periods, selectedSchoolYear, selectedSemester]);
+
+  useEffect(() => {
+    if (!canViewGroupDirectory) return;
+    const selectedStillVisible = filteredPeriods.some((period) => period._id === selectedPeriodId);
+    if (selectedStillVisible) return;
+    setSelectedPeriodId(filteredPeriods[0]?._id || '');
+    setCurrentPage(1);
+  }, [canViewGroupDirectory, filteredPeriods, selectedPeriodId, setSelectedPeriodId]);
 
   // Load all groups (Staff only)
   const fetchAllGroups = useCallback(async (periodId) => {
-    if (!periodId) return;
+    if (!periodId) {
+      setGroups([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.get(`/groups?periodId=${periodId}`, token);
@@ -147,12 +192,12 @@ export default function GroupsPage() {
 
   useEffect(() => {
     if (!token || !user) return;
-    if (isStaff) {
+    if (canViewGroupDirectory) {
       fetchAllGroups(selectedPeriodId);
     } else {
       fetchStudentGroupData();
     }
-  }, [fetchAllGroups, fetchStudentGroupData, isStaff, selectedPeriodId, token, user]);
+  }, [canViewGroupDirectory, fetchAllGroups, fetchStudentGroupData, selectedPeriodId, token, user]);
 
   const handleCreateGroup = async (e) => {
     e.preventDefault();
@@ -234,7 +279,7 @@ export default function GroupsPage() {
   };
 
   const reloadGroups = () => {
-    if (isStaff) fetchAllGroups(selectedPeriodId);
+    if (canViewGroupDirectory) fetchAllGroups(selectedPeriodId);
     else fetchStudentGroupData();
   };
 
@@ -257,7 +302,7 @@ export default function GroupsPage() {
   }, [currentPage, totalPages]);
 
   useEffect(() => {
-    if (!isStaff) return;
+    if (!canViewGroupDirectory) return;
     const params = new URLSearchParams();
     params.set('page', String(currentPage));
     params.set('limit', String(pageSize));
@@ -266,7 +311,7 @@ export default function GroupsPage() {
     if (typeof window === 'undefined') return;
     const currentUrl = `${window.location.pathname}${window.location.search}`;
     if (currentUrl !== nextUrl) router.replace(nextUrl, { scroll: false });
-  }, [currentPage, isStaff, pageSize, pathname, router, search]);
+  }, [canViewGroupDirectory, currentPage, pageSize, pathname, router, search]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -374,7 +419,11 @@ export default function GroupsPage() {
           Quản lý Nhóm đồ án
         </h1>
         <p className={css.s4}>
-          {isStaff ? 'Xem chi tiết các nhóm thành lập trong từng học kỳ' : 'Thành lập nhóm và kết nối với các bạn sinh viên'}
+          {canViewGroupDirectory
+            ? isLecturer && !isStaff
+              ? 'Xem các nhóm đồ án bạn đang hướng dẫn trong từng học phần'
+              : 'Xem chi tiết các nhóm thành lập trong từng học kỳ'
+            : 'Thành lập nhóm và kết nối với các bạn sinh viên'}
         </p>
       </div>
 
@@ -382,9 +431,69 @@ export default function GroupsPage() {
         <div className={css.s5}>
           <Spinner size="lg" />
         </div>
-      ) : isStaff ? (
-        /* ─── Staff View ─── */
+      ) : canViewGroupDirectory ? (
+        /* ─── Staff/Lecturer View ─── */
         <div>
+          <div className={css.periodFilters}>
+            <div className={css.periodField}>
+              <label className={css.periodLabel} htmlFor="group-school-year">Năm học</label>
+              <select
+                id="group-school-year"
+                value={selectedSchoolYear}
+                onChange={(e) => {
+                  setSelectedSchoolYear(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className={css.periodSelect}
+              >
+                {schoolYearOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={css.periodField}>
+              <label className={css.periodLabel} htmlFor="group-semester">Học kỳ</label>
+              <select
+                id="group-semester"
+                value={selectedSemester}
+                onChange={(e) => {
+                  setSelectedSemester(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className={css.periodSelect}
+              >
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+              </select>
+            </div>
+            <div className={css.periodFieldWide}>
+              <label className={css.periodLabel} htmlFor="group-period">Đợt đồ án</label>
+              <select
+                id="group-period"
+                value={selectedPeriodId}
+                onChange={(e) => {
+                  setSelectedPeriodId(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className={css.periodSelect}
+                disabled={filteredPeriods.length === 0}
+              >
+                {filteredPeriods.length === 0 ? (
+                  <option value="">Chưa có đợt phù hợp</option>
+                ) : (
+                  filteredPeriods.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.name} ({p.courseCode || p.schoolYear})
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          </div>
+
           <FilterCard
             searchInput={searchInput}
             setSearchInput={setSearchInput}
@@ -392,33 +501,7 @@ export default function GroupsPage() {
             onReset={handleResetSearch}
             placeholder="Tìm theo tên nhóm, trưởng nhóm..."
             hasFilters={true}
-          >
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Chọn Đợt Đồ Án</label>
-              <select
-                value={selectedPeriodId}
-                onChange={(e) => {
-                  setSelectedPeriodId(e.target.value);
-                  setCurrentPage(1);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  backgroundColor: 'var(--bg-surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                }}
-              >
-                {periods.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {p.name} ({p.schoolYear})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </FilterCard>
+          />
 
           {periods.length === 0 ? (
             <Card>
@@ -426,6 +509,12 @@ export default function GroupsPage() {
                 Chưa có đợt đồ án nào được tạo trong hệ thống. Vui lòng tạo đợt đồ án trước khi quản lý nhóm đồ án.
               </div>
             </Card>
+          ) : filteredPeriods.length === 0 ? (
+            <EmptyState
+              title="Chưa có đợt đồ án phù hợp"
+              description="Không tìm thấy đợt đồ án trong năm học và học kỳ đã chọn."
+              icon={Users}
+            />
           ) : visibleGroups.length === 0 ? (
             <EmptyState
               title={search ? 'Không tìm thấy kết quả' : 'Chưa có nhóm nào'}
@@ -436,36 +525,57 @@ export default function GroupsPage() {
             <div className={css.s9}>
               {pagedGroups.map((g) => {
                 const statusInfo = getStatus(g.status);
+                const acceptedMembers = g.members?.filter((m) => m.status === 'accepted') || [];
                 return (
-                  <Card key={g._id} title={g.name} subtitle={`Trưởng nhóm: ${g.leaderStudentId?.userId?.fullName || 'Không rõ'}`}
-                    actions={
-                      <div className={css.s10}>
-                        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-                        <Button variant="secondary" size="sm" onClick={() => handleEditGroup(g)}>
-                          <PencilSimple size={14} /> Sửa
-                        </Button>
-                        <Button variant="danger" size="sm" onClick={() => setGroupToDelete(g)}>
-                          <Trash size={14} /> Xóa
-                        </Button>
+                  <Card key={g._id} noPadding className={css.groupCard}>
+                    <div className={css.groupHeader}>
+                      <div className={css.groupTitleBlock}>
+                        <div className={css.groupTitleRow}>
+                          <h3 className={css.groupTitle}>{g.name}</h3>
+                          <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                        </div>
+                        <div className={css.groupMeta}>
+                          <span>Trưởng nhóm: {g.leaderStudentId?.userId?.fullName || 'Không rõ'}</span>
+                          <span>{acceptedMembers.length}/{g.members?.length || 0} thành viên đã tham gia</span>
+                        </div>
                       </div>
-                    }
-                  >
-                    <div className={css.s11}>
-                      <p className={css.s12}>Thành viên nhóm:</p>
-                      <div className={css.s13}>
+                      {isStaff && (
+                        <div className={css.groupActions}>
+                          <Button variant="secondary" size="sm" onClick={() => handleEditGroup(g)}>
+                            <PencilSimple size={14} /> Sửa
+                          </Button>
+                          <Button variant="danger" size="sm" onClick={() => setGroupToDelete(g)}>
+                            <Trash size={14} /> Xóa
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={css.memberTable}>
+                      <div className={css.memberTableHead}>
+                        <span>Thành viên</span>
+                        <span>Vai trò</span>
+                        <span>Trạng thái</span>
+                      </div>
+                      <div className={css.memberRows}>
                         {g.members?.map((m) => (
                           <div
-                            key={m.studentId?._id || m.studentId} className={css.s14} >
-                            <div>
-                              <p className={css.s15}>
+                            key={m.studentId?._id || m.studentId}
+                            className={css.memberRow}
+                          >
+                            <div className={css.memberIdentity}>
+                              <span className={css.memberName}>
                                 {m.studentId?.userId?.fullName || 'Đang mời...'}
-                              </p>
-                              <p className={css.s16}>
+                              </span>
+                              <span className={css.memberEmail}>
                                 {m.studentId?.userId?.email || 'Chờ phản hồi'}
-                              </p>
+                              </span>
                             </div>
+                            <span className={css.memberRole}>
+                              {m.role === 'LEADER' ? 'Trưởng nhóm' : 'Thành viên'}
+                            </span>
                             <Badge variant={m.status === 'accepted' ? 'success' : 'warning'}>
-                              {m.status === 'accepted' ? 'Đã tham gia' : 'Chờ duyệt'}
+                              {m.status === 'accepted' ? 'Đã tham gia' : 'Chờ phản hồi'}
                             </Badge>
                           </div>
                         ))}
