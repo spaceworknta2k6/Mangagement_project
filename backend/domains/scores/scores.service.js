@@ -220,6 +220,10 @@ const getProjectsSummary = async (query = {}, user = {}) => {
     .populate({
       path: 'groupId',
       select: 'name members status',
+      populate: {
+        path: 'members.studentId',
+        populate: { path: 'userId', select: 'fullName email' }
+      }
     })
     .populate({
       path: 'studentId',
