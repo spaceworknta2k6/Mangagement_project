@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/Toast';
 import { formatDate, hasAnyRole } from '@/lib/utils';
 import { ClipboardText, ArrowsClockwise, CheckCircle, Calculator, MagnifyingGlass, FileText, Printer, LockKey, Siren } from '@phosphor-icons/react';
 import { exportToCSV } from '@/lib/export';
+import { getOwnerDisplay, getMemberDisplay } from '@/lib/projectOwner';
 import css from './page.module.css';
 
 const PAGE_SIZE = 10;
@@ -498,6 +499,7 @@ export default function ScoresPage() {
     const headers = [
       'Tên Đề Tài',
       'Nhóm / Sinh viên',
+      'Thành viên',
       'GV Hướng Dẫn',
       'Điểm GVHD',
       'GV Chấm 2',
@@ -511,7 +513,8 @@ export default function ScoresPage() {
       const reviewerSheet = p.sheets.find(s => s.rubricRole === 'REVIEWER' || s.rubricRole === 'SECOND_MARKER');
       return [
         p.topicId?.title || 'Chưa đăng ký đề tài',
-        p.groupId?.name || p.studentId?.userId?.fullName || 'Sinh viên',
+        getOwnerDisplay(p),
+        getMemberDisplay(p),
         p.supervisorId?.userId?.fullName || 'Chưa phân công',
         supervisorSheet ? supervisorSheet.roundedTotal : 'Chưa chấm',
         p.reviewerId?.userId?.fullName || 'Chưa phân công',
@@ -621,7 +624,14 @@ export default function ScoresPage() {
                         return (
                           <tr key={p._id} style={{ borderBottom: '1px solid var(--border)', transition: 'background-color 0.2s' }}>
                             <td style={{ padding: '12px 16px', fontWeight: '500', color: 'var(--text-primary)' }}>{p.topicId?.title || 'Chưa đăng ký đề tài'}</td>
-                            <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{p.groupId?.name || p.studentId?.userId?.fullName || 'Sinh viên'}</td>
+                            <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
+                              <div style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                                {getOwnerDisplay(p)}
+                              </div>
+                              <div style={{ fontSize: '0.85rem' }}>
+                                {getMemberDisplay(p)}
+                              </div>
+                            </td>
                             <td style={{ padding: '12px 16px' }}>
                               {supervisorSheet ? (
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1043,8 +1053,9 @@ export default function ScoresPage() {
 
           <div className={css.printSignatures}>
             <div>
-              <strong>Sinh viên thực hiện</strong>
-              <div style={{ marginTop: '60px', fontWeight: 'bold' }}>{printPrimaryStudent.fullName || printSubject.displayName}</div>
+              <strong>Thành viên thực hiện ({getOwnerDisplay(selectedProject)})</strong>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{getMemberDisplay(selectedProject) || 'Chưa có thông tin'}</p>
+              <div style={{ marginTop: '50px', fontWeight: 'bold' }}>Đại diện nhóm ký</div>
             </div>
             <div>
               <strong>Giảng viên chấm điểm</strong>

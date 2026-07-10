@@ -30,6 +30,10 @@ const getProjects = async (query = {}, user = {}) => {
     .populate({
       path: 'groupId',
       select: 'name members status',
+      populate: {
+        path: 'members.studentId',
+        populate: { path: 'userId', select: 'fullName email' }
+      }
     })
     .populate({
       path: 'studentId',
@@ -68,6 +72,10 @@ const getProjectById = async (id, user = {}) => {
     .populate({
       path: 'groupId',
       select: 'name members status',
+      populate: {
+        path: 'members.studentId',
+        populate: { path: 'userId', select: 'fullName email' }
+      }
     })
     .populate({
       path: 'studentId',

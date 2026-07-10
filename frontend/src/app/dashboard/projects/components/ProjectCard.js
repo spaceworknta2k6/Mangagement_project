@@ -4,7 +4,7 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { UserCheck, CheckSquare, ChatsCircle } from '@phosphor-icons/react';
-import { getOwnerDisplay, getOwnerTypeLabel } from '@/lib/projectOwner';
+import { getOwnerDisplay, getOwnerTypeLabel, getMemberDisplay } from '@/lib/projectOwner';
 import { getTechnicalLabel } from '@/lib/utils';
 import css from '../page.module.css';
 
@@ -121,6 +121,8 @@ export default function ProjectCard({
           </div>
         </div>
         <div className={css.s15}>
+          <p className={css.s16}>Thành viên thực hiện:</p>
+          <p className={css.s17} style={{ marginBottom: '12px' }}>{getMemberDisplay(p) || 'Chưa có thông tin.'}</p>
           <p className={css.s16}>Tóm tắt đề tài:</p>
           <p className={css.s17}>{p.topicId?.summary || 'Không có tóm tắt chi tiết.'}</p>
         </div>
