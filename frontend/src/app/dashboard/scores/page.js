@@ -75,7 +75,14 @@ export default function ScoresPage() {
   const [searchInput, setSearchInput] = useState(initialQuery.search);
   const [search, setSearch] = useState(initialQuery.search);
 
-  const { periods, selectedPeriodId, setSelectedPeriodId, fetchPeriods } = usePeriodStore();
+  const {
+    periods,
+    selectedPeriodId,
+    setSelectedPeriodId,
+    fetchPeriods,
+    isLoading: periodsLoading,
+    hasFetched: periodsFetched,
+  } = usePeriodStore();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -119,7 +126,11 @@ export default function ScoresPage() {
   const isStudentUser = useMemo(() => (user?.roles || []).includes('STUDENT'), [user]);
 
   const fetchData = useCallback(async () => {
-    if (!selectedPeriodId) return;
+    if (!selectedPeriodId) {
+      setProjects([]);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const res = await api.get(`/scores/projects-summary?periodId=${selectedPeriodId}`, token).catch(() => ({data:[]}));
@@ -154,6 +165,13 @@ export default function ScoresPage() {
       }
     }
   }, [fetchData, token, selectedPeriodId, isStudentUser]);
+
+  useEffect(() => {
+    if (!token || selectedPeriodId || periodsLoading || !periodsFetched) return;
+    setProjects([]);
+    setSelectedPeriodData(null);
+    setLoading(false);
+  }, [token, selectedPeriodId, periodsLoading, periodsFetched]);
 
   const loadFormForRole = useCallback((role, rubric, sheetsList) => {
     const existingSheet = sheetsList.find(s => s.rubricRole === role);
@@ -513,7 +531,7 @@ export default function ScoresPage() {
   return (
     <div>
       <div className={css.screenArea}>
-        {loading && periods.length === 0 ? (
+        {(periodsLoading || (loading && !periodsFetched)) && periods.length === 0 ? (
           <div className={css.s1}><Spinner size="lg" /></div>
         ) : (
           <>
@@ -575,7 +593,7 @@ export default function ScoresPage() {
             </div>
           </div>
 
-          {loading ? (
+          {loading && selectedPeriodId ? (
             <div className={css.s1}><Spinner size="lg" /></div>
           ) : (
             <div className="no-print">
