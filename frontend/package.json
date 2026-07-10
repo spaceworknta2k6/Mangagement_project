@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "docx": "^9.7.1",
     "js-cookie": "^3.0.8",
     "motion": "^12.40.0",
     "next": "16.2.6",

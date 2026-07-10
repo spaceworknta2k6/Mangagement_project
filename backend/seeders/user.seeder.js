@@ -34,7 +34,7 @@ const seedData = async () => {
     // 1. Seed Student: Hoàng Anh
     const studentUser = await User.create({
       fullName: 'Hoàng Anh',
-      email: 'hoanganh@hust.edu.vn',
+      email: 'hoanganh@st.phenikaa-uni.edu.vn',
       passwordHash,
       roles: ['STUDENT'],
       status: 'active',
@@ -51,12 +51,12 @@ const seedData = async () => {
       interests: ['Microservices', 'AI Chatbots', 'Cloud Architectures'],
       technologies: ['Docker', 'MongoDB', 'Next.js'],
     });
-    console.log('🎓 Seeded Student: Hoàng Anh (hoanganh@hust.edu.vn / 22021435)');
+    console.log('🎓 Seeded Student: Hoàng Anh (hoanganh@st.phenikaa-uni.edu.vn / 22021435)');
 
     // 2. Seed Lecturer/Supervisor: Kiều Tuấn Hải
     const supervisorUser = await User.create({
       fullName: 'Kiều Tuấn Hải',
-      email: 'haikt@hust.edu.vn',
+      email: 'haikt@st.phenikaa-uni.edu.vn',
       passwordHash,
       roles: ['LECTURER'],
       status: 'active',
@@ -73,12 +73,12 @@ const seedData = async () => {
       isExternal: false,
       organization: 'HUST',
     });
-    console.log('👨‍🏫 Seeded Supervisor: Kiều Tuấn Hải (haikt@hust.edu.vn / GV001)');
+    console.log('👨‍🏫 Seeded Supervisor: Kiều Tuấn Hải (haikt@st.phenikaa-uni.edu.vn / GV001)');
 
     // 3. Seed Lecturer/Reviewer: Nguyễn Thị Hồng
     const reviewerUser = await User.create({
       fullName: 'Nguyễn Thị Hồng',
-      email: 'hongnt@hust.edu.vn',
+      email: 'hongnt@st.phenikaa-uni.edu.vn',
       passwordHash,
       roles: ['LECTURER'],
       status: 'active',
@@ -95,12 +95,12 @@ const seedData = async () => {
       isExternal: false,
       organization: 'HUST',
     });
-    console.log('🔬 Seeded Reviewer: Nguyễn Thị Hồng (hongnt@hust.edu.vn / GV003)');
+    console.log('🔬 Seeded Reviewer: Nguyễn Thị Hồng (hongnt@st.phenikaa-uni.edu.vn / GV003)');
 
     // 4. Seed Faculty Staff: Lê Thị Hương
     const staffUser = await User.create({
       fullName: 'Lê Thị Hương',
-      email: 'huonglt@hust.edu.vn',
+      email: 'huonglt@st.phenikaa-uni.edu.vn',
       passwordHash,
       roles: ['FACULTY_STAFF'],
       status: 'active',
@@ -117,7 +117,7 @@ const seedData = async () => {
       isExternal: false,
       organization: 'Khoa CNTT - HUST',
     });
-    console.log('🏢 Seeded Faculty Staff: Lê Thị Hương (huonglt@hust.edu.vn / GV002)');
+    console.log('🏢 Seeded Faculty Staff: Lê Thị Hương (huonglt@st.phenikaa-uni.edu.vn / GV002)');
 
     // 5. Seed System Admin: Quản trị viên Karl
     await User.create({

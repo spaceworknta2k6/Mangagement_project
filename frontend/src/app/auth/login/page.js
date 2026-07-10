@@ -19,6 +19,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Apply saved theme on login page too
@@ -48,10 +50,20 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setError('Tên tài khoản hoặc mật khẩu không hợp lệ!');
-      return;
+    setEmailError('');
+    setPasswordError('');
+    let hasError = false;
+
+    if (!email.trim()) {
+      setEmailError('Vui lòng nhập tài khoản hoặc email!');
+      hasError = true;
     }
+    if (!password.trim()) {
+      setPasswordError('Vui lòng nhập mật khẩu!');
+      hasError = true;
+    }
+    if (hasError) return;
+
     doLogin(email, password);
   };
 
@@ -114,41 +126,53 @@ export default function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
             {/* Email field */}
-            <div className={styles.field}>
-              <span className={styles.fieldIcon}>
-                <User size={18} />
-              </span>
-              <input
-                type="text"
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Nhập tài khoản hoặc email"
-                autoFocus
-                className={styles.input}
-              />
+            <div className={styles.fieldWrapper}>
+              <div className={styles.field}>
+                <span className={styles.fieldIcon}>
+                  <User size={18} />
+                </span>
+                <input
+                  type="text"
+                  name="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (e.target.value) setEmailError('');
+                  }}
+                  placeholder="Nhập tài khoản hoặc email"
+                  autoFocus
+                  className={`${styles.input} ${emailError ? styles.inputError : ''}`}
+                />
+              </div>
+              {emailError && <div className={styles.fieldErrorMsg}>{emailError}</div>}
             </div>
 
             {/* Password field */}
-            <div className={styles.field}>
-              <span className={styles.fieldIcon}>
-                <Lock size={18} />
-              </span>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Nhập mật khẩu"
-                className={`${styles.input} ${styles.passwordInput}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className={styles.passwordButton}
-              >
-                {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
-              </button>
+            <div className={styles.fieldWrapper}>
+              <div className={styles.field}>
+                <span className={styles.fieldIcon}>
+                  <Lock size={18} />
+                </span>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (e.target.value) setPasswordError('');
+                  }}
+                  placeholder="Nhập mật khẩu"
+                  className={`${styles.input} ${styles.passwordInput} ${passwordError ? styles.inputError : ''}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className={styles.passwordButton}
+                >
+                  {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {passwordError && <div className={styles.fieldErrorMsg}>{passwordError}</div>}
             </div>
 
             {/* Links Row */}

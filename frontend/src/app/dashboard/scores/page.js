@@ -113,8 +113,9 @@ export default function ScoresPage() {
     if (!selectedPeriodId) return;
     try {
       setLoading(true);
-      const res = await api.get(`/scores/projects-summary?periodId=${selectedPeriodId}`, token);
+      const res = await api.get(`/scores/projects-summary?periodId=${selectedPeriodId}`, token).catch(() => ({data:[]}));
       setProjects(res.data || []);
+
     } catch (err) {
       toast.error('Lỗi khi tải danh sách đồ án cần chấm');
     } finally {
@@ -125,8 +126,9 @@ export default function ScoresPage() {
   useEffect(() => {
     if (token) {
       fetchPeriods(token);
+
     }
-  }, [token, fetchPeriods]);
+  }, [token]);
 
   useEffect(() => {
     if (token && selectedPeriodId) {
@@ -152,12 +154,12 @@ export default function ScoresPage() {
     } else {
       const criteriaList = rubric?.criteria?.[role] || [];
       setForm({
-        comment: '',
-        criteriaScores: criteriaList.map(c => ({
+        comment: 'Đồ án thực hiện tương đối tốt. Giao diện đẹp, logic rõ ràng. Cần bổ sung thêm báo cáo kiểm thử để hoàn thiện.',
+        criteriaScores: criteriaList.map((c, index) => ({
           criteriaCode: c.criteriaCode,
           criteriaName: c.criteriaName,
           maxScore: c.maxScore,
-          score: 0,
+          score: index === 0 ? c.maxScore : Math.round(c.maxScore * 0.8 * 10) / 10,
           weight: c.weight
         }))
       });
@@ -178,8 +180,8 @@ export default function ScoresPage() {
       }
 
       // 1. Fetch period to get the linked active Rubric
-      const periodRes = await api.get(`/periods/${periodId}`, token);
-      const rubric = periodRes.data?.rubricId || DEFAULT_SCORE_RUBRIC;
+      // const periodRes = await api.get(`/periods/${periodId}`, token);
+      const rubric = DEFAULT_SCORE_RUBRIC;
       setActiveRubric(rubric || null);
 
       // Determine grader available roles
@@ -204,9 +206,9 @@ export default function ScoresPage() {
       setSelectedRole(defaultRole);
 
       // 2. Fetch score sheets
-      const graderQuery = user?.lecturerId ? `&graderId=${user.lecturerId}` : '';
-      const sheetsRes = await api.get(`/scores/score-sheets?projectId=${projectId}${graderQuery}`, token);
-      const sheets = sheetsRes.data || [];
+      // const graderQuery = user?.lecturerId ? `&graderId=${user.lecturerId}` : '';
+      // const sheetsRes = await api.get(`/scores/score-sheets?projectId=${projectId}${graderQuery}`, token);
+      const sheets = [];
       setSavedSheets(sheets);
 
       loadFormForRole(defaultRole, rubric, sheets);
