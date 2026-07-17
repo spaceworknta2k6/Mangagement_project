@@ -10,8 +10,10 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "seed:demo": "node seeders/seed_demo_data.js",
+    "reset:manual-check": "node scripts/reset_manual_check_data.js",
     "test": "node tests/run-all.js",
     "test:integration": "node tests/run-all.js",
+    "test:manual-flow": "node tests/manual-flow/run.js",
     "test:env": "node tests/check-test-env.js"
   },
   "dependencies": {

@@ -47,7 +47,7 @@ const runTests = async () => {
             { criteriaCode: 'C1', criteriaName: 'Chuyên cần', maxScore: 5, weight: 0.5 },
             { criteriaCode: 'C2', criteriaName: 'Báo cáo', maxScore: 5, weight: 1.5 },
           ],
-          REVIEWER: [
+          SECOND_MARKER: [
             { criteriaCode: 'C1', criteriaName: 'Phản biện', maxScore: 10, weight: 1.0 }
           ]
         },
@@ -78,7 +78,7 @@ const runTests = async () => {
         maxGroupSize: 3,
         rubricVersion: '1.0',
         rubricId: rubric._id,
-        scoringFormula: { supervisor: 0.5, reviewer: 0.5 },
+        scoringFormula: { supervisor: 0.5, secondMarker: 0.5 },
         status: 'in_progress',
       });
       console.log(`✅ ProjectPeriod created with Rubric link. Rubric ID = ${period.rubricId}`);

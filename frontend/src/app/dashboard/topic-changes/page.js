@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useAuthStore from '@/store/auth.store';
+import usePeriodStore from '@/store/period.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -12,6 +13,7 @@ import Tabs from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { formatDateTime, hasAnyRole } from '@/lib/utils';
 import { getOwnerDisplay, getOwnerTypeLabel, isStudentProjectOwner } from '@/lib/projectOwner';
+import { filterRecordsByTerm, getCurrentAcademicTerm, getRecordPeriod, isPeriodInTerm } from '@/lib/academicTerm';
 import { ArrowsClockwise, Check, FileText, Plus, X } from '@phosphor-icons/react';
 import css from '../extensions/page.module.css';
 
@@ -90,6 +92,7 @@ export default function TopicChangesPage() {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
+  const { periods, selectedPeriodId, setSelectedPeriodId, fetchPeriods } = usePeriodStore();
 
   const [projects, setProjects] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -104,32 +107,63 @@ export default function TopicChangesPage() {
   const isStudent = hasAnyRole(user, ['STUDENT']);
   const isLecturer = hasAnyRole(user, ['LECTURER']);
   const isFaculty = hasAnyRole(user, ['FACULTY_STAFF', 'SYSTEM_ADMIN']);
+  const currentAcademicTerm = useMemo(() => getCurrentAcademicTerm({ user, periods }), [periods, user]);
+  const currentTermPeriods = useMemo(
+    () => periods.filter((period) => isPeriodInTerm(period, currentAcademicTerm.schoolYear, currentAcademicTerm.semester)),
+    [currentAcademicTerm.schoolYear, currentAcademicTerm.semester, periods]
+  );
+
+  const termProjects = useMemo(() => {
+    const currentTermProjects = filterRecordsByTerm(projects, periods, currentAcademicTerm.schoolYear, currentAcademicTerm.semester);
+    if (!selectedPeriodId) return [];
+    return currentTermProjects.filter((project) => String(project.periodId?._id || project.periodId) === String(selectedPeriodId));
+  }, [currentAcademicTerm.schoolYear, currentAcademicTerm.semester, periods, projects, selectedPeriodId]);
+
+  const termTopicIds = useMemo(() => {
+    return new Set(
+      termProjects
+        .map((project) => String(project.topicId?._id || project.topicId || ''))
+        .filter(Boolean)
+    );
+  }, [termProjects]);
+
+  const isRequestInSelectedPeriod = useCallback((request) => {
+    if (!selectedPeriodId) return false;
+    const topicId = String(request?.topicId?._id || request?.topicId || '');
+    if (termTopicIds.has(topicId)) return true;
+
+    const period = getRecordPeriod(request?.topicId || request, periods);
+    return period && String(period._id) === String(selectedPeriodId);
+  }, [periods, selectedPeriodId, termTopicIds]);
 
   const visibleProjects = useMemo(() => {
     if (isStudent) {
-      return projects.filter((project) => isStudentProjectOwner(project, user?.studentId));
+      return termProjects.filter((project) => isStudentProjectOwner(project, user?.studentId));
     }
-    return projects;
-  }, [isStudent, projects, user?.studentId]);
+    return termProjects;
+  }, [isStudent, termProjects, user?.studentId]);
 
-  const topicOptions = visibleProjects
-    .filter((project) => project.topicId && !['cancelled', 'finalized'].includes(project.status))
-    .map((project) => ({
-      projectId: project._id,
-      topicId: project.topicId._id || project.topicId,
-      title: project.topicId.title || project.topicId._id || project.topicId,
-      scope: project.topicId.scope || '',
-      plan: project.topicId.plan || '',
-    }));
+  const topicOptions = useMemo(
+    () => visibleProjects
+      .filter((project) => project.topicId && !['cancelled', 'finalized'].includes(project.status))
+      .map((project) => ({
+        projectId: project._id,
+        topicId: project.topicId._id || project.topicId,
+        title: project.topicId.title || project.topicId._id || project.topicId,
+        scope: project.topicId.scope || '',
+        plan: project.topicId.plan || '',
+      })),
+    [visibleProjects]
+  );
 
   const activeRequests = useMemo(
-    () => requests.filter((request) => request.status === 'pending'),
-    [requests]
+    () => requests.filter((request) => request.status === 'pending' && isRequestInSelectedPeriod(request)),
+    [isRequestInSelectedPeriod, requests]
   );
 
   const historyRequests = useMemo(
-    () => requests.filter((request) => historyStatuses.includes(request.status)),
-    [requests]
+    () => requests.filter((request) => historyStatuses.includes(request.status) && isRequestInSelectedPeriod(request)),
+    [isRequestInSelectedPeriod, requests]
   );
 
   const displayedRequests = requestView === 'history' ? historyRequests : activeRequests;
@@ -138,28 +172,36 @@ export default function TopicChangesPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const [projectsRes, requestsRes] = await Promise.all([
+      const [, projectsRes, requestsRes] = await Promise.all([
+        fetchPeriods(token, false, user),
         api.get('/projects', token),
         api.get('/topic-change-requests', token),
       ]);
       setProjects(projectsRes.data || []);
       setRequests(requestsRes.data || []);
-
-      const firstTopic = (projectsRes.data || []).find((project) => project.topicId && !['cancelled', 'finalized'].includes(project.status));
-      setForm((prev) => ({
-        ...prev,
-        topicId: prev.topicId || firstTopic?.topicId?._id || firstTopic?.topicId || '',
-      }));
     } catch (err) {
       toast.error(err.message || 'Không thể tải dữ liệu đổi đề tài.');
     } finally {
       setLoading(false);
     }
-  }, [token, toast]);
+  }, [fetchPeriods, token, toast, user]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    const hasSelectedTopic = topicOptions.some((topic) => String(topic.topicId) === String(form.topicId));
+    if (hasSelectedTopic) return;
+    const nextTopicId = topicOptions[0]?.topicId || '';
+    setForm((prev) => {
+      if (String(prev.topicId) === String(nextTopicId)) return prev;
+      return {
+        ...prev,
+        topicId: nextTopicId,
+      };
+    });
+  }, [form.topicId, topicOptions]);
 
   const validateCreateForm = () => {
     if (!form.topicId) return 'Vui lòng chọn đề tài cần đổi.';
@@ -275,11 +317,34 @@ export default function TopicChangesPage() {
         <Button variant="outline" onClick={loadData} icon={<ArrowsClockwise />} title="Làm mới" />
       </div>
 
+      <div style={{ marginBottom: '16px' }}>
+        <Card>
+          <SelectField
+            id="topic-change-period"
+            label="Học phần trong kỳ hiện tại"
+            value={selectedPeriodId}
+            onChange={(event) => {
+              setSelectedPeriodId(event.target.value);
+              setForm((prev) => ({ ...prev, topicId: '' }));
+            }}
+          >
+            <option value="">Chọn học phần</option>
+            {currentTermPeriods.map((period) => (
+              <option key={period._id} value={period._id}>
+                {period.name} ({period.courseCode || `Kỳ ${period.semester}`})
+              </option>
+            ))}
+          </SelectField>
+        </Card>
+      </div>
+
       <div className={[css.extensionGrid, isStudent ? css.extensionGridStudent : ''].filter(Boolean).join(' ')}>
         {isStudent && (
           <Card title="Gửi đơn đổi đề tài" subtitle="Áp dụng cho đề tài/dự án cá nhân hoặc nhóm đang hoạt động">
-            {topicOptions.length === 0 ? (
-              <div className={css.s8}>Bạn chưa có đề tài đang hoạt động để gửi đơn đổi.</div>
+            {!selectedPeriodId ? (
+              <div className={css.s8}>Vui lòng chọn học phần để xem đề tài có thể đổi.</div>
+            ) : topicOptions.length === 0 ? (
+              <div className={css.s8}>Bạn chưa có đề tài đang hoạt động trong học phần này để gửi đơn đổi.</div>
             ) : (
               <form onSubmit={handleCreateRequest} className={css.s9}>
                 <SelectField id="topic-change-topic" label="Đề tài hiện tại" value={form.topicId} onChange={(e) => setForm((prev) => ({ ...prev, topicId: e.target.value }))}>
@@ -344,7 +409,7 @@ export default function TopicChangesPage() {
           {displayedRequests.length === 0 ? (
             <div className={css.s10}>
               <FileText size={36} weight="duotone" className={css.s11} />
-              <p>{requestView === 'history' ? 'Chưa có đơn nào trong lịch sử.' : 'Không có đơn đang chờ xử lý.'}</p>
+              <p>{!selectedPeriodId ? 'Vui lòng chọn học phần để xem danh sách đơn.' : requestView === 'history' ? 'Chưa có đơn nào trong lịch sử.' : 'Không có đơn đang chờ xử lý.'}</p>
             </div>
           ) : (
             <div className={css.s12}>

@@ -1,28 +1,11 @@
-'use client';
+﻿'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import useAuthStore from '@/store/auth.store';
 import api from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
 import { ACADEMIC_UNITS } from '@/lib/academicUnits';
-
-function getCurrentAcademicTerm() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-
-  if (month >= 8) {
-    return { schoolYear: `${year}-${year + 1}`, semester: '1' };
-  }
-
-  if (month >= 6) {
-    return { schoolYear: `${year - 1}-${year}`, semester: '3' };
-  }
-
-  return { schoolYear: `${year - 1}-${year}`, semester: '2' };
-}
-
-const CURRENT_ACADEMIC_TERM = getCurrentAcademicTerm();
+import { CURRENT_ACADEMIC_TERM, getCurrentAcademicTerm } from '@/lib/academicTerm';
 
 const DEFAULT_FORM_STATE = {
   name: 'Đồ án cơ sở ngành',
@@ -31,6 +14,8 @@ const DEFAULT_FORM_STATE = {
   type: 'foundation_project',
   courseCode: 'IT3000',
   courseName: 'Đồ án cơ sở ngành',
+  cohort: '',
+  classCount: '1',
   projectType: 'foundation',
   academicUnit: ACADEMIC_UNITS[0].value,
   coordinatorLecturerId: '',
@@ -57,103 +42,9 @@ const DEFAULT_FORM_STATE = {
   archiveDeadline: '',
 };
 
-const DEMO_PERIODS = [
-  {
-    _id: 'demo-period-software-design-2025-2',
-    isDemo: true,
-    name: 'Thiết kế phần mềm',
-    schoolYear: '2025-2026',
-    semester: '2',
-    status: 'registration_open',
-    type: 'foundation_project',
-    courseCode: 'IT3180',
-    courseName: 'Thiết kế phần mềm',
-    projectType: 'foundation',
-    academicUnit: ACADEMIC_UNITS[0].value,
-    allowIndividual: true,
-    allowGroup: true,
-    groupMinSize: 2,
-    groupMaxSize: 5,
-    scoringFormula: { supervisor: 0.5, reviewer: 0.5 },
-    registrationStart: '2026-01-10T01:00:00.000Z',
-    registrationEnd: '2026-01-20T11:00:00.000Z',
-    topicChangeDeadline: '2026-01-25T11:00:00.000Z',
-    projectStart: '2026-02-01T01:00:00.000Z',
-    projectEnd: '2026-05-20T11:00:00.000Z',
-  },
-  {
-    _id: 'demo-period-advanced-web-2024-1',
-    isDemo: true,
-    name: 'Thiết kế web nâng cao',
-    schoolYear: '2024-2025',
-    semester: '1',
-    status: 'archived',
-    type: 'foundation_project',
-    courseCode: 'IT4409',
-    courseName: 'Thiết kế web nâng cao',
-    projectType: 'foundation',
-    academicUnit: ACADEMIC_UNITS[0].value,
-    allowIndividual: false,
-    allowGroup: true,
-    groupMinSize: 3,
-    groupMaxSize: 5,
-    scoringFormula: { supervisor: 0.4, reviewer: 0.6 },
-    registrationStart: '2024-08-15T01:00:00.000Z',
-    registrationEnd: '2024-08-25T11:00:00.000Z',
-    topicChangeDeadline: '2024-09-01T11:00:00.000Z',
-    projectStart: '2024-09-05T01:00:00.000Z',
-    projectEnd: '2024-12-20T11:00:00.000Z',
-  },
-  {
-    _id: 'demo-period-mobile-apps-2023-2',
-    isDemo: true,
-    name: 'Phát triển ứng dụng di động',
-    schoolYear: '2023-2024',
-    semester: '2',
-    status: 'archived',
-    type: 'foundation_project',
-    courseCode: 'IT4788',
-    courseName: 'Phát triển ứng dụng di động',
-    projectType: 'foundation',
-    academicUnit: ACADEMIC_UNITS[0].value,
-    allowIndividual: true,
-    allowGroup: true,
-    groupMinSize: 2,
-    groupMaxSize: 4,
-    scoringFormula: { supervisor: 0.5, reviewer: 0.5 },
-    registrationStart: '2024-01-10T01:00:00.000Z',
-    registrationEnd: '2024-01-20T11:00:00.000Z',
-    topicChangeDeadline: '2024-01-28T11:00:00.000Z',
-    projectStart: '2024-02-05T01:00:00.000Z',
-    projectEnd: '2024-05-25T11:00:00.000Z',
-  },
-  {
-    _id: 'demo-period-database-project-2022-3',
-    isDemo: true,
-    name: 'Cơ sở dữ liệu nâng cao',
-    schoolYear: '2022-2023',
-    semester: '3',
-    status: 'archived',
-    type: 'foundation_project',
-    courseCode: 'IT3290',
-    courseName: 'Cơ sở dữ liệu nâng cao',
-    projectType: 'foundation',
-    academicUnit: ACADEMIC_UNITS[0].value,
-    allowIndividual: false,
-    allowGroup: true,
-    groupMinSize: 2,
-    groupMaxSize: 5,
-    scoringFormula: { supervisor: 0.5, reviewer: 0.5 },
-    registrationStart: '2023-06-05T01:00:00.000Z',
-    registrationEnd: '2023-06-12T11:00:00.000Z',
-    topicChangeDeadline: '2023-06-18T11:00:00.000Z',
-    projectStart: '2023-06-20T01:00:00.000Z',
-    projectEnd: '2023-07-30T11:00:00.000Z',
-  },
-];
-
 export function usePeriods() {
   const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
   const toast = useToast();
   const [periods, setPeriods] = useState([]);
   const [rubrics, setRubrics] = useState([]);
@@ -166,6 +57,10 @@ export function usePeriods() {
   const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState(DEFAULT_FORM_STATE);
   const [formErrors, setFormErrors] = useState({});
+  const currentAcademicTerm = useMemo(
+    () => getCurrentAcademicTerm({ user, periods }),
+    [periods, user]
+  );
 
   const toDateTimeLocal = (value) => {
     if (!value) return '';
@@ -178,8 +73,9 @@ export function usePeriods() {
     setEditingPeriod(null);
     setForm({
       ...DEFAULT_FORM_STATE,
-      schoolYear: CURRENT_ACADEMIC_TERM.schoolYear,
-      semester: CURRENT_ACADEMIC_TERM.semester,
+      schoolYear: currentAcademicTerm.schoolYear,
+      semester: currentAcademicTerm.semester,
+      cohort: currentAcademicTerm.cohort || DEFAULT_FORM_STATE.cohort,
     });
     setFormErrors({});
     setShowModal(true);
@@ -194,6 +90,8 @@ export function usePeriods() {
       type: period.type || 'foundation_project',
       courseCode: period.courseCode || '',
       courseName: period.courseName || '',
+      cohort: period.cohort || period.batchId?.cohort || '',
+      classCount: String(period.batchId?.classCount || 1),
       projectType: period.projectType || 'foundation',
       academicUnit: period.academicUnit || ACADEMIC_UNITS[0].value,
       coordinatorLecturerId: period.coordinatorLecturerId?._id || period.coordinatorLecturerId || '',
@@ -206,7 +104,7 @@ export function usePeriods() {
       rubricId: period.rubricId?._id || period.rubricId || '',
       rubricVersion: period.rubricVersion || '',
       supervisorWeight: String(period.scoringFormula?.supervisor ?? 0.5),
-      reviewerWeight: String(period.scoringFormula?.reviewer ?? 0.5),
+      reviewerWeight: String(period.scoringFormula?.secondMarker ?? period.scoringFormula?.reviewer ?? 0.5),
       registrationStart: toDateTimeLocal(period.registrationStart),
       registrationEnd: toDateTimeLocal(period.registrationEnd),
       topicChangeDeadline: toDateTimeLocal(period.topicChangeDeadline),
@@ -226,13 +124,13 @@ export function usePeriods() {
     setLoading(true);
     try {
       const res = await api.get('/periods', token);
-      setPeriods([...(res.data || []), ...DEMO_PERIODS]);
+      setPeriods(res.data || []);
       const rubricsRes = await api.get('/rubrics', token);
       setRubrics(rubricsRes.data || []);
       const lecturersRes = await api.get('/auth/lecturers', token);
       setLecturers(lecturersRes.data || []);
     } catch (err) {
-      setPeriods(DEMO_PERIODS);
+      setPeriods([]);
       toast.error(err.message || 'Không thể tải danh sách học phần');
     } finally {
       setLoading(false);
@@ -263,6 +161,8 @@ export function usePeriods() {
       { name: 'semester', label: 'Học kỳ' },
       { name: 'courseCode', label: 'Mã học phần' },
       { name: 'courseName', label: 'Tên học phần' },
+      { name: 'cohort', label: 'Khóa sinh viên' },
+      { name: 'classCount', label: 'Số lớp học phần' },
       { name: 'academicUnit', label: 'Khoa/đơn vị chuyên môn phụ trách' },
       { name: 'rubricId', label: 'Tiêu chí chấm' },
       { name: 'supervisorWeight', label: 'Trọng số GVHD' },
@@ -299,6 +199,14 @@ export function usePeriods() {
       }
     }
 
+    if (form.cohort && !/^K\d{1,3}$/i.test(String(form.cohort).trim())) {
+      errors.cohort = 'Khóa sinh viên phải có dạng K17, K18...';
+    }
+    const classCount = parseInt(form.classCount || 1, 10);
+    if (isNaN(classCount) || classCount < 1 || classCount > 50) {
+      errors.classCount = 'Số lớp học phần phải từ 1 đến 50.';
+    }
+
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
@@ -321,6 +229,7 @@ export function usePeriods() {
       type: form.type,
       courseCode: form.courseCode,
       courseName: form.courseName,
+      cohort: form.cohort.trim().toUpperCase(),
       projectType: form.projectType || (form.type === 'interdisciplinary_project' ? 'interdisciplinary' : 'foundation'),
       academicUnit: form.academicUnit,
       coordinatorLecturerId: form.coordinatorLecturerId || undefined,
@@ -334,7 +243,7 @@ export function usePeriods() {
       rubricVersion: form.rubricVersion || '1.0',
       scoringFormula: {
         supervisor: sup,
-        reviewer: rev,
+        secondMarker: rev,
       },
       registrationStart: new Date(form.registrationStart).toISOString(),
       registrationEnd: new Date(form.registrationEnd).toISOString(),
@@ -347,6 +256,10 @@ export function usePeriods() {
       revisionDeadline: form.revisionDeadline ? new Date(form.revisionDeadline).toISOString() : undefined,
       archiveDeadline: form.archiveDeadline ? new Date(form.archiveDeadline).toISOString() : undefined,
     };
+
+    if (!editingPeriod) {
+      payload.classCount = classCount;
+    }
 
     try {
       if (editingPeriod) {
@@ -394,6 +307,28 @@ export function usePeriods() {
     }
   };
 
+  const handleTransitionBatch = async (periodIds, action) => {
+    try {
+      const endpointFor = (id) => {
+        let endpoint = `/periods/${id}`;
+        if (action === 'open-registration') endpoint += '/open-registration';
+        else if (action === 'start') endpoint += '/start';
+        else if (action === 'start-grading') endpoint += '/start-grading';
+        else if (action === 'publish-results') endpoint += '/publish-results';
+        else if (action === 'open-appeal') endpoint += '/open-appeal';
+        else if (action === 'lock-results') endpoint += '/lock-results';
+        else if (action === 'archive') endpoint += '/archive';
+        return endpoint;
+      };
+
+      await Promise.all(periodIds.map((id) => api.post(endpointFor(id), {}, token)));
+      toast.success('Cập nhật trạng thái tất cả lớp học phần thành công!');
+      fetchPeriods();
+    } catch (err) {
+      toast.error(err.message || 'Không thể cập nhật trạng thái các lớp học phần');
+    }
+  };
+
   const handleDeletePeriod = async (period) => {
     setDeleting(true);
     try {
@@ -403,6 +338,20 @@ export function usePeriods() {
       fetchPeriods();
     } catch (err) {
       toast.error(err.message || 'Không thể xóa học phần');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteBatch = async (periodsToDelete) => {
+    setDeleting(true);
+    try {
+      await Promise.all(periodsToDelete.map((period) => api.delete(`/periods/${period._id}`, token)));
+      toast.success('Đã xóa các lớp học phần trong đợt.');
+      setPeriodToDelete(null);
+      fetchPeriods();
+    } catch (err) {
+      toast.error(err.message || 'Không thể xóa đợt học phần');
     } finally {
       setDeleting(false);
     }
@@ -423,13 +372,16 @@ export function usePeriods() {
     deleting,
     form,
     formErrors,
-    currentAcademicTerm: CURRENT_ACADEMIC_TERM,
+    currentAcademicTerm,
     openCreateModal,
     openEditModal,
     fetchPeriods,
     handleChange,
     handleSubmit,
     handleTransition,
+    handleTransitionBatch,
     handleDeletePeriod,
+    handleDeleteBatch,
   };
 }
+

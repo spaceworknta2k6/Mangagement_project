@@ -31,7 +31,7 @@ const seedRubrics = async () => {
           { criteriaCode: 'C3', criteriaName: 'Chất lượng nội dung báo cáo và tính học thuật', maxScore: 10, weight: 0.3 },
           { criteriaCode: 'C4', criteriaName: 'Kỹ năng giải quyết vấn đề và tính sáng tạo', maxScore: 10, weight: 0.2 },
         ],
-        REVIEWER: [
+        SECOND_MARKER: [
           { criteriaCode: 'C1', criteriaName: 'Bố cục, hình thức trình bày quyển báo cáo', maxScore: 10, weight: 0.2 },
           { criteriaCode: 'C2', criteriaName: 'Chất lượng tài liệu tham khảo và trích dẫn khoa học', maxScore: 10, weight: 0.1 },
           { criteriaCode: 'C3', criteriaName: 'Ý nghĩa thực tiễn, tính mới và độ phức tạp của đề tài', maxScore: 10, weight: 0.3 },
@@ -55,7 +55,7 @@ const seedRubrics = async () => {
           { criteriaCode: 'C3', criteriaName: 'Chất lượng nội dung phân tích & thiết kế báo cáo', maxScore: 10, weight: 0.3 },
           { criteriaCode: 'C4', criteriaName: 'Đóng góp cá nhân thực tế vào sản phẩm chung', maxScore: 10, weight: 0.2 },
         ],
-        REVIEWER: [
+        SECOND_MARKER: [
           { criteriaCode: 'C1', criteriaName: 'Hình thức báo cáo, tính khoa học và cấu trúc tài liệu', maxScore: 10, weight: 0.2 },
           { criteriaCode: 'C2', criteriaName: 'Tính mới, độ phức tạp và khả năng ứng dụng thực tế', maxScore: 10, weight: 0.2 },
           { criteriaCode: 'C3', criteriaName: 'Khối lượng công việc và mức độ hoàn thành sản phẩm liên ngành', maxScore: 10, weight: 0.3 },

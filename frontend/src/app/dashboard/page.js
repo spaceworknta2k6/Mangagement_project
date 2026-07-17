@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import useAuthStore from '@/store/auth.store';
+import usePeriodStore from '@/store/period.store';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
+import AcademicTermFilter from '@/components/dashboard/AcademicTermFilter';
 import { formatDate, getPrimaryRole, hasAnyRole } from '@/lib/utils';
 import { getId, isStudentProjectOwner } from '@/lib/projectOwner';
+import { filterRecordsByTerm, isPeriodInTerm } from '@/lib/academicTerm';
 import api from '@/services/api';
 import {
   Users,
@@ -299,6 +302,7 @@ function ProjectProgressBar({ projects }) {
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
+  const { periods, selectedSchoolYear, selectedSemester, fetchPeriods } = usePeriodStore();
   const [dashboard, setDashboard] = useState({
     periods: [],
     groups: [],
@@ -308,6 +312,7 @@ export default function DashboardPage() {
     milestonesByProject: {},
   });
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const role = getPrimaryRole(user);
   const isStaff = hasAnyRole(user, ['FACULTY_STAFF', 'SYSTEM_ADMIN']);
@@ -323,14 +328,17 @@ export default function DashboardPage() {
       setLoading(true);
       try {
         const [periodsRes, groupsRes, topicsRes, projectsRes, notificationsRes] = await Promise.all([
-          isStaff ? api.get('/periods', token).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+          fetchPeriods(token).then((data) => ({ data })).catch(() => ({ data: [] })),
           api.get('/groups', token).catch(() => ({ data: [] })),
           api.get('/topics', token).catch(() => ({ data: [] })),
           api.get('/projects', token).catch(() => ({ data: [] })),
           api.get('/notifications', token).catch(() => ({ data: [] })),
         ]);
 
-        let projects = projectsRes.data || [];
+        const availablePeriods = periodsRes.data || [];
+        const groups = filterRecordsByTerm(groupsRes.data || [], availablePeriods, selectedSchoolYear, selectedSemester);
+        const topics = filterRecordsByTerm(topicsRes.data || [], availablePeriods, selectedSchoolYear, selectedSemester);
+        let projects = filterRecordsByTerm(projectsRes.data || [], availablePeriods, selectedSchoolYear, selectedSemester);
         if (isStudent) {
           projects = projects.filter((project) => isStudentInProject(project, getId(user.studentId)));
         } else if (isLecturer) {
@@ -348,15 +356,18 @@ export default function DashboardPage() {
         if (!alive) return;
 
         setDashboard({
-          periods: periodsRes.data || [],
-          groups: groupsRes.data || [],
-          topics: topicsRes.data || [],
+          periods: availablePeriods.filter((period) => isPeriodInTerm(period, selectedSchoolYear, selectedSemester)),
+          groups,
+          topics,
           projects,
           notifications: notificationsRes.data || [],
           milestonesByProject: Object.fromEntries(milestonePairs),
         });
       } finally {
-        if (alive) setLoading(false);
+        if (alive) {
+          setHasLoaded(true);
+          setLoading(false);
+        }
       }
     }
 
@@ -365,7 +376,7 @@ export default function DashboardPage() {
     return () => {
       alive = false;
     };
-  }, [token, user, role, isStaff, isLecturer, isStudent]);
+  }, [fetchPeriods, token, user, role, isStaff, isLecturer, isStudent, selectedSchoolYear, selectedSemester]);
 
   const actionItems = useMemo(() => {
     const items = [];
@@ -535,7 +546,7 @@ export default function DashboardPage() {
     };
   }, [dashboard]);
 
-  if (loading) {
+  if (loading && !hasLoaded) {
     return (
       <div className={css.s16}>
         <Spinner size="lg" />
@@ -555,6 +566,12 @@ export default function DashboardPage() {
         <p className={css.s18}>
           Hôm nay là {formatDate(new Date(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <Card>
+          <AcademicTermFilter periods={periods} />
+        </Card>
       </div>
 
       <div className={css.s19} >

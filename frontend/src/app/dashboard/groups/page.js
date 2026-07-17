@@ -15,6 +15,7 @@ import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { getStatus, hasAnyRole, handleApiError } from '@/lib/utils';
+import { getCurrentAcademicTerm } from '@/lib/academicTerm';
 import EmptyState from '@/components/ui/EmptyState';
 import { Users, Plus, Check, UserPlus, Warning, PencilSimple, Trash, MagnifyingGlass } from '@phosphor-icons/react';
 import css from './page.module.css';
@@ -25,16 +26,6 @@ const BASE_SCHOOL_YEAR_OPTIONS = Array.from({ length: 5 }, (_, index) => {
   const startYear = new Date().getFullYear() - index;
   return `${startYear}-${startYear + 1}`;
 });
-
-function getCurrentAcademicTerm() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  if (month >= 8) return { schoolYear: `${year}-${year + 1}`, semester: '1' };
-  if (month <= 1) return { schoolYear: `${year - 1}-${year}`, semester: '1' };
-  if (month <= 5) return { schoolYear: `${year - 1}-${year}`, semester: '2' };
-  return { schoolYear: `${year - 1}-${year}`, semester: '3' };
-}
 
 function getSafePositiveInt(value, fallback) {
   const parsed = Number(value);
@@ -63,17 +54,18 @@ export default function GroupsPage() {
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
+  const { periods, selectedPeriodId, fetchPeriods, setSelectedPeriodId } = usePeriodStore();
 
   const initialQuery = useMemo(() => getInitialQuery(), []);
   const [currentPage, setCurrentPage] = useState(initialQuery.page);
   const [pageSize, setPageSize] = useState(initialQuery.limit);
   const [searchInput, setSearchInput] = useState(initialQuery.search);
   const [search, setSearch] = useState(initialQuery.search);
-  const currentAcademicTerm = useMemo(() => getCurrentAcademicTerm(), []);
+  const currentAcademicTerm = useMemo(() => getCurrentAcademicTerm({ user, periods }), [periods, user]);
   const [selectedSchoolYear, setSelectedSchoolYear] = useState(currentAcademicTerm.schoolYear);
   const [selectedSemester, setSelectedSemester] = useState(currentAcademicTerm.semester);
+  const [termTouched, setTermTouched] = useState(false);
 
-  const { periods, selectedPeriodId, fetchPeriods, setSelectedPeriodId } = usePeriodStore();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [groupToDelete, setGroupToDelete] = useState(null);
@@ -105,6 +97,12 @@ export default function GroupsPage() {
     });
     return Array.from(years).sort((a, b) => b.localeCompare(a));
   }, [currentAcademicTerm.schoolYear, periods]);
+
+  useEffect(() => {
+    if (termTouched) return;
+    setSelectedSchoolYear(currentAcademicTerm.schoolYear);
+    setSelectedSemester(currentAcademicTerm.semester);
+  }, [currentAcademicTerm.schoolYear, currentAcademicTerm.semester, termTouched]);
 
   const filteredPeriods = useMemo(() => (
     periods.filter((period) => (
@@ -186,9 +184,9 @@ export default function GroupsPage() {
 
   useEffect(() => {
     if (token) {
-      fetchPeriods(token);
+      fetchPeriods(token, false, user);
     }
-  }, [fetchPeriods, token]);
+  }, [fetchPeriods, token, user]);
 
   useEffect(() => {
     if (!token || !user) return;
@@ -427,11 +425,7 @@ export default function GroupsPage() {
         </p>
       </div>
 
-      {loading ? (
-        <div className={css.s5}>
-          <Spinner size="lg" />
-        </div>
-      ) : canViewGroupDirectory ? (
+      {canViewGroupDirectory ? (
         /* ─── Staff/Lecturer View ─── */
         <div>
           <div className={css.periodFilters}>
@@ -441,6 +435,7 @@ export default function GroupsPage() {
                 id="group-school-year"
                 value={selectedSchoolYear}
                 onChange={(e) => {
+                  setTermTouched(true);
                   setSelectedSchoolYear(e.target.value);
                   setCurrentPage(1);
                 }}
@@ -459,6 +454,7 @@ export default function GroupsPage() {
                 id="group-semester"
                 value={selectedSemester}
                 onChange={(e) => {
+                  setTermTouched(true);
                   setSelectedSemester(e.target.value);
                   setCurrentPage(1);
                 }}
@@ -503,7 +499,11 @@ export default function GroupsPage() {
             hasFilters={true}
           />
 
-          {periods.length === 0 ? (
+          {loading ? (
+            <div className={css.s5}>
+              <Spinner size="lg" />
+            </div>
+          ) : periods.length === 0 ? (
             <Card>
               <div className={css.s8}>
                 Chưa có đợt đồ án nào được tạo trong hệ thống. Vui lòng tạo đợt đồ án trước khi quản lý nhóm đồ án.
@@ -620,7 +620,11 @@ export default function GroupsPage() {
             </div>
           )}
 
-          {myGroup ? (
+          {loading ? (
+            <div className={css.s5}>
+              <Spinner size="lg" />
+            </div>
+          ) : myGroup ? (
             /* Student has group */
             <Card title={myGroup.name} subtitle={`Mã nhóm: ${myGroup._id}`}
               actions={

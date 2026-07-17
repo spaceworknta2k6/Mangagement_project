@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePeriods } from './hooks/usePeriods';
 import PeriodCard from './components/PeriodCard';
 import PeriodModal from './components/PeriodModal';
@@ -39,12 +39,21 @@ export default function PeriodsPage() {
     handleChange,
     handleSubmit,
     handleTransition,
+    handleTransitionBatch,
     handleDeletePeriod,
+    handleDeleteBatch,
   } = usePeriods();
 
   const [selectedSchoolYear, setSelectedSchoolYear] = useState(currentAcademicTerm.schoolYear);
   const [selectedSemester, setSelectedSemester] = useState(currentAcademicTerm.semester);
+  const [termTouched, setTermTouched] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    if (termTouched) return;
+    setSelectedSchoolYear(currentAcademicTerm.schoolYear);
+    setSelectedSemester(currentAcademicTerm.semester);
+  }, [currentAcademicTerm.schoolYear, currentAcademicTerm.semester, termTouched]);
 
   const schoolYearOptions = useMemo(() => {
     const years = new Set([currentAcademicTerm.schoolYear, ...BASE_SCHOOL_YEAR_OPTIONS]);
@@ -58,14 +67,52 @@ export default function PeriodsPage() {
     periods.filter((period) => {
       const normalizedSearch = searchTerm.trim().toLowerCase();
       const courseName = (period.courseName || period.name || '').toLowerCase();
+      const classCode = (period.classCode || '').toLowerCase();
+      const cohort = (period.cohort || period.batchId?.cohort || '').toLowerCase();
 
       return (
         period.schoolYear === selectedSchoolYear &&
         String(period.semester) === selectedSemester &&
-        (!normalizedSearch || courseName.includes(normalizedSearch))
+        (!normalizedSearch || courseName.includes(normalizedSearch) || classCode.includes(normalizedSearch) || cohort.includes(normalizedSearch))
       );
     })
   ), [periods, searchTerm, selectedSchoolYear, selectedSemester]);
+
+  const periodDisplayItems = useMemo(() => {
+    const groups = new Map();
+    const items = [];
+
+    filteredPeriods.forEach((period) => {
+      const batchKey = period.batchId?._id || period.batchId;
+      if (!batchKey) {
+        items.push(period);
+        return;
+      }
+
+      if (!groups.has(batchKey)) {
+        groups.set(batchKey, {
+          ...period,
+          _id: `batch-${batchKey}`,
+          batchKey,
+          isBatchGroup: true,
+          childPeriods: [],
+        });
+        items.push(groups.get(batchKey));
+      }
+
+      groups.get(batchKey).childPeriods.push(period);
+    });
+
+    return items.map((item) => {
+      if (!item.isBatchGroup) return item;
+      const childPeriods = [...item.childPeriods].sort((a, b) => (a.classSection || '').localeCompare(b.classSection || ''));
+      return {
+        ...item,
+        childPeriods,
+        classCount: item.batchId?.classCount || childPeriods.length,
+      };
+    });
+  }, [filteredPeriods]);
 
   return (
     <div>
@@ -102,7 +149,10 @@ export default function PeriodsPage() {
             <select
               id="period-school-year"
               value={selectedSchoolYear}
-              onChange={(e) => setSelectedSchoolYear(e.target.value)}
+              onChange={(e) => {
+                setTermTouched(true);
+                setSelectedSchoolYear(e.target.value);
+              }}
               className={css.s41}
             >
               {schoolYearOptions.map((year) => (
@@ -117,7 +167,10 @@ export default function PeriodsPage() {
             <select
               id="period-semester"
               value={selectedSemester}
-              onChange={(e) => setSelectedSemester(e.target.value)}
+              onChange={(e) => {
+                setTermTouched(true);
+                setSelectedSemester(e.target.value);
+              }}
               className={css.s41}
             >
               <option value="1">1</option>
@@ -137,6 +190,7 @@ export default function PeriodsPage() {
             onClick={() => {
               setSelectedSchoolYear(currentAcademicTerm.schoolYear);
               setSelectedSemester(currentAcademicTerm.semester);
+              setTermTouched(false);
               openCreateModal();
             }}
           >
@@ -157,7 +211,7 @@ export default function PeriodsPage() {
             Chưa có đợt học phần nào được định cấu hình trên hệ thống. Hãy nhấp &quot;Tạo đợt học phần&quot; để bắt đầu.
           </div>
         </Card>
-      ) : filteredPeriods.length === 0 ? (
+      ) : periodDisplayItems.length === 0 ? (
         <Card>
           <div className={css.s7}>
             Không tìm thấy đợt học phần phù hợp với bộ lọc hiện tại.
@@ -165,13 +219,14 @@ export default function PeriodsPage() {
         </Card>
       ) : (
         <div className={css.s8}>
-          {filteredPeriods.map((p) => (
+          {periodDisplayItems.map((p) => (
             <PeriodCard
               key={p._id}
               period={p}
               openEditModal={openEditModal}
               setPeriodToDelete={setPeriodToDelete}
               handleTransition={handleTransition}
+              handleTransitionBatch={handleTransitionBatch}
             />
           ))}
         </div>
@@ -203,7 +258,13 @@ export default function PeriodsPage() {
         confirmLabel="Xóa"
         loading={deleting}
         onCancel={() => setPeriodToDelete(null)}
-        onConfirm={() => handleDeletePeriod(periodToDelete)}
+        onConfirm={() => {
+          if (periodToDelete?.isBatchGroup) {
+            handleDeleteBatch(periodToDelete.childPeriods);
+            return;
+          }
+          handleDeletePeriod(periodToDelete);
+        }}
       />
     </div>
   );

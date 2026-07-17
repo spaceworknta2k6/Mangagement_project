@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
+import usePeriodStore from '@/store/period.store';
 import api from '@/services/api';
 import { useToast } from '@/components/ui/Toast';
 import { hasAnyRole } from '@/lib/utils';
+import { filterRecordsByTerm, getCurrentAcademicTerm } from '@/lib/academicTerm';
 import { io } from 'socket.io-client';
 
 const getId = (value) => value?._id || value;
@@ -34,6 +36,7 @@ export function useSubmissions() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
+  const { periods, fetchPeriods } = usePeriodStore();
   const toast = useToast();
 
   const [projects, setProjects] = useState([]);
@@ -73,6 +76,7 @@ export function useSubmissions() {
   const isStaff = hasAnyRole(user, ['FACULTY_STAFF', 'SYSTEM_ADMIN']);
   const isLecturer = hasAnyRole(user, ['LECTURER']);
   const isStudent = hasAnyRole(user, ['STUDENT']);
+  const currentAcademicTerm = useMemo(() => getCurrentAcademicTerm({ user, periods }), [periods, user]);
 
   const currentProject = projects.find(p => p._id === selectedProjectId);
   const isSupervisor = isLecturer && currentProject && (
@@ -83,8 +87,14 @@ export function useSubmissions() {
   const loadProjects = useCallback(async () => {
     setLoading(true);
     try {
+      const periodList = await fetchPeriods(token, false, user);
       const res = await api.get('/projects', token);
-      let list = res.data || [];
+      let list = filterRecordsByTerm(
+        res.data || [],
+        periodList || periods,
+        currentAcademicTerm.schoolYear,
+        currentAcademicTerm.semester
+      );
       if (isStudent) {
         list = list.filter((p) => isStudentProjectOwner(p, user?.studentId) || isStudentGroupProjectMember(p, user?.studentId));
       } else if (isLecturer) {
@@ -113,7 +123,7 @@ export function useSubmissions() {
     } finally {
       setLoading(false);
     }
-  }, [isLecturer, isStudent, toast, token, user?.id, user?.lecturerId, user?.studentId]);
+  }, [currentAcademicTerm.schoolYear, currentAcademicTerm.semester, fetchPeriods, isLecturer, isStudent, periods, toast, token, user]);
 
   // 2. Fetch milestones for selected project
   const loadMilestones = useCallback(async (projId) => {

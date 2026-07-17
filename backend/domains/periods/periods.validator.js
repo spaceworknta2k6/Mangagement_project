@@ -26,6 +26,9 @@ const validatePeriodCreate = (req, res, next) => {
     courseName,
     projectType,
     coordinatorLecturerId,
+    cohort,
+    classCount,
+    courseOfferingCode,
     allowIndividual,
     allowGroup,
     groupMinSize,
@@ -62,7 +65,7 @@ const validatePeriodCreate = (req, res, next) => {
     errors.push({ field: 'academicUnit', code: 'ACADEMIC_UNIT_INVALID', message: 'Khoa/đơn vị chuyên môn phụ trách không hợp lệ.' });
   }
 
-  const isOfferingFlow = courseCode !== undefined || coordinatorLecturerId !== undefined || projectType !== undefined;
+  const isOfferingFlow = courseCode !== undefined || coordinatorLecturerId !== undefined || projectType !== undefined || classCount !== undefined;
 
   if (isOfferingFlow) {
     if (!courseCode || typeof courseCode !== 'string' || courseCode.trim() === '') {
@@ -71,8 +74,20 @@ const validatePeriodCreate = (req, res, next) => {
     if (!courseName || typeof courseName !== 'string' || courseName.trim() === '') {
       errors.push({ field: 'courseName', code: 'COURSE_NAME_REQUIRED', message: 'Tên học phần là bắt buộc.' });
     }
-    if (!coordinatorLecturerId || !mongoose.Types.ObjectId.isValid(coordinatorLecturerId)) {
-      errors.push({ field: 'coordinatorLecturerId', code: 'COORDINATOR_LECTURER_ID_REQUIRED', message: 'Giảng viên phụ trách học phần không hợp lệ.' });
+    if (coordinatorLecturerId && !mongoose.Types.ObjectId.isValid(coordinatorLecturerId)) {
+      errors.push({ field: 'coordinatorLecturerId', code: 'COORDINATOR_LECTURER_ID_INVALID', message: 'Giảng viên phụ trách học phần không hợp lệ.' });
+    }
+    if (classCount !== undefined) {
+      const parsedClassCount = parseInt(classCount, 10);
+      if (isNaN(parsedClassCount) || parsedClassCount < 1 || parsedClassCount > 50) {
+        errors.push({ field: 'classCount', code: 'CLASS_COUNT_INVALID', message: 'Số lớp học phần phải từ 1 đến 50.' });
+      }
+      if (!cohort || typeof cohort !== 'string' || !/^K\d{1,3}$/i.test(cohort.trim())) {
+        errors.push({ field: 'cohort', code: 'COHORT_REQUIRED', message: 'Khóa sinh viên phải có dạng K17, K18...' });
+      }
+    }
+    if (courseOfferingCode !== undefined && (typeof courseOfferingCode !== 'string' || courseOfferingCode.trim() === '')) {
+      errors.push({ field: 'courseOfferingCode', code: 'COURSE_OFFERING_CODE_INVALID', message: 'Mã đợt học phần không hợp lệ.' });
     }
     if (allowIndividual === false && allowGroup === false) {
       errors.push({ field: 'allowIndividual', code: 'INDIVIDUAL_AND_GROUP_DISABLED', message: 'Học phần phải cho phép ít nhất làm cá nhân hoặc làm nhóm.' });
@@ -182,7 +197,7 @@ const validatePeriodCreate = (req, res, next) => {
 
 const validatePeriodUpdate = (req, res, next) => {
   // Supports partial updates but ensures updated dates are correct
-  const { minGroupSize, maxGroupSize, scoringFormula, rubricId, groupMinSize, groupMaxSize, academicUnit } = req.body;
+  const { minGroupSize, maxGroupSize, scoringFormula, rubricId, groupMinSize, groupMaxSize, academicUnit, coordinatorLecturerId } = req.body;
   const errors = [];
 
   if (rubricId !== undefined && rubricId !== null && rubricId !== '') {
@@ -193,6 +208,12 @@ const validatePeriodUpdate = (req, res, next) => {
 
   if (academicUnit !== undefined && !ACADEMIC_UNITS.includes(academicUnit)) {
     errors.push({ field: 'academicUnit', code: 'ACADEMIC_UNIT_INVALID', message: 'Khoa/đơn vị chuyên môn phụ trách không hợp lệ.' });
+  }
+
+  if (coordinatorLecturerId !== undefined && coordinatorLecturerId !== null && coordinatorLecturerId !== '') {
+    if (!mongoose.Types.ObjectId.isValid(coordinatorLecturerId)) {
+      errors.push({ field: 'coordinatorLecturerId', code: 'COORDINATOR_LECTURER_ID_INVALID', message: 'Giảng viên phụ trách lớp không hợp lệ.' });
+    }
   }
 
   if (minGroupSize !== undefined || maxGroupSize !== undefined) {

@@ -17,6 +17,32 @@ const ProjectPeriodSchema = new mongoose.Schema({
     required: true,
     trim: true, // e.g. "Học kỳ II"
   },
+  batchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CourseOfferingBatch',
+    required: false,
+  },
+  cohort: {
+    type: String,
+    required: false,
+    trim: true,
+    uppercase: true,
+  },
+  classSection: {
+    type: String,
+    required: false,
+    trim: true,
+    uppercase: true,
+  },
+  classCode: {
+    type: String,
+    required: false,
+    trim: true,
+  },
+  isBatchChild: {
+    type: Boolean,
+    default: false,
+  },
   facultyId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,

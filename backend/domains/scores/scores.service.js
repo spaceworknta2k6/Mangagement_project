@@ -6,6 +6,19 @@ const EvaluationRubric = require('../../models/EvaluationRubric');
 const { assertProjectAccess, canAccessProject, isStaff } = require('../../utils/access-control');
 const { resolveProjectOwner } = require('../../utils/project-owner');
 
+const normalizeMarkerRole = (role) => (role === 'REVIEWER' ? 'SECOND_MARKER' : role);
+
+const getRubricCriteriaForRole = (criteria, role) => {
+  const normalizedRole = normalizeMarkerRole(role);
+  if (normalizedRole === 'SECOND_MARKER') {
+    return criteria.SECOND_MARKER || criteria.REVIEWER;
+  }
+  if (normalizedRole === 'RECHECK') {
+    return criteria.RECHECK || criteria.SECOND_MARKER || criteria.REVIEWER;
+  }
+  return criteria[normalizedRole];
+};
+
 const assertScoreSheetPermission = async (project, rubricRole, user) => {
   if (!project || !user?.lecturerId) {
     throw { status: 403, message: 'Bạn không có quyền chấm điểm dự án này.' };
@@ -14,12 +27,13 @@ const assertScoreSheetPermission = async (project, rubricRole, user) => {
   const lecturerId = user.lecturerId.toString();
   const supervisorId = project.supervisorId?.toString();
   const reviewerId = project.reviewerId?.toString();
+  const normalizedRole = normalizeMarkerRole(rubricRole);
 
-  if (rubricRole === 'SUPERVISOR' && supervisorId === lecturerId) return;
-  if ((rubricRole === 'REVIEWER' || rubricRole === 'SECOND_MARKER') && reviewerId === lecturerId) return;
+  if (normalizedRole === 'SUPERVISOR' && supervisorId === lecturerId) return;
+  if (normalizedRole === 'SECOND_MARKER' && reviewerId === lecturerId) return;
 
   // Cho phép GV được phân công chấm phúc khảo
-  if (rubricRole === 'RECHECK') {
+  if (normalizedRole === 'RECHECK') {
     const AppealRequest = require('../../models/AppealRequest');
     const appeal = await AppealRequest.findOne({
       projectId: project._id,
@@ -39,7 +53,9 @@ const assertSheetOwner = (sheet, user) => {
 };
 
 const submitScoreSheet = async (data, user) => {
-  const { projectId, groupId, periodId, rubricRole, targetType, targetId, criteriaScores, comment } = data;
+  const { projectId, groupId, periodId, targetId, criteriaScores, comment } = data;
+  const rubricRole = normalizeMarkerRole(data.rubricRole);
+  const targetType = normalizeMarkerRole(data.targetType);
   
   if (!user.lecturerId) {
     throw { status: 403, message: 'Người dùng không được liên kết với hồ sơ Giảng viên.' };
@@ -71,10 +87,9 @@ const submitScoreSheet = async (data, user) => {
     if (activeRubric) {
       rubricIdToSave = activeRubric._id;
       rubricVersionToSave = activeRubric.version;
-      const rubricCriteria = activeRubric.criteria[rubricRole]
-        || (rubricRole === 'RECHECK' ? activeRubric.criteria.REVIEWER || activeRubric.criteria.SECOND_MARKER : null);
+      const rubricCriteria = getRubricCriteriaForRole(activeRubric.criteria, rubricRole);
       if (!rubricCriteria || rubricCriteria.length === 0) {
-        throw { status: 400, message: `Không tìm thấy tiêu chí chấm điểm nào cho vai trò ${rubricRole} trong Rubric.` };
+        throw { status: 400, message: `Không tìm thấy tiêu chí chấm điểm nào cho loại phiếu ${rubricRole} trong Rubric.` };
       }
 
       const validatedCriteriaScores = [];
@@ -138,8 +153,8 @@ const submitScoreSheet = async (data, user) => {
     if (!graderRole) {
       if (rubricRole === 'SUPERVISOR') {
         graderRole = 'SUPERVISOR';
-      } else if (rubricRole === 'REVIEWER' || rubricRole === 'SECOND_MARKER') {
-        graderRole = 'REVIEWER';
+      } else if (rubricRole === 'SECOND_MARKER') {
+        graderRole = 'SECOND_MARKER';
       }
     }
 
@@ -320,10 +335,9 @@ const updateScoreSheet = async (id, data, user) => {
     if (period && period.rubricId) {
       const activeRubric = await EvaluationRubric.findOne({ _id: period.rubricId, isDeleted: { $ne: true } });
       if (activeRubric) {
-        const rubricCriteria = activeRubric.criteria[sheet.rubricRole]
-          || (sheet.rubricRole === 'RECHECK' ? activeRubric.criteria.REVIEWER || activeRubric.criteria.SECOND_MARKER : null);
+        const rubricCriteria = getRubricCriteriaForRole(activeRubric.criteria, sheet.rubricRole);
         if (!rubricCriteria || rubricCriteria.length === 0) {
-          throw { status: 400, message: `Không tìm thấy tiêu chí chấm điểm nào cho vai trò ${sheet.rubricRole} trong Rubric.` };
+          throw { status: 400, message: `Không tìm thấy tiêu chí chấm điểm nào cho loại phiếu ${sheet.rubricRole} trong Rubric.` };
         }
 
         const validatedCriteriaScores = [];

@@ -34,7 +34,7 @@ const ScoreSheetSchema = new mongoose.Schema({
   },
   rubricRole: {
     type: String,
-    enum: ['SUPERVISOR', 'REVIEWER', 'SECOND_MARKER', 'RECHECK'],
+    enum: ['SUPERVISOR', 'REVIEWER', 'SECOND_MARKER', 'RECHECK'], // REVIEWER is kept for legacy score sheets only.
     required: true,
   },
   rubricVersion: {
@@ -43,7 +43,7 @@ const ScoreSheetSchema = new mongoose.Schema({
   },
   targetType: {
     type: String,
-    enum: ['SUPERVISOR', 'REVIEWER', 'SECOND_MARKER', 'RECHECK'],
+    enum: ['SUPERVISOR', 'REVIEWER', 'SECOND_MARKER', 'RECHECK'], // REVIEWER is kept for legacy score sheets only.
     required: true,
   },
   targetId: {
@@ -82,7 +82,7 @@ const ScoreSheetSchema = new mongoose.Schema({
   },
   graderRole: {
     type: String,
-    required: true, // e.g. "REVIEWER", "SUPERVISOR", "RECHECK"
+    required: true, // e.g. "SECOND_MARKER", "SUPERVISOR", "RECHECK"
   },
   criteriaScores: {
     type: [CriteriaScoreSchema],

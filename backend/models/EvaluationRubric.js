@@ -44,7 +44,7 @@ const EvaluationRubricSchema = new mongoose.Schema({
       type: [RubricCriteriaSchema],
       default: [],
     },
-    REVIEWER: {
+    REVIEWER: { // Legacy rubric key; new writes use SECOND_MARKER.
       type: [RubricCriteriaSchema],
       default: [],
     },

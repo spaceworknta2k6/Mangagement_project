@@ -116,7 +116,7 @@ const runIntegrationTests = async () => {
         maxGroupSize: 3,
         topicChangeDeadline: new Date('2026-06-20'),
         rubricVersion: 'v1.0',
-        scoringFormula: { supervisor: 0.5, reviewer: 0.5 },
+        scoringFormula: { supervisor: 0.5, secondMarker: 0.5 },
         status: 'in_progress',
       });
 

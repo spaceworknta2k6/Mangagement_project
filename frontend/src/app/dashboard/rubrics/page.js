@@ -22,7 +22,7 @@ const INITIAL_FORM_STATE = {
   version: '1.0',
   criteria: {
     SUPERVISOR: [...DEFAULT_CRITERIA],
-    REVIEWER: [...DEFAULT_CRITERIA],
+    SECOND_MARKER: [...DEFAULT_CRITERIA],
   }
 };
 
@@ -75,7 +75,9 @@ export default function RubricsPage() {
       version: rubric.version || '1.0',
       criteria: {
         SUPERVISOR: rubric.criteria?.SUPERVISOR ? JSON.parse(JSON.stringify(rubric.criteria.SUPERVISOR)) : [],
-        REVIEWER: rubric.criteria?.REVIEWER ? JSON.parse(JSON.stringify(rubric.criteria.REVIEWER)) : [],
+        SECOND_MARKER: rubric.criteria?.SECOND_MARKER
+          ? JSON.parse(JSON.stringify(rubric.criteria.SECOND_MARKER))
+          : (rubric.criteria?.REVIEWER ? JSON.parse(JSON.stringify(rubric.criteria.REVIEWER)) : []),
       }
     });
     setFormErrors({});
@@ -144,7 +146,7 @@ export default function RubricsPage() {
       errors.version = 'Phiên bản là bắt buộc.';
     }
 
-    const requiredRoles = ['SUPERVISOR', 'REVIEWER'];
+    const requiredRoles = ['SUPERVISOR', 'SECOND_MARKER'];
     requiredRoles.forEach((role) => {
       const criteriaList = form.criteria[role];
       if (!criteriaList || criteriaList.length === 0) {
@@ -152,7 +154,7 @@ export default function RubricsPage() {
       }
     });
 
-    const allRoles = ['SUPERVISOR', 'REVIEWER'];
+    const allRoles = ['SUPERVISOR', 'SECOND_MARKER'];
     allRoles.forEach((role) => {
       const criteriaList = form.criteria[role] || [];
       criteriaList.forEach((c, idx) => {
@@ -337,7 +339,7 @@ export default function RubricsPage() {
                 </div>
                 <div className={css.criteriaSummary}>
                   <span className={css.criteriaBadge}>GVHD: {r.criteria?.SUPERVISOR?.length || 0} TC</span>
-                  <span className={css.criteriaBadge}>GV Chấm 2: {r.criteria?.REVIEWER?.length || 0} TC</span>
+                  <span className={css.criteriaBadge}>GV Chấm 2: {r.criteria?.SECOND_MARKER?.length || r.criteria?.REVIEWER?.length || 0} TC</span>
                 </div>
               </div>
               <p className={css.cardDesc}>
@@ -422,7 +424,7 @@ export default function RubricsPage() {
                 </div>
 
                 {renderCriteriaConfigSection('SUPERVISOR', 'Tiêu chí Giảng viên hướng dẫn')}
-                {renderCriteriaConfigSection('REVIEWER', 'Tiêu chí Giảng viên chấm 2')}
+                {renderCriteriaConfigSection('SECOND_MARKER', 'Tiêu chí Giảng viên chấm 2')}
               </div>
 
               <div className={css.modalFooter}>

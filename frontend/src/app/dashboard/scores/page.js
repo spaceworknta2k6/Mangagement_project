@@ -14,6 +14,7 @@ import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate, hasAnyRole } from '@/lib/utils';
+import { getCurrentAcademicTerm, isPeriodInTerm } from '@/lib/academicTerm';
 import { ClipboardText, ArrowsClockwise, CheckCircle, Calculator, MagnifyingGlass, FileText, Printer, LockKey, Siren } from '@phosphor-icons/react';
 import { exportToCSV } from '@/lib/export';
 import css from './page.module.css';
@@ -28,7 +29,7 @@ const DEFAULT_SCORE_RUBRIC = {
       { criteriaCode: 'C2', criteriaName: 'Chất lượng chuyên môn của sản phẩm/đồ án', maxScore: 10, weight: 0.4 },
       { criteriaCode: 'C3', criteriaName: 'Chất lượng báo cáo và khả năng trình bày', maxScore: 10, weight: 0.3 },
     ],
-    REVIEWER: [
+    SECOND_MARKER: [
       { criteriaCode: 'C1', criteriaName: 'Mức độ đáp ứng mục tiêu và yêu cầu đề tài', maxScore: 10, weight: 0.4 },
       { criteriaCode: 'C2', criteriaName: 'Chất lượng kỹ thuật và nội dung báo cáo', maxScore: 10, weight: 0.4 },
       { criteriaCode: 'C3', criteriaName: 'Khả năng phân tích và giải trình nội dung', maxScore: 10, weight: 0.2 },
@@ -61,6 +62,11 @@ function getEntityId(value) {
   if (!value) return '';
   if (typeof value === 'string') return value;
   return value._id || value.id || '';
+}
+
+function isScoreSheetForRole(sheet, role) {
+  if (sheet.rubricRole === role) return true;
+  return role === 'SECOND_MARKER' && sheet.rubricRole === 'REVIEWER';
 }
 
 export default function ScoresPage() {
@@ -124,6 +130,21 @@ export default function ScoresPage() {
 
   const isStaffUser = useMemo(() => hasAnyRole(user, ['FACULTY_STAFF', 'SYSTEM_ADMIN']), [user]);
   const isStudentUser = useMemo(() => (user?.roles || []).includes('STUDENT'), [user]);
+  const currentAcademicTerm = useMemo(() => getCurrentAcademicTerm({ user, periods }), [periods, user]);
+  const periodOptions = useMemo(
+    () => periods.filter((period) => isPeriodInTerm(period, currentAcademicTerm.schoolYear, currentAcademicTerm.semester)),
+    [currentAcademicTerm.schoolYear, currentAcademicTerm.semester, periods]
+  );
+
+  useEffect(() => {
+    if (!selectedPeriodId) return;
+    const selectedPeriodInCurrentTerm = periodOptions.some((period) => period._id === selectedPeriodId);
+    if (!selectedPeriodInCurrentTerm) {
+      setSelectedPeriodId('');
+      setProjects([]);
+      setSelectedPeriodData(null);
+    }
+  }, [periodOptions, selectedPeriodId, setSelectedPeriodId]);
 
   const fetchData = useCallback(async () => {
     if (!selectedPeriodId) {
@@ -145,10 +166,10 @@ export default function ScoresPage() {
 
   useEffect(() => {
     if (token) {
-      fetchPeriods(token);
+      fetchPeriods(token, false, user);
 
     }
-  }, [token]);
+  }, [fetchPeriods, token, user]);
 
   useEffect(() => {
     if (token && selectedPeriodId) {
@@ -174,7 +195,7 @@ export default function ScoresPage() {
   }, [token, selectedPeriodId, periodsLoading, periodsFetched]);
 
   const loadFormForRole = useCallback((role, rubric, sheetsList) => {
-    const existingSheet = sheetsList.find(s => s.rubricRole === role);
+    const existingSheet = sheetsList.find(s => isScoreSheetForRole(s, role));
     setCurrentSheet(existingSheet || null);
 
     if (existingSheet) {
@@ -189,7 +210,7 @@ export default function ScoresPage() {
         }))
       });
     } else {
-      const criteriaList = rubric?.criteria?.[role] || [];
+      const criteriaList = rubric?.criteria?.[role] || (role === 'SECOND_MARKER' ? rubric?.criteria?.REVIEWER : []) || [];
       setForm({
         comment: 'Đồ án thực hiện tương đối tốt. Giao diện đẹp, logic rõ ràng. Cần bổ sung thêm báo cáo kiểm thử để hoàn thiện.',
         criteriaScores: criteriaList.map((c, index) => ({
@@ -217,8 +238,8 @@ export default function ScoresPage() {
       }
 
       // 1. Fetch period to get the linked active Rubric
-      // const periodRes = await api.get(`/periods/${periodId}`, token);
-      const rubric = DEFAULT_SCORE_RUBRIC;
+      const periodRes = await api.get(`/periods/${periodId}`, token);
+      const rubric = periodRes.data?.rubricId || DEFAULT_SCORE_RUBRIC;
       setActiveRubric(rubric || null);
 
       // Determine grader available roles
@@ -231,11 +252,11 @@ export default function ScoresPage() {
         roles.push('SUPERVISOR');
       }
       if (reviewerId && reviewerId.toString() === lecturerId?.toString()) {
-        roles.push('REVIEWER');
+        roles.push('SECOND_MARKER');
       }
       
       if (roles.length === 0) {
-        roles.push('SUPERVISOR', 'REVIEWER');
+        roles.push('SUPERVISOR', 'SECOND_MARKER');
       }
       setAvailableRoles(roles);
 
@@ -243,9 +264,9 @@ export default function ScoresPage() {
       setSelectedRole(defaultRole);
 
       // 2. Fetch score sheets
-      // const graderQuery = user?.lecturerId ? `&graderId=${user.lecturerId}` : '';
-      // const sheetsRes = await api.get(`/scores/score-sheets?projectId=${projectId}${graderQuery}`, token);
-      const sheets = [];
+      const graderQuery = user?.lecturerId ? `&graderId=${user.lecturerId}` : '';
+      const sheetsRes = await api.get(`/scores/score-sheets?projectId=${projectId}${graderQuery}`, token);
+      const sheets = sheetsRes.data || [];
       setSavedSheets(sheets);
 
       loadFormForRole(defaultRole, rubric, sheets);
@@ -254,7 +275,7 @@ export default function ScoresPage() {
       }
     } catch (err) {
       setActiveRubric(DEFAULT_SCORE_RUBRIC);
-      setAvailableRoles(['SUPERVISOR', 'REVIEWER']);
+      setAvailableRoles(['SUPERVISOR', 'SECOND_MARKER']);
       setSelectedRole('SUPERVISOR');
       setSavedSheets([]);
       setCurrentSheet(null);
@@ -320,7 +341,7 @@ export default function ScoresPage() {
       const sheets = sheetsRes.data || [];
       setSavedSheets(sheets);
 
-      const updatedSheet = sheets.find(s => s.rubricRole === selectedRole);
+      const updatedSheet = sheets.find(s => isScoreSheetForRole(s, selectedRole));
       setCurrentSheet(updatedSheet || null);
 
       try {
@@ -350,7 +371,7 @@ export default function ScoresPage() {
       const sheets = sheetsRes.data || [];
       setSavedSheets(sheets);
 
-      const updatedSheet = sheets.find(s => s.rubricRole === selectedRole);
+      const updatedSheet = sheets.find(s => isScoreSheetForRole(s, selectedRole));
       setCurrentSheet(updatedSheet || null);
 
       try {
@@ -565,9 +586,9 @@ export default function ScoresPage() {
                   className={css.periodSelect}
                 >
                   <option value="">Chọn học phần</option>
-                  {periods.map((p) => (
+                  {periodOptions.map((p) => (
                     <option key={p._id} value={p._id}>
-                      {p.name} ({p.courseCode})
+                      {p.name} ({p.courseCode || `Kỳ ${p.semester}`})
                     </option>
                   ))}
                 </select>
@@ -806,7 +827,7 @@ export default function ScoresPage() {
                             }}
                           >
                             {availableRoles.includes('SUPERVISOR') && <option value="SUPERVISOR">Giảng viên hướng dẫn</option>}
-                            {availableRoles.includes('REVIEWER') && <option value="REVIEWER">Giảng viên chấm 2</option>}
+                            {availableRoles.includes('SECOND_MARKER') && <option value="SECOND_MARKER">Giảng viên chấm 2</option>}
                           </select>
                         </div>
                       )}

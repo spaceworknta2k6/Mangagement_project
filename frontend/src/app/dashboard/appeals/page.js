@@ -10,6 +10,7 @@ import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate, hasAnyRole } from '@/lib/utils';
+import { getCurrentAcademicTerm, isPeriodInTerm } from '@/lib/academicTerm';
 import { Siren, ArrowsClockwise, CheckCircle, UserPlus } from '@phosphor-icons/react';
 
 const STATUS_LABELS = {
@@ -42,6 +43,21 @@ export default function AppealsPage() {
   const [selectedAppealProject, setSelectedAppealProject] = useState(null);
 
   const isStaffUser = useMemo(() => hasAnyRole(user, ['FACULTY_STAFF', 'SYSTEM_ADMIN']), [user]);
+  const currentAcademicTerm = useMemo(() => getCurrentAcademicTerm({ user, periods }), [periods, user]);
+  const periodOptions = useMemo(
+    () => periods.filter((period) => isPeriodInTerm(period, currentAcademicTerm.schoolYear, currentAcademicTerm.semester)),
+    [currentAcademicTerm.schoolYear, currentAcademicTerm.semester, periods]
+  );
+
+  useEffect(() => {
+    if (!selectedPeriodId) return;
+    const selectedPeriodInCurrentTerm = periodOptions.some((period) => period._id === selectedPeriodId);
+    if (!selectedPeriodInCurrentTerm) {
+      setSelectedPeriodId('');
+      setAppeals([]);
+      setTotal(0);
+    }
+  }, [periodOptions, selectedPeriodId, setSelectedPeriodId]);
 
   const fetchAppeals = useCallback(async () => {
     if (!selectedPeriodId || !token) return;
@@ -60,8 +76,8 @@ export default function AppealsPage() {
   }, [selectedPeriodId, statusFilter, token, toast]);
 
   useEffect(() => {
-    if (token) fetchPeriods(token);
-  }, [token, fetchPeriods]);
+    if (token) fetchPeriods(token, false, user);
+  }, [token, fetchPeriods, user]);
 
   useEffect(() => {
     fetchAppeals();
@@ -165,8 +181,8 @@ export default function AppealsPage() {
             style={{ width: '100%', padding: '10px', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '14px', height: '42px' }}
           >
             <option value="">Chọn học phần</option>
-            {periods.map((p) => (
-              <option key={p._id} value={p._id}>{p.name} ({p.courseCode})</option>
+            {periodOptions.map((p) => (
+              <option key={p._id} value={p._id}>{p.name} ({p.courseCode || `Kỳ ${p.semester}`})</option>
             ))}
           </select>
         </div>

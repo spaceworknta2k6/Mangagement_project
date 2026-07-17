@@ -74,7 +74,7 @@ const runIntegrationTests = async () => {
           minGroupSize: 1,
           maxGroupSize: 3,
           rubricVersion: 'v1.0-IT-HUST',
-          scoringFormula: { supervisor: 0.5, reviewer: 0.5 },
+          scoringFormula: { supervisor: 0.5, secondMarker: 0.5 },
           status: 'in_progress',
         });
       }

@@ -1,4 +1,5 @@
 const ProjectPeriod = require('../../models/ProjectPeriod');
+const CourseOfferingBatch = require('../../models/CourseOfferingBatch');
 const WorkflowEvent = require('../../models/WorkflowEvent');
 const Lecturer = require('../../models/Lecturer');
 const { ACADEMIC_UNIT_DEPARTMENT_IDS, IT_FACULTY_ID } = require('../../constants/academic-units');
@@ -25,6 +26,33 @@ const logWorkflowEvent = async ({
   });
 };
 
+const normalizeCodePart = (value) => String(value || '')
+  .trim()
+  .toUpperCase()
+  .replace(/[^A-Z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
+const buildCourseOfferingCode = ({ courseCode, cohort, schoolYear, semester }) => {
+  const startYear = String(schoolYear || '').split('-')[0] || 'YEAR';
+  return [
+    normalizeCodePart(courseCode),
+    normalizeCodePart(cohort),
+    startYear,
+    `HK${String(semester || '').trim()}`,
+  ].filter(Boolean).join('-');
+};
+
+const buildClassSection = (index) => `N${String(index).padStart(2, '0')}`;
+
+const toPeriodPayload = (periodData, facultyId, departmentId, actorId) => ({
+  ...periodData,
+  facultyId,
+  departmentId,
+  status: 'draft',
+  createdBy: actorId,
+  updatedBy: actorId,
+});
+
 const createPeriod = async (periodData, actorId) => {
   let { facultyId, departmentId } = periodData;
 
@@ -43,14 +71,71 @@ const createPeriod = async (periodData, actorId) => {
     departmentId = departmentId || ACADEMIC_UNIT_DEPARTMENT_IDS[academicUnit] || ACADEMIC_UNIT_DEPARTMENT_IDS.computer_science;
   }
 
-  const period = new ProjectPeriod({
-    ...periodData,
-    facultyId,
-    departmentId,
-    status: 'draft',
-    createdBy: actorId,
-    updatedBy: actorId,
-  });
+  const classCount = Number.parseInt(periodData.classCount, 10);
+  const shouldCreateBatch = Number.isInteger(classCount) && classCount > 0;
+
+  if (shouldCreateBatch) {
+    const cohort = String(periodData.cohort || '').trim().toUpperCase();
+    const courseOfferingCode = periodData.courseOfferingCode || buildCourseOfferingCode({
+      courseCode: periodData.courseCode,
+      cohort,
+      schoolYear: periodData.schoolYear,
+      semester: periodData.semester,
+    });
+
+    const batch = await CourseOfferingBatch.create({
+      name: periodData.name || periodData.courseName,
+      courseCode: periodData.courseCode,
+      courseName: periodData.courseName,
+      courseOfferingCode,
+      cohort,
+      schoolYear: periodData.schoolYear,
+      semester: periodData.semester,
+      academicUnit: periodData.academicUnit || 'computer_science',
+      classCount,
+      status: 'draft',
+      createdBy: actorId,
+      updatedBy: actorId,
+    });
+
+    const periods = [];
+    for (let index = 1; index <= classCount; index += 1) {
+      const classSection = buildClassSection(index);
+      const period = new ProjectPeriod(toPeriodPayload({
+        ...periodData,
+        name: `${periodData.courseName || periodData.name} (${classSection})`,
+        batchId: batch._id,
+        cohort,
+        classSection,
+        classCode: `${courseOfferingCode}(${classSection})`,
+        coordinatorLecturerId: undefined,
+        isBatchChild: true,
+      }, facultyId, departmentId, actorId));
+      await period.save();
+      periods.push(period);
+
+      await logWorkflowEvent({
+        entityId: period._id,
+        fromStatus: '',
+        toStatus: 'draft',
+        actorId,
+        actorRoles: ['FACULTY_STAFF'],
+        action: 'CREATE_PERIOD_CLASS',
+        reason: `Tự động tạo lớp học phần ${period.classCode}`,
+      });
+    }
+
+    batch.periodIds = periods.map((period) => period._id);
+    await batch.save();
+
+    return {
+      ...batch.toObject(),
+      periods,
+      isBatch: true,
+    };
+  }
+
+  const period = new ProjectPeriod(toPeriodPayload(periodData, facultyId, departmentId, actorId));
 
   await period.save();
 
@@ -69,11 +154,24 @@ const createPeriod = async (periodData, actorId) => {
 };
 
 const getAllPeriods = async (query = {}) => {
-  return await ProjectPeriod.find({ ...query, isDeleted: { $ne: true } }).populate('rubricId').sort({ createdAt: -1 });
+  return await ProjectPeriod.find({ ...query, isDeleted: { $ne: true } })
+    .populate('rubricId')
+    .populate('batchId')
+    .populate({
+      path: 'coordinatorLecturerId',
+      populate: { path: 'userId', select: 'fullName email' },
+    })
+    .sort({ createdAt: -1 });
 };
 
 const getPeriodById = async (id) => {
-  const period = await ProjectPeriod.findOne({ _id: id, isDeleted: { $ne: true } }).populate('rubricId');
+  const period = await ProjectPeriod.findOne({ _id: id, isDeleted: { $ne: true } })
+    .populate('rubricId')
+    .populate('batchId')
+    .populate({
+      path: 'coordinatorLecturerId',
+      populate: { path: 'userId', select: 'fullName email' },
+    });
   if (!period) {
     throw { status: 404, message: 'Đợt đồ án không tồn tại.' };
   }

@@ -32,7 +32,14 @@ export function useTopics(initialActiveTab = 'all') {
   const token = useAuthStore((s) => s.token);
   const toast = useToast();
 
-  const { periods, fetchPeriods } = usePeriodStore();
+  const {
+    periods,
+    selectedPeriodId,
+    selectedSchoolYear,
+    selectedSemester,
+    setSelectedPeriodId,
+    fetchPeriods,
+  } = usePeriodStore();
   const [groups, setGroups] = useState([]);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -424,6 +431,10 @@ export function useTopics(initialActiveTab = 'all') {
     user,
     token,
     periods,
+    selectedPeriodId,
+    selectedSchoolYear,
+    selectedSemester,
+    setSelectedPeriodId,
     proposalPeriods,
     groups: availableGroups,
     topics,

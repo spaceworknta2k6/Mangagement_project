@@ -14,6 +14,7 @@ import Spinner from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { hasAnyRole } from '@/lib/utils';
 import { getMemberDisplay, getOwnerDisplay, getOwnerTypeLabel, isStudentProjectOwner } from '@/lib/projectOwner';
+import { getCurrentAcademicTerm, getRecordPeriod, isPeriodInTerm } from '@/lib/academicTerm';
 import { FolderSimple, ArrowsClockwise, FileText } from '@phosphor-icons/react';
 import { exportToCSV } from '@/lib/export';
 import ProjectCard from './components/ProjectCard';
@@ -72,12 +73,17 @@ export default function ProjectsPage() {
   const isStaff = hasAnyRole(user, ['FACULTY_STAFF', 'SYSTEM_ADMIN']);
   const isLecturer = hasAnyRole(user, ['LECTURER']);
   const isStudent = hasAnyRole(user, ['STUDENT']);
+  const currentAcademicTerm = useMemo(() => getCurrentAcademicTerm({ user, periods }), [periods, user]);
+  const periodOptions = useMemo(
+    () => periods.filter((period) => isPeriodInTerm(period, currentAcademicTerm.schoolYear, currentAcademicTerm.semester)),
+    [currentAcademicTerm.schoolYear, currentAcademicTerm.semester, periods]
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       // 1. Fetch periods first
-      await fetchPeriods(token);
+      await fetchPeriods(token, false, user);
 
       // 2. Fetch all projects
       const resProjects = await api.get('/projects', token);
@@ -107,7 +113,7 @@ export default function ProjectsPage() {
     } finally {
       setLoading(false);
     }
-  }, [isLecturer, isStaff, toast, token, user?.id, user?.lecturerId, user?.studentId, fetchPeriods]);
+  }, [isLecturer, isStaff, toast, token, user, fetchPeriods]);
 
   useEffect(() => {
     if (token) {
@@ -116,7 +122,7 @@ export default function ProjectsPage() {
   }, [loadData, token]);
 
   const visibleProjects = useMemo(() => {
-    let list = projects;
+    let list = projects.filter((project) => isPeriodInTerm(getRecordPeriod(project, periods), currentAcademicTerm.schoolYear, currentAcademicTerm.semester));
     if (selectedPeriodId) {
       list = list.filter((p) => {
         const pId = p.periodId?._id || p.periodId;
@@ -135,7 +141,7 @@ export default function ProjectsPage() {
       ];
       return values.some((v) => String(v || '').toLowerCase().includes(keyword));
     });
-  }, [projects, selectedPeriodId, search]);
+  }, [currentAcademicTerm.schoolYear, currentAcademicTerm.semester, periods, projects, selectedPeriodId, search]);
 
   const totalPages = Math.max(1, Math.ceil(visibleProjects.length / pageSize));
   const pagedProjects = visibleProjects.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -314,9 +320,9 @@ export default function ProjectsPage() {
               className={css.periodSelect}
             >
               <option value="">Chọn học phần</option>
-              {periods.map((p) => (
+              {periodOptions.map((p) => (
                 <option key={p._id} value={p._id}>
-                  {p.name} ({p.courseCode})
+                  {p.name} ({p.courseCode || `Kỳ ${p.semester}`})
                 </option>
               ))}
             </select>

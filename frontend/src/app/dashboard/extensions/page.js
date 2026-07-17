@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/store/auth.store';
+import usePeriodStore from '@/store/period.store';
 import api from '@/services/api';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -10,9 +11,11 @@ import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import Pagination from '@/components/ui/Pagination';
+import AcademicTermFilter from '@/components/dashboard/AcademicTermFilter';
 import { useToast } from '@/components/ui/Toast';
 import { formatDate, formatDateTime, hasAnyRole } from '@/lib/utils';
 import { getOwnerDisplay, getOwnerTypeLabel, isStudentProjectOwner } from '@/lib/projectOwner';
+import { filterRecordsByTerm, getRecordPeriod, isPeriodInTerm } from '@/lib/academicTerm';
 import {
   ArrowsClockwise,
   Calendar,
@@ -162,11 +165,20 @@ export default function ExtensionRequestsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const initialQuery = useMemo(() => getInitialExtensionsQuery(), []);
+  const {
+    periods,
+    selectedPeriodId,
+    selectedSchoolYear,
+    selectedSemester,
+    setSelectedPeriodId,
+    fetchPeriods,
+  } = usePeriodStore();
 
   const [projects, setProjects] = useState([]);
   const [milestonesByProject, setMilestonesByProject] = useState({});
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [reviewModal, setReviewModal] = useState(null);
@@ -185,6 +197,10 @@ export default function ExtensionRequestsPage() {
   const isStudent = hasAnyRole(user, ['STUDENT']);
   const isLecturer = hasAnyRole(user, ['LECTURER']);
   const isFaculty = hasAnyRole(user, ['FACULTY_STAFF']);
+  const periodOptions = useMemo(
+    () => periods.filter((period) => isPeriodInTerm(period, selectedSchoolYear, selectedSemester)),
+    [periods, selectedSchoolYear, selectedSemester]
+  );
 
   const visibleProjects = useMemo(() => {
     if (isStudent) {
@@ -220,19 +236,42 @@ export default function ExtensionRequestsPage() {
         limit: pageSize.toString(),
       });
 
-      const [projectsRes, requestsRes] = await Promise.all([
+      const [periodList, projectsRes, requestsRes] = await Promise.all([
+        fetchPeriods(token),
         api.get('/projects', token),
         api.get(`/extensions?${queryParams.toString()}`, token),
       ]);
 
       const projectList = projectsRes.data || [];
-      setProjects(projectList);
-      setRequests(requestsRes.data || []);
+      const availablePeriods = periodList || periods;
+      let termProjectList = filterRecordsByTerm(projectList, availablePeriods, selectedSchoolYear, selectedSemester);
+      if (selectedPeriodId) {
+        termProjectList = termProjectList.filter((project) => String(project.periodId?._id || project.periodId) === String(selectedPeriodId));
+      }
+      const termProjectIds = new Set(termProjectList.map((project) => String(project._id)));
+      const termRequests = (requestsRes.data || []).filter((request) => {
+        const requestProjectId = String(request.projectId?._id || request.projectId || '');
+        if (termProjectIds.has(requestProjectId)) return true;
+
+        const requestProject = typeof request.projectId === 'object'
+          ? request.projectId
+          : projectList.find((project) => String(project._id) === requestProjectId);
+        const requestPeriod = getRecordPeriod(requestProject, availablePeriods);
+        const requestInTerm = isPeriodInTerm(requestPeriod, selectedSchoolYear, selectedSemester);
+        return requestInTerm && (!selectedPeriodId || String(requestPeriod?._id) === String(selectedPeriodId));
+      });
+
+      setProjects(termProjectList);
+      setRequests(termRequests);
       if (requestsRes.pagination) {
-        setPagination(requestsRes.pagination);
+        setPagination({
+          ...requestsRes.pagination,
+          total: termRequests.length,
+          pages: Math.max(1, Math.ceil(termRequests.length / pageSize)),
+        });
       }
 
-      const scopedProjects = projectList.filter((project) => {
+      const scopedProjects = termProjectList.filter((project) => {
         if (isStudent) {
           return isStudentProjectOwner(project, user?.studentId);
         }
@@ -268,9 +307,10 @@ export default function ExtensionRequestsPage() {
     } catch (err) {
       toast.error(err.message || 'Không thể tải dữ liệu yêu cầu gia hạn.');
     } finally {
+      setHasLoaded(true);
       setLoading(false);
     }
-  }, [token, search, statusFilter, currentPage, pageSize, isStudent, user?.studentId, isLecturer, isFaculty, user?.lecturerId, toast]);
+  }, [currentPage, fetchPeriods, isFaculty, isLecturer, isStudent, pageSize, periods, search, selectedPeriodId, selectedSchoolYear, selectedSemester, statusFilter, toast, token, user?.lecturerId, user?.studentId]);
 
   useEffect(() => {
     loadData();
@@ -435,7 +475,7 @@ export default function ExtensionRequestsPage() {
     return `${targetTypeLabels[request.targetType] || 'Đối tượng'}: ${String(request.targetId).slice(-6)}`;
   };
 
-  if (loading) {
+  if (loading && !hasLoaded) {
     return (
       <div className={css.s3}>
         <Spinner size="lg" />
@@ -456,6 +496,30 @@ export default function ExtensionRequestsPage() {
           </p>
         </div>
         <Button variant="outline" onClick={loadData} icon={<ArrowsClockwise />} title="Làm mới" />
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <Card>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) minmax(220px, 1fr)', gap: '12px', alignItems: 'end' }}>
+            <AcademicTermFilter periods={periods} />
+            <SelectField
+              id="extension-period"
+              label="Học phần đồ án"
+              value={selectedPeriodId}
+              onChange={(event) => {
+                setSelectedPeriodId(event.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Tất cả học phần trong kỳ</option>
+              {periodOptions.map((period) => (
+                <option key={period._id} value={period._id}>
+                  {period.name} ({period.courseCode || `Kỳ ${period.semester}`})
+                </option>
+              ))}
+            </SelectField>
+          </div>
+        </Card>
       </div>
 
       {/* Search & Filters */}

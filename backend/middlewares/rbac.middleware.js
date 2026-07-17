@@ -1,46 +1,48 @@
 const Project = require('../models/Project');
 
-const checkContextualAssignment = (requiredRole, paramName = 'projectId') => {
+const normalizeAssignment = (assignment) => (
+  assignment === 'REVIEWER' ? 'SECOND_MARKER' : assignment
+);
+
+const checkContextualAssignment = (requiredAssignment, paramName = 'projectId') => {
   return async (req, res, next) => {
     try {
+      const assignment = normalizeAssignment(requiredAssignment);
       const entityId = req.params[paramName];
       if (!entityId) {
         return res.status(400).json({ success: false, message: 'Missing entity ID parameter' });
       }
 
-      // Check dynamic roles requires LECTURER base profile linkage
       const lecturerId = req.user.lecturerId; 
-      if (!lecturerId && requiredRole !== 'STUDENT') {
+      if (!lecturerId && assignment !== 'STUDENT') {
         return res.status(403).json({ success: false, message: 'User is not linked to a Lecturer profile' });
       }
 
-      req.user.activeContextualRoles = req.user.activeContextualRoles || [];
+      req.user.activeProjectAssignments = req.user.activeProjectAssignments || [];
 
-      // Case 1: Supervisor contextual check
-      if (requiredRole === 'SUPERVISOR') {
+      if (assignment === 'SUPERVISOR') {
         const project = await Project.findById(entityId);
         if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
         
         if (project.supervisorId && project.supervisorId.toString() === lecturerId.toString()) {
-          req.user.activeContextualRoles.push('SUPERVISOR');
+          req.user.activeProjectAssignments.push('SUPERVISOR');
           return next();
         }
       }
 
-      // Case 2: Reviewer contextual check
-      if (requiredRole === 'REVIEWER') {
+      if (assignment === 'SECOND_MARKER') {
         const project = await Project.findById(entityId);
         if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
         
         if (project.reviewerId && project.reviewerId.toString() === lecturerId.toString()) {
-          req.user.activeContextualRoles.push('REVIEWER');
+          req.user.activeProjectAssignments.push('SECOND_MARKER');
           return next();
         }
       }
 
       return res.status(403).json({
         success: false,
-        message: `Forbidden: Requires dynamic role assignment as ${requiredRole}`
+        message: `Forbidden: Requires project assignment as ${assignment}`
       });
     } catch (error) {
       next(error);

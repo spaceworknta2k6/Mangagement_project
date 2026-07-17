@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTopics } from './hooks/useTopics';
 import TopicCard from './components/TopicCard';
@@ -16,10 +16,12 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import Pagination from '@/components/ui/Pagination';
 import Spinner from '@/components/ui/Spinner';
 import Tabs from '@/components/ui/Tabs';
+import AcademicTermFilter from '@/components/dashboard/AcademicTermFilter';
 import { useToast } from '@/components/ui/Toast';
 import api from '@/services/api';
 import { handleApiError } from '@/lib/utils';
 import { getAcademicUnitLabel, getTopicDomainLabel } from '@/lib/academicUnits';
+import { isPeriodInTerm } from '@/lib/academicTerm';
 import EmptyState from '@/components/ui/EmptyState';
 import { BookOpen, Plus, Lightbulb, MagnifyingGlass, FileText } from '@phosphor-icons/react';
 import { exportToCSV } from '@/lib/export';
@@ -88,6 +90,10 @@ export default function TopicsPage() {
     user,
     token,
     periods,
+    selectedPeriodId,
+    selectedSchoolYear,
+    selectedSemester,
+    setSelectedPeriodId,
     proposalPeriods,
     groups,
     loading,
@@ -136,10 +142,10 @@ export default function TopicsPage() {
     filteredTopics,
   } = useTopics(initialQuery.tab);
 
-  const getPeriodByTopic = (topic) => {
+  const getPeriodByTopic = useCallback((topic) => {
     const periodId = topic?.periodId?._id || topic?.periodId;
     return periods.find((period) => String(period._id) === String(periodId)) || topic?.periodId || null;
-  };
+  }, [periods]);
 
   const getCoordinatorLecturerId = (period) => (
     period?.coordinatorLecturerId?._id || period?.coordinatorLecturerId || ''
@@ -167,9 +173,27 @@ export default function TopicsPage() {
     await handleRegisterTopic(topicId, ownerType, groupId);
   };
 
+  const periodOptions = useMemo(
+    () => periods.filter((period) => isPeriodInTerm(period, selectedSchoolYear, selectedSemester)),
+    [periods, selectedSchoolYear, selectedSemester]
+  );
+
+  const scopedTopics = useMemo(() => {
+    return filteredTopics.filter((topic) => {
+      const period = getPeriodByTopic(topic);
+      if (!isPeriodInTerm(period, selectedSchoolYear, selectedSemester)) return false;
+      if (!selectedPeriodId) return true;
+      return String(period?._id || topic.periodId?._id || topic.periodId) === String(selectedPeriodId);
+    });
+  }, [filteredTopics, getPeriodByTopic, selectedPeriodId, selectedSchoolYear, selectedSemester]);
+
+  const scopedProposalPeriods = useMemo(() => {
+    return proposalPeriods.filter((period) => isPeriodInTerm(period, selectedSchoolYear, selectedSemester));
+  }, [proposalPeriods, selectedSchoolYear, selectedSemester]);
+
   const keyword = search.trim().toLowerCase();
   const visibleTopics = keyword
-    ? filteredTopics.filter((topic) => {
+    ? scopedTopics.filter((topic) => {
         const values = [
           topic.title,
           topic.summary,
@@ -181,7 +205,7 @@ export default function TopicsPage() {
         ];
         return values.some((value) => String(value || '').toLowerCase().includes(keyword));
       })
-    : filteredTopics;
+    : scopedTopics;
 
   const totalPages = Math.max(1, Math.ceil(visibleTopics.length / pageSize));
   const pagedTopics = visibleTopics.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -380,6 +404,32 @@ export default function TopicsPage() {
         )}
       </div>
 
+      <div style={{ marginBottom: '16px' }}>
+        <Card>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) minmax(220px, 1fr)', gap: '12px', alignItems: 'end' }}>
+            <AcademicTermFilter periods={periods} />
+            <div>
+              <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '6px' }}>Học phần đồ án</label>
+              <select
+                value={selectedPeriodId}
+                onChange={(event) => {
+                  setSelectedPeriodId(event.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{ width: '100%', minHeight: '40px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--surface, var(--bg-surface))', color: 'var(--text-primary)', fontSize: '14px', padding: '0 12px' }}
+              >
+                <option value="">Tất cả học phần trong kỳ</option>
+                {periodOptions.map((period) => (
+                  <option key={period._id} value={period._id}>
+                    {period.name} ({period.courseCode || `Kỳ ${period.semester}`})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       <Tabs tabs={topicTabs} activeTab={activeTab} onChange={handleTabChange} />
 
       {/* Search form */}
@@ -446,7 +496,7 @@ export default function TopicsPage() {
           editingTopicId={editingTopicId}
           form={form}
           setForm={setForm}
-          periods={proposalPeriods}
+          periods={scopedProposalPeriods}
           groups={groups}
           handleSubmitTopic={handleSubmitTopic}
           onClose={() => {

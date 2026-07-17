@@ -137,7 +137,7 @@ const runIntegrationTests = async () => {
         minGroupSize: 1,
         maxGroupSize: 2,
         rubricVersion: 'appeal-test-v1',
-        scoringFormula: { supervisor: 0.5, reviewer: 0.5, recheck: 0.5 },
+        scoringFormula: { supervisor: 0.5, secondMarker: 0.5, recheck: 0.5 },
         status: 'in_progress',
       });
 
@@ -211,8 +211,8 @@ const runIntegrationTests = async () => {
             projectId: project._id.toString(),
             groupId: group._id.toString(),
             periodId: period._id.toString(),
-            rubricRole: 'REVIEWER',
-            targetType: 'REVIEWER',
+            rubricRole: 'SECOND_MARKER',
+            targetType: 'SECOND_MARKER',
             targetId: project._id.toString(),
             criteriaScores: [{ criteriaCode: 'C1', criteriaName: 'Reviewer score', maxScore: 10, score: 8, weight: 1 }],
             comment: 'Original reviewer score',
